@@ -346,18 +346,6 @@ const AuthenticationController = {
           Audit: {
             IsDeleted: false,
           },
-          // AND: [
-          //   {
-          //     Id: {
-          //       not: userId,
-          //     },
-          //   },
-          //   {
-          //     Audit: {
-          //       IsDeleted: false,
-          //     },
-          //   },
-          // ],
         },
         select: {
           Id: true,
@@ -391,6 +379,58 @@ const AuthenticationController = {
       });
     } catch (error) {
       console.log("THE ERROR", error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getUserById: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const user = await prisma.users.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Firstname: true,
+          Lastname: true,
+          Username: true,
+          Email: true,
+          Role: true,
+          PhoneNumber: true,
+          Category: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).send({
+          status: 404,
+          message: "User not found!",
+          data: {},
+        });
+      }
+      const formatedUser = {
+        username: user.Username,
+        password: "",
+        role: user.Role,
+        email: user.Email,
+        firstname: user.Firstname,
+        lastname: user.Lastname,
+        phoneNumber: user.PhoneNumber,
+        category: user.Category,
+      };
+
+      return res.status(200).send({
+        status: 200,
+        message: "User found!",
+        data: formatedUser,
+      });
+    } catch (error) {
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -467,9 +507,9 @@ const AuthenticationController = {
     }
   },
   updateUser: async (req, res, next) => {
-    const userId =
-      req.params.id !== "undefined" ? parseInt(req.params.id) : req.userId;
+    const userId = req.userId;
     const file = req.file;
+    const id = req.params.id;
 
     const { userInfo } = req.body;
     const parsedUserInfo = JSON.parse(userInfo);
@@ -478,16 +518,16 @@ const AuthenticationController = {
       lastname,
       role,
       username,
-      isActive,
       password,
       phoneNumber,
       email,
+      category,
     } = parsedUserInfo;
     try {
       // Ensure the user exists
       const existingUser = await prisma.users.findUnique({
         where: {
-          Id: userId,
+          Id: +id,
         },
       });
 
@@ -516,8 +556,7 @@ const AuthenticationController = {
         PhoneNumber: phoneNumber ? phoneNumber : existingUser.PhoneNumber,
         Email: email ? email : existingUser.Email,
         Role: role ? role : existingUser.Role,
-        IsActive:
-          isActive !== undefined ? JSON.parse(isActive) : existingUser.IsActive,
+        Category: category ? category : existingUser.Category,
         PhotoPath: file
           ? `/${file.destination.split("/")[1]}/${file.filename}`
           : existingUser.PhotoPath,
@@ -531,9 +570,16 @@ const AuthenticationController = {
       // Update user
       await prisma.users.update({
         where: {
-          Id: userId,
+          Id: +id,
         },
-        data: updateData,
+        data: {
+          ...updateData,
+          Audit: {
+            update: {
+              UpdatedBy: userId,
+            },
+          },
+        },
       });
 
       return res.status(200).send({

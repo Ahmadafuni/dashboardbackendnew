@@ -32,7 +32,19 @@ router.get(
   verifyUser(["FACTORYMANAGER", "CUTTING", "TAILORING"]),
   AuthenticationController.getAllUsers
 );
-
+router.get(
+  "/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "WAREHOUSEMANAGER",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  AuthenticationController.getUserById
+);
 router.get(
   "/managers",
   verifyUser(["FACTORYMANAGER", "ENGINEERING", "STOREMANAGER"]),
