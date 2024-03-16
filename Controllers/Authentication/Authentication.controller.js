@@ -576,7 +576,8 @@ const AuthenticationController = {
           ...updateData,
           Audit: {
             update: {
-              UpdatedBy: userId,
+              UpdatedById: userId,
+              UpdatedAt: new Date(),
             },
           },
         },
