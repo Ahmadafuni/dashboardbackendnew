@@ -475,12 +475,12 @@ const AuthenticationController = {
     }
   },
   deleteUser: async (req, res, next) => {
-    const userId = parseInt(req.params.id);
-
+    const userId = req.userId;
+    const id = req.params.id;
     try {
       await prisma.users.update({
         where: {
-          Id: +userId,
+          Id: +id,
         },
         data: {
           Audit: {

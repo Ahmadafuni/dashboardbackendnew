@@ -52,7 +52,6 @@ router.get(
 );
 router.delete(
   "/:id",
-  uploadProfile.single("profiles"),
   verifyUser(["FACTORYMANAGER"]),
   AuthenticationController.deleteUser
 );
