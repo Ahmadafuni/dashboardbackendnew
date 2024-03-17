@@ -44,7 +44,7 @@ const app = express();
 // app.use("/profile", express.static(`${__dirname}/public/profiles`));
 
 let corsOptions = {
-  origin: ["http://localhost:3000", "https://factoryfrontend.onrender.com"],
+  origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
   credentials: true,
 };
 
