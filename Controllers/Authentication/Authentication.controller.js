@@ -422,7 +422,7 @@ const AuthenticationController = {
         firstname: user.Firstname,
         lastname: user.Lastname,
         phoneNumber: user.PhoneNumber,
-        department: user.Department.Id,
+        department: user.Department.Id.toString(),
       };
 
       return res.status(200).send({

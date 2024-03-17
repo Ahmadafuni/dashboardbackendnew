@@ -1,3 +1,4 @@
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library.js";
 import prisma from "../../client.js";
 
 const DepartmentController = {
@@ -46,7 +47,7 @@ const DepartmentController = {
     }
   },
   createDepartment: async (req, res, next) => {
-    const { name, manager, description, category } = req.body;
+    const { name, location, description, category } = req.body;
     const userId = req.userId;
 
     try {
@@ -55,8 +56,9 @@ const DepartmentController = {
         data: {
           Name: name,
           Description: description,
-          CategoryName: category,
-          Manager: { connect: { Id: manager.id } },
+          Category: category,
+          NameShort: name.toLowerCase(),
+          Location: location,
           Audit: {
             create: {
               CreatedById: userId,
@@ -65,7 +67,6 @@ const DepartmentController = {
           },
         },
       });
-
       // Return response
       return res.status(201).send({
         status: 201,
@@ -75,6 +76,13 @@ const DepartmentController = {
     } catch (error) {
       // Server error or unsolved error
       console.log("THE ERROR", error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        return res.status(409).send({
+          status: 409,
+          message: "Department name already in use!",
+          data: {},
+        });
+      }
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -83,51 +91,20 @@ const DepartmentController = {
     }
   },
   getAllDepartments: async (req, res, next) => {
-    const userId = req.userId;
-
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
-    const skip = (page - 1) * itemsPerPage;
-
     try {
       // Get all departments
       const departments = await prisma.departments.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
-          AND: [
-            { Audit: { IsDeleted: false } },
-            { ManagerId: { not: userId } },
-          ],
+          Audit: {
+            IsDeleted: false,
+          },
         },
         select: {
           Id: true,
           Name: true,
-          CategoryName: true,
+          Category: true,
           Description: true,
-          Manager: {
-            select: {
-              Id: true,
-              Firstname: true,
-              Lastname: true,
-            },
-          },
-        },
-      });
-
-      const totalDeparts = await prisma.departments.count({
-        where: {
-          AND: [
-            {
-              Id: {
-                not: userId,
-              },
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+          Location: true,
         },
       });
 
@@ -135,10 +112,7 @@ const DepartmentController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الأقسام بنجاح!",
-        data: {
-          departments,
-          count: totalDeparts,
-        },
+        data: departments,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -155,25 +129,30 @@ const DepartmentController = {
       // Get department
       const department = await prisma.departments.findUnique({
         where: {
-          Id: +departmentId,
-        },
-        include: {
-          Manager: {
-            select: {
-              Firstname: true,
-              Lastname: true,
-              Username: true,
-              Email: true,
-              PhoneNumber: true,
-            },
+          Id: departmentId,
+          Audit: {
+            IsDeleted: false,
           },
         },
       });
+
+      if (!department) {
+        return res.status(404).send({
+          status: 404,
+          message: "Department not found!",
+          data: {},
+        });
+      }
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب القسم بنجاح!",
-        data: department,
+        data: {
+          name: department.Name,
+          location: department.Location,
+          description: department.Description,
+          category: department.Category,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -185,19 +164,19 @@ const DepartmentController = {
     }
   },
   updateDepartment: async (req, res, next) => {
-    const { name, manager, description, category } = req.body;
+    const { name, location, description, category } = req.body;
     const departmentId = parseInt(req.params.id);
     const userId = req.userId;
     try {
       await prisma.departments.update({
         where: {
-          Id: +departmentId,
+          Id: departmentId,
         },
         data: {
           Name: name,
           Description: description,
           CategoryName: category,
-          Manager: { connect: { Id: manager.id } },
+          Location: location,
           Audit: {
             update: {
               data: {
@@ -216,6 +195,13 @@ const DepartmentController = {
     } catch (error) {
       // Server error or unsolved error
       console.log(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        return res.status(404).send({
+          status: 404,
+          message: "Department not found!",
+          data: {},
+        });
+      }
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -314,15 +300,9 @@ const DepartmentController = {
         select: {
           Id: true,
           Name: true,
-          CategoryName: true,
+          Category: true,
           Description: true,
-          Manager: {
-            select: {
-              Id: true,
-              Firstname: true,
-              Lastname: true,
-            },
-          },
+          Location: true,
         },
       });
 
