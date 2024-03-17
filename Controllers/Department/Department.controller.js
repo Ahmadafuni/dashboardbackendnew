@@ -175,7 +175,7 @@ const DepartmentController = {
         data: {
           Name: name,
           Description: description,
-          CategoryName: category,
+          Category: category,
           Location: location,
           Audit: {
             update: {
