@@ -47,13 +47,23 @@ export const getUser = async (username) => {
         Id: true,
         Username: true,
         PasswordHash: true,
-        Role: true,
         Firstname: true,
         Lastname: true,
         Email: true,
         PhotoPath: true,
+        Department: {
+          select: {
+            Id: true,
+            Name: true,
+            Category: true,
+          },
+        },
       },
-      where: { Username: username, IsActive: true },
+      where: {
+        Username: username,
+        IsActive: true,
+        Audit: { IsDeleted: false },
+      },
     });
 
     return user;

@@ -45,11 +45,11 @@ router.get(
   ]),
   AuthenticationController.getUserById
 );
-router.get(
-  "/managers",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING", "STOREMANAGER"]),
-  AuthenticationController.getManagers
-);
+// router.get(
+//   "/managers",
+//   verifyUser(["FACTORYMANAGER", "ENGINEERING", "STOREMANAGER"]),
+//   AuthenticationController.getManagers
+// );
 router.delete(
   "/:id",
   verifyUser(["FACTORYMANAGER"]),

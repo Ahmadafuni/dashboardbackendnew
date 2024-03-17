@@ -1,6 +1,50 @@
 import prisma from "../../client.js";
 
 const DepartmentController = {
+  centralDepartment: async (req, res, next) => {
+    try {
+      const department = await prisma.departments.findFirst({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (department) {
+        return res.status(409).send({
+          status: 409,
+          message: "There is already a central department!",
+          data: {},
+        });
+      }
+      // Create Department
+      await prisma.departments.create({
+        data: {
+          Name: "Central",
+          Category: "FACTORYMANAGER",
+          NameShort: "Central".toLowerCase(),
+          Description: "Central department for factory managers.",
+          Location: "Central",
+          Audit: {
+            create: { CreatedAt: new Date() },
+          },
+        },
+      });
+      // Return success response
+      return res.status(200).send({
+        status: 200,
+        message: "Central department created successfully!",
+        data: {},
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
   createDepartment: async (req, res, next) => {
     const { name, manager, description, category } = req.body;
     const userId = req.userId;
@@ -227,8 +271,8 @@ const DepartmentController = {
         })
         .then((departments) =>
           departments.map((department) => ({
-            id: department.Id,
-            name: department.Name,
+            value: department.Id.toString(),
+            label: department.Name,
           }))
         );
 

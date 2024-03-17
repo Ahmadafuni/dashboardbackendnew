@@ -49,7 +49,7 @@ enum TemplateSizeType {
   DRESSUP
 }
 
-enum Role {
+enum DepartmentCategory {
   CUTTING
   TAILORING
   PRINTING
@@ -63,10 +63,10 @@ model AuditRecords {
   Id                        Int                        @id @default(autoincrement())
   CreatedAt                 DateTime                   @default(now())
   UpdatedAt                 DateTime                   @updatedAt
-  CreatedById               Int
-  UpdatedById               Int
-  CreatedBy                 Users                      @relation(name: "CreatedBy", fields: [CreatedById], references: [Id])
-  UpdatedBy                 Users                      @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
+  CreatedById               Int?
+  UpdatedById               Int?
+  CreatedBy                 Users?                     @relation(name: "CreatedBy", fields: [CreatedById], references: [Id])
+  UpdatedBy                 Users?                     @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
   IsDeleted                 Boolean                    @default(false)
   Colors                    Colors?
   Components                Components?
@@ -129,12 +129,11 @@ model Components {
 
 model Departments {
   Id                        Int                   @id @default(autoincrement())
-  Name                      String                @db.VarChar(255)
-  Manager                   Users                 @relation("UserDepartment", fields: [ManagerId], references: [Id])
-  ManagerId                 Int                   @unique
+  Name                      String                @unique @db.VarChar(255)
+  NameShort                 String                @unique @db.VarChar(255)
   Location                  String?               @db.VarChar(255)
   Description               String?
-  CategoryName              CategoryName?
+  Category                  DepartmentCategory
   Audit                     AuditRecords          @relation(fields: [AuditId], references: [Id])
   AuditId                   Int                   @unique
   AssignedTasks             Tasks[]               @relation(name: "AssignedTo")
@@ -146,6 +145,7 @@ model Departments {
   TrakingModels             TrakingModels[]
   ReceivedFromTrakingModels TrakingModels[]       @relation("ReceivedFrom")
   DeliveredToTrakingModels  TrakingModels[]       @relation("DeliveredTo")
+  Users                     Users[]
 }
 
 model InternalOrders {
@@ -518,30 +518,26 @@ model TrakingModels {
 }
 
 model Users {
-  Id                 Int              @id @default(autoincrement())
-  IsActive           Boolean          @default(false)
-  Role               Role
-  Username           String           @unique @db.VarChar(255)
-  Email              String           @unique @db.VarChar(255)
-  Firstname          String           @db.VarChar(255)
-  Lastname           String           @db.VarChar(255)
-  DOB                DateTime?        @db.Date
-  PhotoPath          String?
-  Category           CategoryName?
-  PasswordHash       String
-  HashedRefreshToken String?
-  PhoneNumber        String           @unique @db.VarChar(50)
-  LastLogin          DateTime?
-  Audit              AuditRecords?    @relation(fields: [AuditId], references: [Id])
-  AuditId            Int?             @unique
-  AuditCreatedBy     AuditRecords[]   @relation(name: "CreatedBy")
-  AuditUpdatedBy     AuditRecords[]   @relation(name: "UpdatedBy")
-  DepartmentId       Int?
-  Department         Departments?     @relation("UserDepartment")
-  WarehouseId        Int?             @unique
-  Warehouse          Warehouses?      @relation
-  InternalOrders     InternalOrders[]
-  Tasks              Tasks[]          @relation(name: "CreatedByManager")
+  Id             Int              @id @default(autoincrement())
+  IsActive       Boolean          @default(false)
+  Username       String           @unique @db.VarChar(255)
+  Email          String           @unique @db.VarChar(255)
+  Firstname      String           @db.VarChar(255)
+  Lastname       String           @db.VarChar(255)
+  PhotoPath      String?
+  PasswordHash   String
+  PhoneNumber    String           @unique @db.VarChar(50)
+  LastLogin      DateTime?
+  Department     Departments?     @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId   Int?
+  Audit          AuditRecords     @relation(fields: [AuditId], references: [Id])
+  AuditId        Int              @unique
+  AuditCreatedBy AuditRecords[]   @relation(name: "CreatedBy")
+  AuditUpdatedBy AuditRecords[]   @relation(name: "UpdatedBy")
+  WarehouseId    Int?             @unique
+  Warehouse      Warehouses?      @relation
+  InternalOrders InternalOrders[]
+  Tasks          Tasks[]          @relation(name: "CreatedByManager")
 }
 
 model Warehouses {

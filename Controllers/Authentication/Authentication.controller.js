@@ -51,14 +51,13 @@ const AuthenticationController = {
       const access_token = await generateAccessToken({
         id: user.Id,
         username: user.Username,
-        role: user.Role,
+        role: user.Department.Category,
       });
 
       await prisma.users.update({
         where: { Id: user.Id },
         data: {
           LastLogin: new Date(),
-          // HashedRefreshToken: hashedRefreshToken,
         },
       });
 
@@ -73,7 +72,7 @@ const AuthenticationController = {
             name: `${user.Firstname} ${user.Lastname}`,
             email: user.Email,
             userImage: user.PhotoPath,
-            userRole: user.Role,
+            userRole: user.Department.Category,
           },
         },
       });
@@ -114,7 +113,7 @@ const AuthenticationController = {
           name: `${user.Firstname} ${user.Lastname}`,
           email: user.Email,
           userImage: user.PhotoPath,
-          userRole: user.Role,
+          userRole: user.Department.Category,
         },
         status: 200,
         message: "الجلسة صالحة!",
@@ -165,8 +164,15 @@ const AuthenticationController = {
   },
   createAdmin: async (req, res, next) => {
     const file = req.file;
-    const { username, email, firstname, lastname, phoneNumber, password } =
-      req.body;
+    const {
+      username,
+      email,
+      firstname,
+      lastname,
+      phoneNumber,
+      password,
+      department,
+    } = req.body;
     try {
       // Check user cred already exist
       const doesExistUser = await doesExist({ username, email, phoneNumber });
@@ -189,10 +195,14 @@ const AuthenticationController = {
           PasswordHash: hashedPass,
           Username: username,
           PhoneNumber: phoneNumber,
-          Role: "FACTORYMANAGER",
-          Category: "MANAGEMENT",
           IsActive: true,
+          DepartmentId: department,
           PhotoPath: `/${file.destination.split("/")[1]}/${file.filename}`,
+          Audit: {
+            create: {
+              CreatedAt: new Date(),
+            },
+          },
         },
       });
 
@@ -215,7 +225,6 @@ const AuthenticationController = {
   createUser: async (req, res, next) => {
     const file = req.file;
     const userId = req.userId;
-
     const { userInfo } = req.body;
     const parsedUserInfo = JSON.parse(userInfo);
 
@@ -226,8 +235,7 @@ const AuthenticationController = {
       lastname,
       phoneNumber,
       password,
-      role,
-      category,
+      department,
     } = parsedUserInfo;
     try {
       // Check user cred already exist
@@ -252,9 +260,7 @@ const AuthenticationController = {
           PasswordHash: hashedPass,
           Username: username,
           PhoneNumber: phoneNumber,
-          Role: role,
-          Category: category,
-          IsActive: true,
+          DepartmentId: department,
           PhotoPath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : "",
@@ -262,7 +268,6 @@ const AuthenticationController = {
             create: {
               CreatedById: userId,
               UpdatedById: userId,
-              IsDeleted: false,
             },
           },
         },
@@ -283,63 +288,62 @@ const AuthenticationController = {
       });
     }
   },
-  getManagers: async (req, res, next) => {
-    try {
-      const departments = await prisma.departments.findMany({
-        select: {
-          ManagerId: true,
-        },
-      });
-      const warehouses = await prisma.warehouses.findMany({
-        select: {
-          ManagerId: true,
-        },
-      });
-      const warehouseManagerIds = warehouses.map(
-        (warehouse) => warehouse.ManagerId
-      );
-      const managerIds = departments.map((dept) => dept.ManagerId);
+  // getManagers: async (req, res, next) => {
+  //   try {
+  //     const departments = await prisma.departments.findMany({
+  //       select: {
+  //         ManagerId: true,
+  //       },
+  //     });
+  //     const warehouses = await prisma.warehouses.findMany({
+  //       select: {
+  //         ManagerId: true,
+  //       },
+  //     });
+  //     const warehouseManagerIds = warehouses.map(
+  //       (warehouse) => warehouse.ManagerId
+  //     );
+  //     const managerIds = departments.map((dept) => dept.ManagerId);
 
-      const allIds = [...managerIds, ...warehouseManagerIds];
+  //     const allIds = [...managerIds, ...warehouseManagerIds];
 
-      // This query retrieves a list of users based on the following conditions:
-      // 1. The user has not been marked as deleted (IsDeleted is false).
-      // 2. The user's role is not "FACTORYMANAGER".
-      // 3. The user is not a manager of any department, determined by their Id not being in the list of managerIds.
-      // The result includes the Id, Firstname, and Lastname of users who meet all these criteria.
-      const users = await prisma.users.findMany({
-        where: {
-          AND: [
-            { Audit: { IsDeleted: false } },
-            { Role: { not: "FACTORYMANAGER" } },
-            {
-              Id: { notIn: allIds },
-            },
-          ],
-        },
-        select: {
-          Id: true,
-          Firstname: true,
-          Lastname: true,
-          Role: true,
-        },
-      });
+  //     // This query retrieves a list of users based on the following conditions:
+  //     // 1. The user has not been marked as deleted (IsDeleted is false).
+  //     // 2. The user's role is not "FACTORYMANAGER".
+  //     // 3. The user is not a manager of any department, determined by their Id not being in the list of managerIds.
+  //     // The result includes the Id, Firstname, and Lastname of users who meet all these criteria.
+  //     const users = await prisma.users.findMany({
+  //       where: {
+  //         AND: [
+  //           { Audit: { IsDeleted: false } },
+  //           { Role: { not: "FACTORYMANAGER" } },
+  //           {
+  //             Id: { notIn: allIds },
+  //           },
+  //         ],
+  //       },
+  //       select: {
+  //         Id: true,
+  //         Firstname: true,
+  //         Lastname: true,
+  //         Role: true,
+  //       },
+  //     });
 
-      return res.status(200).send({
-        status: 200,
-        message: "تم جلب جميع المستخدمين بنجاح!",
-        data: users,
-      });
-    } catch (error) {
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
+  //     return res.status(200).send({
+  //       status: 200,
+  //       message: "تم جلب جميع المستخدمين بنجاح!",
+  //       data: users,
+  //     });
+  //   } catch (error) {
+  //     return res.status(500).send({
+  //       status: 500,
+  //       message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+  //       data: {},
+  //     });
+  //   }
+  // },
   getAllUsers: async (req, res, next) => {
-    const userId = req.userId;
     try {
       const users = await prisma.users.findMany({
         where: {
@@ -353,18 +357,12 @@ const AuthenticationController = {
           Lastname: true,
           Username: true,
           Email: true,
-          Role: true,
           PhoneNumber: true,
           Department: {
             select: {
+              Id: true,
               Name: true,
-              CategoryName: true,
-            },
-          },
-          Warehouse: {
-            select: {
-              WarehouseName: true,
-              CategoryName: true,
+              Category: true,
             },
           },
           IsActive: true,
@@ -401,9 +399,12 @@ const AuthenticationController = {
           Lastname: true,
           Username: true,
           Email: true,
-          Role: true,
           PhoneNumber: true,
-          Category: true,
+          Department: {
+            select: {
+              Id: true,
+            },
+          },
         },
       });
 
@@ -417,12 +418,11 @@ const AuthenticationController = {
       const formatedUser = {
         username: user.Username,
         password: "",
-        role: user.Role,
         email: user.Email,
         firstname: user.Firstname,
         lastname: user.Lastname,
         phoneNumber: user.PhoneNumber,
-        category: user.Category,
+        department: user.Department.Id,
       };
 
       return res.status(200).send({
@@ -516,12 +516,11 @@ const AuthenticationController = {
     const {
       firstname,
       lastname,
-      role,
       username,
       password,
       phoneNumber,
       email,
-      category,
+      department,
     } = parsedUserInfo;
     try {
       // Ensure the user exists
@@ -555,8 +554,7 @@ const AuthenticationController = {
         PasswordHash: hashedPass,
         PhoneNumber: phoneNumber ? phoneNumber : existingUser.PhoneNumber,
         Email: email ? email : existingUser.Email,
-        Role: role ? role : existingUser.Role,
-        Category: category ? category : existingUser.Category,
+        DepartmentId: department > 0 ? department : existingUser.DepartmentId,
         PhotoPath: file
           ? `/${file.destination.split("/")[1]}/${file.filename}`
           : existingUser.PhotoPath,
@@ -577,7 +575,6 @@ const AuthenticationController = {
           Audit: {
             update: {
               UpdatedById: userId,
-              UpdatedAt: new Date(),
             },
           },
         },
@@ -605,30 +602,6 @@ const AuthenticationController = {
           data: {},
         });
       }
-      //   const managers = await prisma.$queryRaw`
-      //   SELECT
-      //     m."Id" AS "UserId",
-      //     m."Firstname",
-      //     m."Lastname",
-      //     m."Username",
-      //     m."Email",
-      //     m."PhoneNumber",
-      //     d."Name" AS "Department",
-      //     d."CategoryName"::text AS "Category",
-      //     m."IsActive" AS "Active",
-      //     m."Role",
-      //     m."PhotoPath" AS "ProfileImage"
-      //   FROM
-      //     "Departments" d
-      //     JOIN "Users" m ON d."ManagerId" = m."Id"
-      //   WHERE
-      //     d."Name" ILIKE ${"%" + searchTerm + "%"} OR
-      //     d."CategoryName"::text ILIKE ${"%" + searchTerm + "%"} OR
-      //     CONCAT(m."Firstname", ' ', m."Lastname") ILIKE ${
-      //       "%" + searchTerm + "%"
-      //     };
-      // `;
-
       const datas = await prisma.users.findMany({
         where: {
           OR: [
@@ -668,18 +641,12 @@ const AuthenticationController = {
           Lastname: true,
           Username: true,
           Email: true,
-          Role: true,
           PhoneNumber: true,
           Department: {
             select: {
+              Id: true,
               Name: true,
-              CategoryName: true,
-            },
-          },
-          Warehouse: {
-            select: {
-              WarehouseName: true,
-              CategoryName: true,
+              Category: true,
             },
           },
           IsActive: true,

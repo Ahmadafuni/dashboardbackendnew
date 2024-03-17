@@ -9,7 +9,7 @@ router.post(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.createDepartment
 );
-
+router.get("/create-central", DepartmentController.centralDepartment);
 router.put(
   "/:id",
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
@@ -22,11 +22,7 @@ router.get(
   DepartmentController.getAllDepartments
 );
 
-router.get(
-  "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  DepartmentController.getDepartmentNames
-);
+router.get("/", DepartmentController.getDepartmentNames);
 
 router.get(
   "/:id",
