@@ -196,7 +196,11 @@ const AuthenticationController = {
           Username: username,
           PhoneNumber: phoneNumber,
           IsActive: true,
-          DepartmentId: +department,
+          Department: {
+            connect: {
+              Id: +department,
+            },
+          },
           PhotoPath: `/${file.destination.split("/")[1]}/${file.filename}`,
           Audit: {
             create: {
@@ -260,7 +264,11 @@ const AuthenticationController = {
           PasswordHash: hashedPass,
           Username: username,
           PhoneNumber: phoneNumber,
-          DepartmentId: +department,
+          Department: {
+            connect: {
+              Id: +department,
+            },
+          },
           PhotoPath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : "",
@@ -554,7 +562,6 @@ const AuthenticationController = {
         PasswordHash: hashedPass,
         PhoneNumber: phoneNumber ? phoneNumber : existingUser.PhoneNumber,
         Email: email ? email : existingUser.Email,
-        DepartmentId: !department ? +department : existingUser.DepartmentId,
         PhotoPath: file
           ? `/${file.destination.split("/")[1]}/${file.filename}`
           : existingUser.PhotoPath,
@@ -572,6 +579,11 @@ const AuthenticationController = {
         },
         data: {
           ...updateData,
+          Department: {
+            connect: {
+              Id: +department,
+            },
+          },
           Audit: {
             update: {
               UpdatedById: userId,

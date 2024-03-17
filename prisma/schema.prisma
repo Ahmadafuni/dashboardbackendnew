@@ -528,8 +528,8 @@ model Users {
   PasswordHash   String
   PhoneNumber    String           @unique @db.VarChar(50)
   LastLogin      DateTime?
-  Department     Departments?     @relation(fields: [DepartmentId], references: [Id])
-  DepartmentId   Int?
+  Department     Departments      @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId   Int
   Audit          AuditRecords     @relation(fields: [AuditId], references: [Id])
   AuditId        Int              @unique
   AuditCreatedBy AuditRecords[]   @relation(name: "CreatedBy")
