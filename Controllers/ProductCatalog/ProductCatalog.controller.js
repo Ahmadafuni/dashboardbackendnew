@@ -34,13 +34,8 @@ const ProductCatalogController = {
     }
   },
   getAllProductCatalogs: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
     try {
-      const skip = (page - 1) * itemsPerPage;
       const productCatalogs = await prisma.productCatalogs.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
@@ -48,26 +43,11 @@ const ProductCatalogController = {
         },
       });
 
-      const totalProductCatalogs = await prisma.productCatalogs.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب كتالوجات المنتجات بنجاح!",
-        data: {
-          productCatalogs,
-          count: totalProductCatalogs,
-        },
+        data: productCatalogs,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -88,30 +68,6 @@ const ProductCatalogController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
 
       if (!productCatalog) {
@@ -126,7 +82,10 @@ const ProductCatalogController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب كتالوجات المنتجات بنجاح!",
-        data: productCatalog,
+        data: {
+          name: productCatalog.ProductCatalogName,
+          description: productCatalog.ProductCatalogDescription,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -221,8 +180,8 @@ const ProductCatalogController = {
         })
         .then((catalogues) =>
           catalogues.map((catalogue) => ({
-            id: catalogue.Id,
-            name: catalogue.ProductCatalogName,
+            value: catalogue.Id.toString(),
+            label: catalogue.ProductCatalogName,
           }))
         );
 
