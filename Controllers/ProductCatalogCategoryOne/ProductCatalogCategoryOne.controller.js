@@ -34,30 +34,17 @@ const ProductCatalogCategoryOneController = {
     }
   },
   getAllCategories: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const categories = await prisma.productCatalogCategoryOne.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalCatgeories = await prisma.productCatalogCategoryOne.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          CategoryName: true,
+          CategoryDescription: true,
         },
       });
 
@@ -65,13 +52,9 @@ const ProductCatalogCategoryOneController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الفئات بنجاح!",
-        data: {
-          categories,
-          count: totalCatgeories,
-        },
+        data: categories,
       });
     } catch (error) {
-      console.log();
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -90,30 +73,6 @@ const ProductCatalogCategoryOneController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!category) {
         // Return response
@@ -127,7 +86,10 @@ const ProductCatalogCategoryOneController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الفئات بنجاح!",
-        data: category,
+        data: {
+          name: category.CategoryName,
+          description: category.CategoryDescription,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -222,8 +184,8 @@ const ProductCatalogCategoryOneController = {
         })
         .then((categories) =>
           categories.map((category) => ({
-            id: category.Id,
-            name: category.CategoryName,
+            value: category.Id.toString(),
+            label: category.CategoryName,
           }))
         );
 

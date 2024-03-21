@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.createCategory
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.getAllCategories
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.getCategoryOneNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.getCategoryById
 );
 router.delete(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.deleteCategory
 );
 router.put(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.updateCategory
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogCategoryOneController.searchPCCO
 );
 const ProductCatalogCategorryOneRoute = router;

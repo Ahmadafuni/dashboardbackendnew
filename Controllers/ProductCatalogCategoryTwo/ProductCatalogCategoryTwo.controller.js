@@ -33,30 +33,17 @@ const ProductCatalogCategoryTwoController = {
     }
   },
   getAllCategories: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 3;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const categories = await prisma.productCatalogCategoryTwo.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalCatgeories = await prisma.productCatalogCategoryTwo.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          CategoryName: true,
+          CategoryDescription: true,
         },
       });
 
@@ -64,10 +51,7 @@ const ProductCatalogCategoryTwoController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الفئات بنجاح!",
-        data: {
-          categories,
-          count: totalCatgeories,
-        },
+        data: categories,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -88,30 +72,6 @@ const ProductCatalogCategoryTwoController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!category) {
         // Return response
@@ -125,7 +85,10 @@ const ProductCatalogCategoryTwoController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الفئات بنجاح!",
-        data: category,
+        data: {
+          name: category.CategoryName,
+          description: category.CategoryDescription,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -220,8 +183,8 @@ const ProductCatalogCategoryTwoController = {
         })
         .then((categories) =>
           categories.map((category) => ({
-            id: category.Id,
-            name: category.CategoryName,
+            value: category.Id.toString(),
+            label: category.CategoryName,
           }))
         );
 
