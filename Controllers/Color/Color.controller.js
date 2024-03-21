@@ -2,14 +2,14 @@ import prisma from "../../client.js";
 
 const ColorController = {
   createColor: async (req, res, next) => {
-    const { colorName, description, colorCode } = req.body;
+    const { ColorName, Description, ColorCode } = req.body;
     const userId = req.userId;
     try {
       await prisma.colors.create({
         data: {
-          ColorName: colorName,
-          ColorCode: colorCode,
-          Description: description,
+          ColorName: ColorName,
+          ColorCode: ColorCode,
+          Description: Description,
           Audit: {
             create: {
               CreatedById: userId,
@@ -34,41 +34,25 @@ const ColorController = {
     }
   },
   getColors: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const colors = await prisma.colors.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalTemplates = await prisma.colors.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          ColorName: true,
+          ColorCode: true,
+          Description: true,
         },
       });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب اللون بنجاح!",
-        data: {
-          colors,
-          count: totalTemplates,
-        },
+        data: colors,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -89,29 +73,10 @@ const ColorController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
+        select: {
+          ColorName: true,
+          ColorCode: true,
+          Description: true,
         },
       });
       if (!color) {
@@ -143,7 +108,7 @@ const ColorController = {
     try {
       await prisma.colors.update({
         where: {
-          Id: +id,
+          Id: id,
         },
         data: {
           Audit: {
@@ -170,18 +135,18 @@ const ColorController = {
     }
   },
   updateColor: async (req, res, next) => {
-    const { colorName, description, colorCode } = req.body;
+    const { ColorName, Description, ColorCode } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
       await prisma.colors.update({
         where: {
-          Id: +id,
+          Id: id,
         },
         data: {
-          ColorName: colorName,
-          ColorCode: colorCode,
-          Description: description,
+          ColorName: ColorName,
+          ColorCode: ColorCode,
+          Description: Description,
           Audit: {
             update: {
               data: {
@@ -218,8 +183,8 @@ const ColorController = {
         })
         .then((colors) =>
           colors.map((color) => ({
-            id: color.Id,
-            name: color.ColorName,
+            value: color.Id.toString(),
+            label: color.ColorName,
           }))
         );
 

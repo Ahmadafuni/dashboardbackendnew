@@ -8,10 +8,11 @@ const ProductCatalogDetailController = {
       category1,
       category2,
       description,
-      templateCatalog,
+      productCatalog,
       season,
       templateType,
       textile,
+      templatePattern,
     } = req.body;
     const userId = req.userId;
     try {
@@ -19,13 +20,14 @@ const ProductCatalogDetailController = {
         data: {
           Grammage: grammage,
           StandardWeight: standardWeight,
-          CategoryOne: { connect: { Id: category1.id } },
-          CategoryTwo: { connect: { Id: category2.id } },
+          CategoryOne: { connect: { Id: +category1 } },
+          CategoryTwo: { connect: { Id: +category2 } },
           Description: description,
-          ProductCatalog: { connect: { Id: templateCatalog.id } },
-          Season: { connect: { Id: season.id } },
-          TemplateType: { connect: { Id: templateType.id } },
-          Textile: { connect: { Id: textile.id } },
+          ProductCatalog: { connect: { Id: +productCatalog } },
+          Season: season,
+          TemplateType: { connect: { Id: +templateType } },
+          TemplatePattern: { connect: { Id: +templatePattern } },
+          Textile: { connect: { Id: +textile } },
           Audit: {
             create: {
               CreatedById: userId,

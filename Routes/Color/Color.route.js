@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.createColor
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.getColors
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.getColorNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.getColorById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.deleteColor
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.updateColor
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ColorController.searchColor
 );
 

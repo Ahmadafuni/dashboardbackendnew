@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.createDetail
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getAllDetails
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getCatalogueDetailNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getDetailById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.deleteDetail
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.updateDetail
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.searchPCD
 );
 
