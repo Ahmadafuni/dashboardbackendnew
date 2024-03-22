@@ -33,42 +33,24 @@ const TemplatePatterController = {
     }
   },
   getPatterns: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const templates = await prisma.templatePatterns.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalTemplates = await prisma.templatePatterns.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          TemplatePatternName: true,
+          Description: true,
         },
       });
-
-      console.log(templates);
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب أنماط القوالب بنجاح!",
-        data: {
-          templates,
-          count: totalTemplates,
-        },
+        data: templates,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -89,30 +71,6 @@ const TemplatePatterController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!pattern) {
         // Return response
@@ -126,7 +84,10 @@ const TemplatePatterController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب أنماط القوالب بنجاح!",
-        data: pattern,
+        data: {
+          name: pattern.TemplatePatternName,
+          description: pattern.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -221,8 +182,8 @@ const TemplatePatterController = {
         })
         .then((patterns) =>
           patterns.map((pattern) => ({
-            id: pattern.Id,
-            name: pattern.TemplatePatternName,
+            value: pattern.Id.toString(),
+            label: pattern.TemplatePatternName,
           }))
         );
 

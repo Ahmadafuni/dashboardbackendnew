@@ -6,37 +6,37 @@ const rouetr = express.Router();
 
 rouetr.post(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.createPattern
 );
 rouetr.get(
   "/all",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.getPatterns
 );
 rouetr.get(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.getTemplatePatternNames
 );
 rouetr.get(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.getPatternById
 );
 rouetr.delete(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.deletePattern
 );
 rouetr.put(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.updatePattern
 );
 rouetr.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplatePatterController.searchTemplateTypes
 );
 export { rouetr as TemplatePatternRoute };
