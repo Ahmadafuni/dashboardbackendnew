@@ -35,30 +35,19 @@ const ProductCatalogTextileController = {
     }
   },
   getAllTextiles: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const textiles = await prisma.productCatalogTextiles.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totaltextiles = await prisma.productCatalogTextiles.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          TextileName: true,
+          Composition: true,
+          TextileType: true,
+          Description: true,
         },
       });
 
@@ -66,10 +55,7 @@ const ProductCatalogTextileController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الأنسجة بنجاح!",
-        data: {
-          textiles,
-          count: totaltextiles,
-        },
+        data: textiles,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -90,29 +76,11 @@ const ProductCatalogTextileController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
+        select: {
+          TextileName: true,
+          Composition: true,
+          TextileType: true,
+          Description: true,
         },
       });
       if (!textile) {
@@ -127,7 +95,12 @@ const ProductCatalogTextileController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الأنسجة بنجاح!",
-        data: textile,
+        data: {
+          textileName: textile.TextileName,
+          textileType: textile.TextileType,
+          composition: textile.Composition,
+          description: textile.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -224,8 +197,8 @@ const ProductCatalogTextileController = {
         })
         .then((textiles) =>
           textiles.map((textile) => ({
-            id: textile.Id,
-            name: textile.TextileName,
+            value: textile.Id,
+            label: textile.TextileName,
           }))
         );
 
