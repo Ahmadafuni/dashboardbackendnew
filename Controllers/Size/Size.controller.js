@@ -33,30 +33,17 @@ const SizeController = {
     }
   },
   getSizes: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const sizes = await prisma.sizes.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalTemplates = await prisma.sizes.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          SizeName: true,
+          Description: true,
         },
       });
 
@@ -64,10 +51,7 @@ const SizeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الأحجام بنجاح!",
-        data: {
-          sizes,
-          count: totalTemplates,
-        },
+        data: sizes,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -88,30 +72,6 @@ const SizeController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!size) {
         // Return response
@@ -125,7 +85,10 @@ const SizeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الأحجام بنجاح!",
-        data: size,
+        data: {
+          sizeName: size.SizeName,
+          description: size.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -219,8 +182,8 @@ const SizeController = {
       });
       // Transform data to required format
       const formattedSizeNames = sizeNames.map((size) => ({
-        id: size.Id,
-        name: size.SizeName,
+        value: size.Id.toString(),
+        label: size.SizeName,
       }));
       // Return response
       return res.status(200).send({

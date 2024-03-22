@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.createSize
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizes
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizeNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizeById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.deleteSize
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.updateSize
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.searchSize
 );
 export { router as SizeRoute };
