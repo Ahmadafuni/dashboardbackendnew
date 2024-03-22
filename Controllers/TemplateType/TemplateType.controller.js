@@ -33,30 +33,17 @@ const TemplateTypeController = {
     }
   },
   getTypes: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const types = await prisma.templateTypes.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-      });
-
-      const totalTemplates = await prisma.templateTypes.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+        select: {
+          Id: true,
+          TemplateTypeName: true,
+          Description: true,
         },
       });
 
@@ -64,10 +51,7 @@ const TemplateTypeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب أنواع القوالب بنجاح!",
-        data: {
-          types,
-          count: totalTemplates,
-        },
+        data: types,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -88,30 +72,6 @@ const TemplateTypeController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!type) {
         // Return response
@@ -125,7 +85,10 @@ const TemplateTypeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب أنواع القوالب بنجاح!",
-        data: type,
+        data: {
+          name: type.TemplateTypeName,
+          description: type.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -220,8 +183,8 @@ const TemplateTypeController = {
         })
         .then((templateTypes) =>
           templateTypes.map((templateType) => ({
-            id: templateType.Id,
-            name: templateType.TemplateTypeName,
+            value: templateType.Id.toString(),
+            label: templateType.TemplateTypeName,
           }))
         );
 

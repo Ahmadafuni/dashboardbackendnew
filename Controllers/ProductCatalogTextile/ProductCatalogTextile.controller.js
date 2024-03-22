@@ -197,7 +197,7 @@ const ProductCatalogTextileController = {
         })
         .then((textiles) =>
           textiles.map((textile) => ({
-            value: textile.Id,
+            value: textile.Id.toString(),
             label: textile.TextileName,
           }))
         );
