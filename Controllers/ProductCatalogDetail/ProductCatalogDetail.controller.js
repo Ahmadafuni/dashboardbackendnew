@@ -52,20 +52,20 @@ const ProductCatalogDetailController = {
     }
   },
   getAllDetails: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
+    const catalogueId = req.params.id;
     try {
-      const skip = (page - 1) * itemsPerPage;
       const details = await prisma.productCatalogDetails.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
+          productCatalogId: +catalogueId,
           Audit: {
             IsDeleted: false,
           },
         },
-        include: {
+        select: {
+          Id: true,
+          Grammage: true,
+          StandardWeight: true,
+          Description: true,
           CategoryOne: {
             select: {
               Id: true,
@@ -84,12 +84,7 @@ const ProductCatalogDetailController = {
               ProductCatalogName: true,
             },
           },
-          Season: {
-            select: {
-              Id: true,
-              SeasonName: true,
-            },
-          },
+          Season: true,
           TemplateType: {
             select: {
               Id: true,
@@ -102,29 +97,19 @@ const ProductCatalogDetailController = {
               TextileName: true,
             },
           },
-        },
-      });
-
-      const totalDetails = await prisma.productCatalogDetails.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
+          TemplatePattern: {
+            select: {
+              Id: true,
+              TemplatePatternName: true,
             },
-          ],
+          },
         },
       });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب التفاصيل بنجاح!",
-        data: {
-          details,
-          count: totalDetails,
-        },
+        data: details,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -140,33 +125,9 @@ const ProductCatalogDetailController = {
     try {
       const detail = await prisma.productCatalogDetails.findUnique({
         where: {
-          Id: +id,
+          Id: id,
           Audit: {
             IsDeleted: false,
-          },
-        },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
           },
         },
       });
@@ -182,7 +143,17 @@ const ProductCatalogDetailController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب التفاصيل بنجاح!",
-        data: season,
+        data: {
+          category1: detail.CategoryOneId.toString(),
+          category2: detail.CategoryTwoId.toString(),
+          description: detail.Description,
+          grammage: detail.Grammage,
+          standardWeight: detail.StandardWeight,
+          season: detail.Season,
+          templatePattern: detail.TemplatePatternId.toString(),
+          templateType: detail.TemplateTypeId.toString(),
+          textile: detail.TextileId.toString(),
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -236,24 +207,26 @@ const ProductCatalogDetailController = {
       season,
       templateType,
       textile,
+      templatePattern,
     } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
-      await prisma.materials.update({
+      await prisma.productCatalogDetails.update({
         where: {
           Id: +id,
         },
         data: {
           Grammage: grammage,
           StandardWeight: standardWeight,
-          CategoryOne: { connect: { Id: category1.id } },
-          CategoryTwo: { connect: { Id: category2.id } },
+          CategoryOne: { connect: { Id: +category1 } },
+          CategoryTwo: { connect: { Id: +category2 } },
           Description: description,
-          ProductCatalog: { connect: { Id: templateCatalog.id } },
-          Season: { connect: { Id: season.id } },
-          TemplateType: { connect: { Id: templateType.id } },
-          Textile: { connect: { Id: textile.id } },
+          ProductCatalog: { connect: { Id: +templateCatalog } },
+          Season: season,
+          TemplateType: { connect: { Id: +templateType } },
+          Textile: { connect: { Id: +textile } },
+          TemplatePattern: { connect: { Id: +templatePattern } },
           Audit: {
             update: {
               data: {

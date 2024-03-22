@@ -60,6 +60,13 @@ enum DepartmentCategory {
   WAREHOUSEMANAGER
 }
 
+enum Season {
+  SUMMER
+  FALL
+  WINTER
+  SPRING
+}
+
 model AuditRecords {
   Id                        Int                        @id @default(autoincrement())
   CreatedAt                 DateTime                   @default(now())
@@ -87,7 +94,6 @@ model AuditRecords {
   ProductCatalogDetails     ProductCatalogDetails?
   ProductCatalogs           ProductCatalogs?
   ProductCatalogTextiles    ProductCatalogTextiles?
-  Seasons                   Seasons?
   Sizes                     Sizes?
   Suppliers                 Suppliers?
   TemplatePatterns          TemplatePatterns?
@@ -323,8 +329,7 @@ model Orders {
   OrderNumber   String          @unique @db.VarChar(20)
   MainStatus    MainStatus      @default(AWAITING)
   TotalAmount   Decimal         @db.Decimal(10, 2)
-  Season        Seasons         @relation(fields: [SeasonId], references: [Id])
-  SeasonId      Int
+  Season        Season
   Audit         AuditRecords    @relation(fields: [AuditId], references: [Id])
   AuditId       Int             @unique
   TrakingModels TrakingModels[]
@@ -351,26 +356,27 @@ model ProductCatalogCategoryTwo {
 }
 
 model ProductCatalogDetails {
-  Id               Int                       @id @default(autoincrement())
-  ProductCatalog   ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
-  ProductCatalogId Int
-  CategoryOne      ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
-  CategoryOneId    Int
-  CategoryTwo      ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
-  CategoryTwoId    Int
-  Season           Seasons                   @relation(fields: [SeasonId], references: [Id])
-  SeasonId         Int
-  Textile          ProductCatalogTextiles    @relation(fields: [TextileId], references: [Id])
-  TextileId        Int
-  TemplateType     TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
-  TemplateTypeId   Int
-  StandardWeight   Decimal                   @db.Decimal(10, 2)
-  Grammage         Decimal                   @db.Decimal(10, 2)
-  Description      String?
-  Audit            AuditRecords              @relation(fields: [AuditId], references: [Id])
-  AuditId          Int                       @unique
-  Templates        Templates[]
-  OrderDetails     OrderDetails[]
+  Id                Int                       @id @default(autoincrement())
+  ProductCatalog    ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId  Int
+  CategoryOne       ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId     Int
+  CategoryTwo       ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId     Int
+  Season            Season
+  Textile           ProductCatalogTextiles    @relation(fields: [TextileId], references: [Id])
+  TextileId         Int
+  TemplateType      TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
+  TemplateTypeId    Int
+  TemplatePattern   TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
+  TemplatePatternId Int
+  StandardWeight    Decimal                   @db.Decimal(10, 2)
+  Grammage          Decimal                   @db.Decimal(10, 2)
+  Description       String?
+  Audit             AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId           Int                       @unique
+  Templates         Templates[]
+  OrderDetails      OrderDetails[]
 }
 
 model ProductCatalogs {
@@ -391,18 +397,6 @@ model ProductCatalogTextiles {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
-}
-
-model Seasons {
-  Id                    Int                     @id @default(autoincrement())
-  SeasonName            String                  @db.VarChar(255)
-  StartDate             DateTime                @db.Date
-  EndDate               DateTime                @db.Date
-  Description           String?
-  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
-  AuditId               Int                     @unique
-  ProductCatalogDetails ProductCatalogDetails[]
-  Orders                Orders[]
 }
 
 model Sizes {
@@ -448,11 +442,12 @@ model Tasks {
 }
 
 model TemplatePatterns {
-  Id                  Int          @id @default(autoincrement())
-  TemplatePatternName String       @db.VarChar(255)
-  Description         String?
-  Audit               AuditRecords @relation(fields: [AuditId], references: [Id])
-  AuditId             Int          @unique
+  Id                    Int                     @id @default(autoincrement())
+  TemplatePatternName   String                  @db.VarChar(255)
+  Description           String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
 }
 
 model Templates {

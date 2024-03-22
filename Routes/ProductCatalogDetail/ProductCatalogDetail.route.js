@@ -10,7 +10,7 @@ router.post(
   ProductCatalogDetailController.createDetail
 );
 router.get(
-  "/all",
+  "/all/:id",
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getAllDetails
 );
