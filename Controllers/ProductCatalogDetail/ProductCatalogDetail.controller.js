@@ -56,7 +56,7 @@ const ProductCatalogDetailController = {
     try {
       const details = await prisma.productCatalogDetails.findMany({
         where: {
-          productCatalogId: +catalogueId,
+          ProductCatalogId: +catalogueId,
           Audit: {
             IsDeleted: false,
           },
@@ -113,6 +113,7 @@ const ProductCatalogDetailController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -147,8 +148,8 @@ const ProductCatalogDetailController = {
           category1: detail.CategoryOneId.toString(),
           category2: detail.CategoryTwoId.toString(),
           description: detail.Description,
-          grammage: detail.Grammage,
-          standardWeight: detail.StandardWeight,
+          grammage: detail.Grammage.toString(),
+          standardWeight: detail.StandardWeight.toString(),
           season: detail.Season,
           templatePattern: detail.TemplatePatternId.toString(),
           templateType: detail.TemplateTypeId.toString(),
@@ -203,7 +204,6 @@ const ProductCatalogDetailController = {
       category1,
       category2,
       description,
-      templateCatalog,
       season,
       templateType,
       textile,
@@ -222,7 +222,6 @@ const ProductCatalogDetailController = {
           CategoryOne: { connect: { Id: +category1 } },
           CategoryTwo: { connect: { Id: +category2 } },
           Description: description,
-          ProductCatalog: { connect: { Id: +templateCatalog } },
           Season: season,
           TemplateType: { connect: { Id: +templateType } },
           Textile: { connect: { Id: +textile } },
