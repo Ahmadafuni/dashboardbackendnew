@@ -250,44 +250,44 @@ const ProductCatalogDetailController = {
       });
     }
   },
-  getCatalogueDetailNames: async (req, res, next) => {
-    try {
-      const catalogueDetailNames = await prisma.productCatalogDetails
-        .findMany({
-          where: {
-            Audit: {
-              IsDeleted: false,
-            },
-          },
-          include: {
-            ProductCatalog: true,
-            Season: true,
-            Textile: true,
-          },
-        })
-        .then((details) =>
-          details.map((detail) => ({
-            id: detail.Id,
-            name: `${detail.ProductCatalog.ProductCatalogName} with ${detail.Season.SeasonName}
-        and  ${detail.Textile.TextileName}`,
-          }))
-        );
+  // getCatalogueDetailNames: async (req, res, next) => {
+  //   try {
+  //     const catalogueDetailNames = await prisma.productCatalogDetails
+  //       .findMany({
+  //         where: {
+  //           Audit: {
+  //             IsDeleted: false,
+  //           },
+  //         },
+  //         include: {
+  //           ProductCatalog: true,
+  //           Season: true,
+  //           Textile: true,
+  //         },
+  //       })
+  //       .then((details) =>
+  //         details.map((detail) => ({
+  //           id: detail.Id,
+  //           name: `${detail.ProductCatalog.ProductCatalogName} with ${detail.Season.SeasonName}
+  //       and  ${detail.Textile.TextileName}`,
+  //         }))
+  //       );
 
-      // Return response
-      return res.status(200).send({
-        status: 200,
-        message: "تم جلب أسماء تفاصيل الكتالوج بنجاح!",
-        data: catalogueDetailNames,
-      });
-    } catch (error) {
-      // Server error or unsolved error
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
+  //     // Return response
+  //     return res.status(200).send({
+  //       status: 200,
+  //       message: "تم جلب أسماء تفاصيل الكتالوج بنجاح!",
+  //       data: catalogueDetailNames,
+  //     });
+  //   } catch (error) {
+  //     // Server error or unsolved error
+  //     return res.status(500).send({
+  //       status: 500,
+  //       message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+  //       data: {},
+  //     });
+  //   }
+  // },
   searchPCD: async (req, res, next) => {
     const searchTerm = req.params.searchTerm;
     try {
@@ -401,6 +401,86 @@ const ProductCatalogDetailController = {
         data: datas,
       });
     } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  searchByCategory: async (req, res, next) => {
+    const { categoryOne, categoryTwo } = req.body;
+    let whereClause = {};
+    try {
+      if (categoryOne.length > 0 && categoryTwo.length > 0) {
+        whereClause = {
+          Audit: {
+            IsDeleted: false,
+          },
+          AND: [
+            {
+              CategoryOneId: +categoryOne,
+            },
+            {
+              CategoryTwoId: +categoryTwo,
+            },
+          ],
+        };
+      } else {
+        whereClause = {
+          Audit: {
+            IsDeleted: false,
+          },
+          OR: [
+            {
+              CategoryOneId: +categoryOne | undefined,
+            },
+            {
+              CategoryTwoId: +categoryTwo | undefined,
+            },
+          ],
+        };
+      }
+
+      const pcds = await prisma.productCatalogDetails
+        .findMany({
+          where: whereClause,
+          select: {
+            Id: true,
+            ProductCatalog: {
+              select: {
+                ProductCatalogName: true,
+              },
+            },
+            Season: true,
+            Textile: {
+              select: {
+                TextileName: true,
+              },
+            },
+          },
+        })
+        .then((details) =>
+          details.map((detail) => ({
+            value: detail.Id.toString(),
+            label: `${detail.ProductCatalog.ProductCatalogName} with ${detail.Season} and ${detail.Textile.TextileName}`,
+          }))
+        );
+      if (pcds.length <= 0) {
+        return res.status(404).send({
+          status: 404,
+          message: "Product catalogue details not found!",
+          data: {},
+        });
+      }
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب أسماء تفاصيل الكتالوج بنجاح!",
+        data: pcds,
+      });
+    } catch (error) {
+      // Server error or unsolved error
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

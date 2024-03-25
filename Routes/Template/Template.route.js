@@ -7,38 +7,38 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   upload.single("template"),
   TemplateController.createTemplate
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.getTemplates
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.getTemplateNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.getTemplateById
 );
 router.delete(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.deleteTemplate
 );
 router.put(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.updateTemplate
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.searchTemplate
 );
 export { router as TemplateRoute };

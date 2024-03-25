@@ -13,7 +13,9 @@ const TemplateController = {
           ProductCatalogDetail: {
             connect: { Id: parseInt(productCatalogDetailId) },
           },
-          FilePath: `/${file.destination.split("/")[1]}/${file.filename}`,
+          FilePath: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : "",
           Audit: {
             create: {
               CreatedById: userId,
@@ -39,25 +41,24 @@ const TemplateController = {
     }
   },
   getTemplates: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const templates = await prisma.templates.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
-        include: {
+        select: {
+          Id: true,
+          TemplateName: true,
+          Description: true,
+          FilePath: true,
           ProductCatalogDetail: {
             select: {
               Id: true,
               ProductCatalog: {
                 select: {
+                  Id: true,
                   ProductCatalogName: true,
                 },
               },
@@ -65,27 +66,11 @@ const TemplateController = {
           },
         },
       });
-
-      const totalTemplates = await prisma.templates.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب القوالب بنجاح!",
-        data: {
-          templates,
-          count: totalTemplates,
-        },
+        data: templates,
       });
     } catch (error) {
       console.log(error);
@@ -107,30 +92,6 @@ const TemplateController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!template) {
         // Return response
@@ -144,7 +105,10 @@ const TemplateController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب القوالب بنجاح!",
-        data: template,
+        data: {
+          name: template.TemplateName,
+          description: template.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -189,11 +153,24 @@ const TemplateController = {
   },
   updateTemplate: async (req, res, next) => {
     const file = req.file;
-    const { name, description, productCatalogDetailId } = req.body;
+    const { name, description } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
-    console.log("THE ID", req.body);
     try {
+      const template = await prisma.templates.findUnique({
+        where: {
+          Id: id,
+        },
+      });
+
+      if (!template) {
+        return res.status(404).send({
+          status: 404,
+          message: "Template not found!",
+          data: {},
+        });
+      }
+
       await prisma.templates.update({
         where: {
           Id: +id,
@@ -201,10 +178,9 @@ const TemplateController = {
         data: {
           TemplateName: name,
           Description: description,
-          ProductCatalogDetail: {
-            connect: { Id: parseInt(productCatalogDetailId) },
-          },
-          FilePath: `/${file.destination.split("/")[1]}/${file.filename}`,
+          FilePath: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : template.FilePath,
           Audit: {
             update: {
               data: {
@@ -221,7 +197,6 @@ const TemplateController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,

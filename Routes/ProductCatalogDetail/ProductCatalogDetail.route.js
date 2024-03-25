@@ -14,10 +14,10 @@ router.get(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getAllDetails
 );
-router.get(
-  "/",
+router.post(
+  "/search-by-category",
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  ProductCatalogDetailController.getCatalogueDetailNames
+  ProductCatalogDetailController.searchByCategory
 );
 router.get(
   "/:id",

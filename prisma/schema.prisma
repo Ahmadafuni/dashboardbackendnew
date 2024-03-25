@@ -77,7 +77,6 @@ model AuditRecords {
   UpdatedBy                 Users?                     @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
   IsDeleted                 Boolean                    @default(false)
   Colors                    Colors?
-  Components                Components?
   Departments               Departments?
   InternalOrders            InternalOrders?
   ManufacturingStages       ManufacturingStages?
@@ -116,22 +115,6 @@ model Colors {
   AuditId           Int                 @unique
   OrderDetailColors OrderDetailColors[]
   Models            Models[]
-}
-
-model Components {
-  Id             Int           @id @default(autoincrement())
-  ComponentName  String        @db.VarChar(255)
-  Description    String?
-  Material       Materials     @relation(fields: [MaterialId], references: [Id])
-  MaterialId     Int
-  Template       Templates     @relation(fields: [TemplateId], references: [Id])
-  TemplateId     Int
-  TemplateSize   TemplateSizes @relation(fields: [TemplateSizeId], references: [Id])
-  TemplateSizeId Int
-  Quantity       Int
-  UnitOfMeasure  String        @db.VarChar(255)
-  Audit          AuditRecords  @relation(fields: [AuditId], references: [Id])
-  AuditId        Int           @unique
 }
 
 model Departments {
@@ -244,7 +227,6 @@ model Materials {
   AuditId           Int                 @unique
   InternalOrders    InternalOrders[]
   MaterialMovements MaterialMovements[]
-  Components        Components[]
 }
 
 model Measurements {
@@ -460,7 +442,6 @@ model Templates {
   Audit                  AuditRecords          @relation(fields: [AuditId], references: [Id])
   AuditId                Int                   @unique
   ManufacturingStages    ManufacturingStages[]
-  Components             Components[]
   TemplateSizes          TemplateSizes[]
   Models                 Models?
 }
@@ -476,7 +457,6 @@ model TemplateSizes {
   Audit            AuditRecords      @relation(fields: [AuditId], references: [Id])
   AuditId          Int               @unique
   Measurements     Measurements[]
-  Components       Components[]
 }
 
 model TemplateTypes {
