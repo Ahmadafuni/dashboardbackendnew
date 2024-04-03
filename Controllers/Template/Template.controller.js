@@ -6,7 +6,7 @@ const TemplateController = {
     const { name, description, productCatalogDetailId } = req.body;
     const userId = req.userId;
     try {
-      await prisma.templates.create({
+      const template = await prisma.templates.create({
         data: {
           TemplateName: name,
           Description: description,
@@ -23,12 +23,15 @@ const TemplateController = {
             },
           },
         },
+        select: {
+          Id: true,
+        },
       });
       // Return response
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء القالب بنجاح!",
-        data: {},
+        data: template,
       });
     } catch (error) {
       console.log(error);
@@ -173,7 +176,7 @@ const TemplateController = {
 
       await prisma.templates.update({
         where: {
-          Id: +id,
+          Id: id,
         },
         data: {
           TemplateName: name,

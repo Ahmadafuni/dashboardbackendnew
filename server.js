@@ -36,6 +36,7 @@ import { ReportsRoute } from "./Routes/Reports/Reports.route.js";
 import { MaterialMovementRoute } from "./Routes/MaterialMovement/MaterialMovement.route.js";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+import { MeasurementRoute } from "./Routes/Measurement/Measurement.route.js";
 
 // const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -88,6 +89,7 @@ app.use("/orderdetail", OrderDetailRoute);
 app.use("/order", OrderRoute);
 app.use("/model", ModelRoute);
 app.use("/trackingmodels", TrackingModelRoute);
+app.use("/measurements", MeasurementRoute);
 
 // 404 no route found
 app.use((req, res, next) => {

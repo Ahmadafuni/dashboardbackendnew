@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.createSize
 );
 router.get(
-  "/all",
-  verifyUser(["ENGINEERING"]),
+  "/all/:id",
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.getSizes
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.getTemplateSizeNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.getSizeById
 );
 router.delete(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.deleteSize
 );
 router.put(
   "/:id",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.updateSize
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateSizeController.searchTemplateSize
 );
 export { router as TemplateSizeRoute };

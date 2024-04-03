@@ -165,7 +165,6 @@ model ManufacturingStages {
   StageName       String       @db.VarChar(255)
   WorkDescription String?
   Duration        Int
-  Description     String?
   Template        Templates    @relation(fields: [TemplateId], references: [Id])
   TemplateId      Int
   Department      Departments  @relation(fields: [DepartmentId], references: [Id])
@@ -236,6 +235,8 @@ model Measurements {
   MeasurementName  String        @db.VarChar(255)
   MeasurementValue String        @db.VarChar(255)
   MeasurementUnit  String        @db.VarChar(255)
+  Size             Sizes         @relation(fields: [SizeId], references: [Id])
+  SizeId           Int
   Audit            AuditRecords  @relation(fields: [AuditId], references: [Id])
   AuditId          Int
 }
@@ -387,9 +388,9 @@ model Sizes {
   Description      String?
   Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
   AuditId          Int                @unique
-  TemplateSizes    TemplateSizes[]
   OrderDetailSizes OrderDetailSizes[]
   Models           Models[]
+  Measurements     Measurements[]
 }
 
 model Suppliers {
@@ -448,8 +449,7 @@ model Templates {
 
 model TemplateSizes {
   Id               Int               @id @default(autoincrement())
-  Size             Sizes             @relation(fields: [SizeId], references: [Id])
-  SizeId           Int
+  Name             String            @db.VarChar(255)
   Template         Templates         @relation(fields: [TemplateId], references: [Id])
   TemplateId       Int
   Description      String?

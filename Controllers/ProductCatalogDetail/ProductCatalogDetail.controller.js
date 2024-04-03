@@ -409,10 +409,14 @@ const ProductCatalogDetailController = {
     }
   },
   searchByCategory: async (req, res, next) => {
-    const { categoryOne, categoryTwo } = req.body;
+    const { categoryOne, categoryTwo, productCatalogue } = req.body;
     let whereClause = {};
     try {
-      if (categoryOne.length > 0 && categoryTwo.length > 0) {
+      if (
+        productCatalogue.length <= 0 &&
+        categoryOne.length > 0 &&
+        categoryTwo.length > 0
+      ) {
         whereClause = {
           Audit: {
             IsDeleted: false,
@@ -426,11 +430,64 @@ const ProductCatalogDetailController = {
             },
           ],
         };
-      } else {
+      } else if (
+        productCatalogue.length <= 0 &&
+        (categoryOne.length > 0 || categoryTwo.length > 0)
+      ) {
         whereClause = {
           Audit: {
             IsDeleted: false,
           },
+          OR: [
+            {
+              CategoryOneId: +categoryOne | undefined,
+            },
+            {
+              CategoryTwoId: +categoryTwo | undefined,
+            },
+          ],
+        };
+      } else if (
+        productCatalogue.length > 0 &&
+        categoryOne.length < 0 &&
+        categoryTwo.length < 0
+      ) {
+        whereClause = {
+          Audit: {
+            IsDeleted: false,
+          },
+          ProductCatalogId: +productCatalogue,
+        };
+      } else if (
+        productCatalogue.length > 0 &&
+        categoryOne.length > 0 &&
+        categoryTwo.length > 0
+      ) {
+        whereClause = {
+          Audit: {
+            IsDeleted: false,
+          },
+          AND: [
+            {
+              CategoryOneId: +categoryOne | undefined,
+            },
+            {
+              CategoryTwoId: +categoryTwo | undefined,
+            },
+            {
+              ProductCatalogId: +productCatalogue,
+            },
+          ],
+        };
+      } else if (
+        productCatalogue.length > 0 &&
+        (categoryOne.length > 0 || categoryTwo.length > 0)
+      ) {
+        whereClause = {
+          Audit: {
+            IsDeleted: false,
+          },
+          ProductCatalogId: +productCatalogue,
           OR: [
             {
               CategoryOneId: +categoryOne | undefined,

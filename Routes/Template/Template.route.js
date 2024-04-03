@@ -34,6 +34,7 @@ router.delete(
 router.put(
   "/:id",
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  upload.single("template"),
   TemplateController.updateTemplate
 );
 router.get(

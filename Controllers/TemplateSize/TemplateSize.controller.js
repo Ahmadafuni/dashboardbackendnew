@@ -3,35 +3,14 @@ import prisma from "../../client.js";
 const TemplateSizeController = {
   createSize: async (req, res, next) => {
     // Adjusted destructuring to match the front-end structure
-    const {
-      templateSizeType,
-      size,
-      template,
-      description,
-      measurements,
-      components,
-    } = req.body;
+    const { sizeType, measurements, templateId } = req.body;
     const userId = req.userId;
 
-    const finalMeasurements = measurements.map((item) => ({
+    let finalMeasurements = measurements.map((item) => ({
       MeasurementName: item.MeasurementName,
       MeasurementValue: item.MeasurementValue,
       MeasurementUnit: item.MeasurementUnit,
-      Audit: {
-        create: {
-          CreatedById: userId,
-          UpdatedById: userId,
-        },
-      },
-    }));
-
-    // Adjusted to match the Components model structure
-    const finalComponents = components.map((component) => ({
-      ComponentName: component.ComponentName,
-      Description: component.Description,
-      MaterialId: component.Material,
-      Quantity: component.Quantity,
-      UnitOfMeasure: component.UnitOfMeasure,
+      Size: { connect: { Id: parseInt(item.SizeId) } },
       Audit: {
         create: {
           CreatedById: userId,
@@ -43,12 +22,11 @@ const TemplateSizeController = {
     try {
       await prisma.templateSizes.create({
         data: {
-          Size: { connect: { Id: parseInt(size.id) } },
-          Template: { connect: { Id: parseInt(template.id) } },
-          Description: description,
-          TemplateSizeType: templateSizeType.toLocaleUpperCase(),
+          Name: "Default",
+          Template: { connect: { Id: parseInt(templateId) } },
+          Description: "Default",
+          TemplateSizeType: sizeType,
           Measurements: { create: finalMeasurements },
-          Components: { create: finalComponents },
           Audit: {
             create: {
               CreatedById: userId,
@@ -64,7 +42,6 @@ const TemplateSizeController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -74,47 +51,39 @@ const TemplateSizeController = {
     }
   },
   getSizes: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
+    const templateId = req.params.id;
     try {
-      const skip = (page - 1) * itemsPerPage;
       const sizes = await prisma.templateSizes.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
+          TemplateId: +templateId,
           Audit: {
             IsDeleted: false,
           },
         },
-        include: {
-          Size: true,
-          Template: true,
-          Measurements: true,
-          Components: true,
-        },
-      });
-
-      const totalTemplates = await prisma.templateSizes.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
+        select: {
+          Id: true,
+          Name: true,
+          Description: true,
+          TemplateSizeType: true,
+          Size: {
+            select: {
+              Id: true,
+              SizeName: true,
             },
-          ],
+          },
+          Template: {
+            select: {
+              Id: true,
+              TemplateName: true,
+            },
+          },
         },
       });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب أحجام القوالب بنجاح!",
-        data: {
-          sizes,
-          count: totalTemplates,
-        },
+        data: sizes,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -135,30 +104,6 @@ const TemplateSizeController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!size) {
         // Return response
@@ -172,7 +117,12 @@ const TemplateSizeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب أحجام القوالب بنجاح!",
-        data: size,
+        data: {
+          description: size.Description,
+          name: size.Name,
+          size: size.SizeId.toString(),
+          templateSizeType: size.TemplateSizeType,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -200,10 +150,16 @@ const TemplateSizeController = {
           },
         },
       });
-      await prisma.measurements.deleteMany({
+      await prisma.measurements.updateMany({
         where: {
-          TemplateSize: {
-            Id: +id,
+          TemplateSizeId: +id,
+        },
+        data: {
+          Audit: {
+            update: {
+              IsDeleted: true,
+              UpdatedById: userId,
+            },
           },
         },
       });
@@ -214,7 +170,6 @@ const TemplateSizeController = {
         data: {},
       });
     } catch (error) {
-      console.log("THe deletion error", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -224,61 +179,18 @@ const TemplateSizeController = {
     }
   },
   updateSize: async (req, res, next) => {
-    const {
-      templateSizeType,
-      size,
-      template,
-      description,
-      measurements,
-      components,
-    } = req.body;
+    const { templateSizeType, size, name, description } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
-      // First, delete existing Measurements and Components related to this TemplateSize
-      await prisma.measurements.deleteMany({
-        where: { TemplateSizeId: id },
-      });
-      await prisma.components.deleteMany({
-        where: { TemplateSizeId: id },
-      });
-
       // Then, update the TemplateSize and recreate Measurements and Components
       await prisma.templateSizes.update({
         where: { Id: id },
         data: {
-          SizeId: size,
-          TemplateId: template,
+          Name: name,
+          Size: { connect: { Id: +size } },
           Description: description,
           TemplateSizeType: templateSizeType,
-          Measurements: {
-            create: measurements.map((item) => ({
-              MeasurementName: item.MeasurementName,
-              MeasurementValue: item.MeasurementValue,
-              MeasurementUnit: item.MeasurementUnit,
-              Audit: {
-                create: {
-                  CreatedById: userId,
-                  UpdatedById: userId,
-                },
-              },
-            })),
-          },
-          Components: {
-            create: components.map((component) => ({
-              ComponentName: component.ComponentName,
-              Description: component.Description,
-              MaterialId: component.MaterialId,
-              Quantity: component.Quantity,
-              UnitOfMeasure: component.UnitOfMeasure,
-              Audit: {
-                create: {
-                  CreatedById: userId,
-                  UpdatedById: userId,
-                },
-              },
-            })),
-          },
           Audit: {
             create: {
               CreatedById: userId,
@@ -295,7 +207,6 @@ const TemplateSizeController = {
         data: {},
       });
     } catch (error) {
-      console.error("Error updating template size:", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,

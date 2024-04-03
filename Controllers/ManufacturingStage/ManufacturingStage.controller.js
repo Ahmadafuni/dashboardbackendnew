@@ -2,25 +2,26 @@ import prisma from "../../client.js";
 
 const ManufacturingStageController = {
   createStage: async (req, res, next) => {
-    const {
-      duration,
-      stageName,
-      stageNumber,
-      department,
-      description,
-      template,
-      workDescription,
-    } = req.body;
+    const { stageName, department, duration, template, workDescription } =
+      req.body;
     const userId = req.userId;
     try {
+      const stagesCount = await prisma.manufacturingStages.count({
+        where: {
+          TemplateId: +template,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
       await prisma.manufacturingStages.create({
         data: {
-          Duration: parseInt(duration),
+          Duration: +duration,
           StageName: stageName,
-          StageNumber: parseInt(stageNumber),
-          Department: { connect: { Id: department.id } },
-          Description: description,
-          Template: { connect: { Id: template.id } },
+          StageNumber: stagesCount + 1,
+          Department: { connect: { Id: +department } },
+          Template: { connect: { Id: +template } },
           WorkDescription: workDescription,
           Audit: {
             create: {
@@ -46,35 +47,68 @@ const ManufacturingStageController = {
       });
     }
   },
-  getStages: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
+  createMultiStage: async (req, res, next) => {
+    const { stages } = req.body;
+    const userId = req.userId;
     try {
-      const skip = (page - 1) * itemsPerPage;
+      for (const s of stages) {
+        await prisma.manufacturingStages.create({
+          data: {
+            Duration: parseInt(s.duration),
+            StageName: s.stageName,
+            StageNumber: s.stageNumber,
+            Department: { connect: { Id: +s.department } },
+            Template: { connect: { Id: +s.template } },
+            WorkDescription: s.workDescription,
+            Audit: {
+              create: {
+                CreatedById: userId,
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+      }
+      // Return response
+      return res.status(201).send({
+        status: 201,
+        message: "New manufacturing stages created successfully!",
+        data: {},
+      });
+    } catch (error) {
+      console.log(error);
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getStages: async (req, res, next) => {
+    const templateId = req.params.id;
+    try {
       const stages = await prisma.manufacturingStages.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
+          TemplateId: +templateId,
           Audit: {
             IsDeleted: false,
           },
         },
-        include: {
-          Department: true,
-          Template: true,
-        },
-      });
-
-      const totalTemplates = await prisma.templateSizes.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
+        select: {
+          Id: true,
+          StageName: true,
+          StageNumber: true,
+          Duration: true,
+          WorkDescription: true,
+          Department: {
+            select: {
+              Name: true,
             },
-          ],
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
         },
       });
 
@@ -82,10 +116,7 @@ const ManufacturingStageController = {
       return res.status(200).send({
         status: 200,
         message: "Manufacturing stages fetched successfully!",
-        data: {
-          stages,
-          count: totalTemplates,
-        },
+        data: stages,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -106,30 +137,6 @@ const ManufacturingStageController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!stage) {
         // Return response
@@ -143,7 +150,12 @@ const ManufacturingStageController = {
       return res.status(200).send({
         status: 200,
         message: "Manufacturing stage fetched successfully!",
-        data: stage,
+        data: {
+          stageName: stage.StageName,
+          department: stage.DepartmentId.toString(),
+          duration: stage.Duration.toString(),
+          workDescription: stage.WorkDescription,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -158,6 +170,41 @@ const ManufacturingStageController = {
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
+      const current = await prisma.manufacturingStages.findUnique({
+        where: {
+          Id: id,
+        },
+      });
+
+      const otherStages = await prisma.manufacturingStages.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          TemplateId: current.TemplateId,
+          StageNumber: { not: current.StageNumber },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+      for (const stage of otherStages) {
+        if (stage.StageNumber > current.StageNumber) {
+          await prisma.manufacturingStages.update({
+            where: {
+              Id: stage.Id,
+            },
+            data: {
+              StageNumber: stage.StageNumber - 1,
+              Audit: {
+                update: {
+                  UpdatedById: userId,
+                },
+              },
+            },
+          });
+        }
+      }
       await prisma.manufacturingStages.update({
         where: {
           Id: +id,
@@ -179,6 +226,7 @@ const ManufacturingStageController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -187,15 +235,7 @@ const ManufacturingStageController = {
     }
   },
   updateStage: async (req, res, next) => {
-    const {
-      duration,
-      stageName,
-      stageNumber,
-      department,
-      description,
-      template,
-      workDescription,
-    } = req.body;
+    const { duration, stageName, department, workDescription } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
@@ -206,10 +246,7 @@ const ManufacturingStageController = {
         data: {
           Duration: parseInt(duration),
           StageName: stageName,
-          StageNumber: parseInt(stageNumber),
-          Department: { connect: { Id: department.id } },
-          Description: description,
-          Template: { connect: { Id: template.id } },
+          Department: { connect: { Id: +department } },
           WorkDescription: workDescription,
           Audit: {
             update: {
@@ -227,7 +264,6 @@ const ManufacturingStageController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -301,6 +337,100 @@ const ManufacturingStageController = {
         status: 200,
         message: "تم البحث بنجاح!",
         data: datas,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  toggleUp: async (req, res, next) => {
+    const stageId = req.params.id;
+    try {
+      const current = await prisma.manufacturingStages.findUnique({
+        where: {
+          Id: +stageId,
+        },
+      });
+      const currentTop = await prisma.manufacturingStages.findFirst({
+        where: {
+          TemplateId: current.TemplateId,
+          StageNumber: current.StageNumber - 1,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      await prisma.manufacturingStages.update({
+        where: {
+          Id: current.Id,
+        },
+        data: {
+          StageNumber: currentTop.StageNumber,
+        },
+      });
+      await prisma.manufacturingStages.update({
+        where: {
+          Id: currentTop.Id,
+        },
+        data: {
+          StageNumber: current.StageNumber,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Toggle successfull!",
+        data: {},
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  toggleDown: async (req, res, next) => {
+    const stageId = req.params.id;
+    try {
+      const current = await prisma.manufacturingStages.findUnique({
+        where: {
+          Id: +stageId,
+        },
+      });
+      const currentDown = await prisma.manufacturingStages.findFirst({
+        where: {
+          TemplateId: current.TemplateId,
+          StageNumber: current.StageNumber + 1,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      await prisma.manufacturingStages.update({
+        where: {
+          Id: current.Id,
+        },
+        data: {
+          StageNumber: currentDown.StageNumber,
+        },
+      });
+      await prisma.manufacturingStages.update({
+        where: {
+          Id: currentDown.Id,
+        },
+        data: {
+          StageNumber: current.StageNumber,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Toggle successfull!",
+        data: {},
       });
     } catch (error) {
       return res.status(500).send({
