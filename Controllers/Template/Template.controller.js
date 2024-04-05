@@ -291,6 +291,139 @@ const TemplateController = {
       });
     }
   },
+  viewTemplateDetails: async (req, res, next) => {
+    const id = +req.params.id;
+    try {
+      const template = await prisma.templates.findUnique({
+        where: {
+          Id: id,
+        },
+        select: {
+          TemplateName: true,
+          ProductCatalogDetail: {
+            select: {
+              ProductCatalog: {
+                select: {
+                  ProductCatalogName: true,
+                },
+              },
+            },
+          },
+          Description: true,
+        },
+      });
+
+      const cutting = await prisma.sizes.findMany({
+        where: {
+          Measurements: {
+            some: {
+              TemplateSize: {
+                TemplateId: id,
+                TemplateSizeType: "CUTTING",
+              },
+            },
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          SizeName: true,
+          Measurements: {
+            where: {
+              TemplateSize: {
+                TemplateSizeType: "CUTTING",
+                TemplateId: id,
+              },
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            select: {
+              Id: true,
+              MeasurementName: true,
+              MeasurementValue: true,
+              MeasurementUnit: true,
+            },
+          },
+        },
+      });
+
+      const dressup = await prisma.sizes.findMany({
+        where: {
+          Measurements: {
+            some: {
+              TemplateSize: {
+                TemplateId: id,
+                TemplateSizeType: "DRESSUP",
+              },
+            },
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          SizeName: true,
+          Measurements: {
+            where: {
+              TemplateSize: {
+                TemplateSizeType: "DRESSUP",
+                TemplateId: id,
+              },
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            select: {
+              Id: true,
+              MeasurementName: true,
+              MeasurementValue: true,
+              MeasurementUnit: true,
+            },
+          },
+        },
+      });
+
+      const stages = await prisma.manufacturingStages.findMany({
+        where: {
+          TemplateId: id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Id: true,
+          StageName: true,
+          Department: {
+            select: {
+              Name: true,
+            },
+          },
+          Duration: true,
+          StageNumber: true,
+          WorkDescription: true,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم البحث بنجاح!",
+        data: {
+          template: template,
+          cutting: cutting,
+          dressup: dressup,
+          stages: stages,
+        },
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 
 export default TemplateController;

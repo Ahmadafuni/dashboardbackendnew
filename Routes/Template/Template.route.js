@@ -42,4 +42,9 @@ router.get(
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   TemplateController.searchTemplate
 );
+router.get(
+  "/view-details/:id",
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  TemplateController.viewTemplateDetails
+);
 export { router as TemplateRoute };

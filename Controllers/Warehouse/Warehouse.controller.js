@@ -2,7 +2,7 @@ import prisma from "../../client.js";
 
 const WarehouseController = {
   createWarehouse: async (req, res, next) => {
-    const { name, location, capacity, manager } = req.body;
+    const { name, location, capacity, category } = req.body;
     const userId = req.userId;
     try {
       await prisma.warehouses.create({
@@ -10,7 +10,7 @@ const WarehouseController = {
           WarehouseName: name,
           Location: location,
           Capacity: parseFloat(capacity),
-          Manager: { connect: { Id: manager.id } },
+          CategoryName: category,
           Audit: {
             create: {
               CreatedById: userId,

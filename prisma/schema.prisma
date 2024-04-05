@@ -504,14 +504,14 @@ model Users {
   PasswordHash   String
   PhoneNumber    String           @unique @db.VarChar(50)
   LastLogin      DateTime?
-  Department     Departments      @relation(fields: [DepartmentId], references: [Id])
-  DepartmentId   Int
+  Department     Departments?     @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId   Int?
+  Warehouse      Warehouses?      @relation(fields: [WarehouseId], references: [Id])
+  WarehouseId    Int?
   Audit          AuditRecords     @relation(fields: [AuditId], references: [Id])
   AuditId        Int              @unique
   AuditCreatedBy AuditRecords[]   @relation(name: "CreatedBy")
   AuditUpdatedBy AuditRecords[]   @relation(name: "UpdatedBy")
-  WarehouseId    Int?             @unique
-  Warehouse      Warehouses?      @relation
   InternalOrders InternalOrders[]
   Tasks          Tasks[]          @relation(name: "CreatedByManager")
 }
@@ -522,10 +522,9 @@ model Warehouses {
   CategoryName          CategoryName?
   Location              String              @db.VarChar(255)
   Capacity              Decimal             @db.Decimal(10, 2)
-  ManagerId             Int                 @unique
-  Manager               Users               @relation(fields: [ManagerId], references: [Id])
   Audit                 AuditRecords        @relation(fields: [AuditId], references: [Id])
   AuditId               Int                 @unique
   FromMaterialMovements MaterialMovements[] @relation(name: "FromWarehouse")
   ToMaterialMovements   MaterialMovements[] @relation(name: "ToWarehouse")
+  Users                 Users[]
 }

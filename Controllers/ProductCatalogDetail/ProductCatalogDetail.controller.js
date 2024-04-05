@@ -515,12 +515,22 @@ const ProductCatalogDetailController = {
                 TextileName: true,
               },
             },
+            TemplatePattern: {
+              select: {
+                TemplatePatternName: true,
+              },
+            },
+            TemplateType: {
+              select: {
+                TemplateTypeName: true,
+              },
+            },
           },
         })
         .then((details) =>
           details.map((detail) => ({
             value: detail.Id.toString(),
-            label: `${detail.ProductCatalog.ProductCatalogName} with ${detail.Season} and ${detail.Textile.TextileName}`,
+            label: `${detail.ProductCatalog.ProductCatalogName} for ${detail.Season} season, Textile: ${detail.Textile.TextileName}, Template Type: ${detail.TemplateType.TemplateTypeName}, Template Pattern: ${detail.TemplatePattern.TemplatePatternName}`,
           }))
         );
       if (pcds.length <= 0) {
