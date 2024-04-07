@@ -3,16 +3,28 @@ import prisma from "../../client.js";
 const TemplateController = {
   createTemplate: async (req, res, next) => {
     const file = req.file;
-    const { name, description, productCatalogDetailId } = req.body;
+    const {
+      name,
+      description,
+      productCatalog,
+      category1,
+      category2,
+      templatePattern,
+      templateType,
+      season,
+    } = req.body;
     const userId = req.userId;
     try {
       const template = await prisma.templates.create({
         data: {
           TemplateName: name,
           Description: description,
-          ProductCatalogDetail: {
-            connect: { Id: parseInt(productCatalogDetailId) },
-          },
+          Season: season,
+          ProductCatalogue: { connect: { Id: +productCatalog } },
+          CategoryOne: { connect: { Id: +category1 } },
+          CategoryTwo: { connect: { Id: +category2 } },
+          TemplatePattern: { connect: { Id: +templatePattern } },
+          TemplateType: { connect: { Id: +templateType } },
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : "",
@@ -55,16 +67,31 @@ const TemplateController = {
           Id: true,
           TemplateName: true,
           Description: true,
+          Season: true,
           FilePath: true,
-          ProductCatalogDetail: {
+          CategoryOne: {
             select: {
-              Id: true,
-              ProductCatalog: {
-                select: {
-                  Id: true,
-                  ProductCatalogName: true,
-                },
-              },
+              CategoryName: true,
+            },
+          },
+          CategoryTwo: {
+            select: {
+              CategoryName: true,
+            },
+          },
+          ProductCatalogue: {
+            select: {
+              ProductCatalogName: true,
+            },
+          },
+          TemplatePattern: {
+            select: {
+              TemplatePatternName: true,
+            },
+          },
+          TemplateType: {
+            select: {
+              TemplateTypeName: true,
             },
           },
         },
@@ -111,6 +138,12 @@ const TemplateController = {
         data: {
           name: template.TemplateName,
           description: template.Description,
+          productCatalog: template.ProductCatalogId.toString(),
+          category1: template.CategoryOneId.toString(),
+          category2: template.CategoryTwoId.toString(),
+          templatePattern: template.TemplatePatternId.toString(),
+          templateType: template.TemplateTypeId.toString(),
+          season: template.Season,
         },
       });
     } catch (error) {
@@ -156,7 +189,16 @@ const TemplateController = {
   },
   updateTemplate: async (req, res, next) => {
     const file = req.file;
-    const { name, description } = req.body;
+    const {
+      name,
+      description,
+      productCatalog,
+      category1,
+      category2,
+      templatePattern,
+      templateType,
+      season,
+    } = req.body;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
@@ -181,6 +223,12 @@ const TemplateController = {
         data: {
           TemplateName: name,
           Description: description,
+          Season: season,
+          ProductCatalogue: { connect: { Id: +productCatalog } },
+          CategoryOne: { connect: { Id: +category1 } },
+          CategoryTwo: { connect: { Id: +category2 } },
+          TemplatePattern: { connect: { Id: +templatePattern } },
+          TemplateType: { connect: { Id: +templateType } },
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : template.FilePath,
@@ -300,27 +348,43 @@ const TemplateController = {
         },
         select: {
           TemplateName: true,
-          ProductCatalogDetail: {
-            select: {
-              ProductCatalog: {
-                select: {
-                  ProductCatalogName: true,
-                },
-              },
-            },
-          },
           Description: true,
+          Season: true,
+          CategoryOne: {
+            select: {
+              CategoryName: true,
+            },
+          },
+          CategoryTwo: {
+            select: {
+              CategoryName: true,
+            },
+          },
+          ProductCatalogue: {
+            select: {
+              ProductCatalogName: true,
+            },
+          },
+          TemplatePattern: {
+            select: {
+              TemplatePatternName: true,
+            },
+          },
+          TemplateType: {
+            select: {
+              TemplateTypeName: true,
+            },
+          },
         },
       });
 
-      const cutting = await prisma.sizes.findMany({
+      const cutting = await prisma.measurements.findMany({
         where: {
-          Measurements: {
-            some: {
-              TemplateSize: {
-                TemplateId: id,
-                TemplateSizeType: "CUTTING",
-              },
+          TemplateSize: {
+            TemplateId: id,
+            TemplateSizeType: "CUTTING",
+            Audit: {
+              IsDeleted: false,
             },
           },
           Audit: {
@@ -328,35 +392,44 @@ const TemplateController = {
           },
         },
         select: {
-          SizeName: true,
-          Measurements: {
-            where: {
-              TemplateSize: {
-                TemplateSizeType: "CUTTING",
-                TemplateId: id,
-              },
-              Audit: {
-                IsDeleted: false,
-              },
-            },
+          Id: true,
+          MeasurementName: true,
+          MeasurementValue: true,
+          MeasurementUnit: true,
+          Size: {
             select: {
-              Id: true,
-              MeasurementName: true,
-              MeasurementValue: true,
-              MeasurementUnit: true,
+              SizeName: true,
             },
           },
         },
       });
+      const formatedCutting = [];
+      cutting.forEach((measurement) => {
+        const size = measurement.Size.SizeName;
 
-      const dressup = await prisma.sizes.findMany({
+        const isThere = formatedCutting.find(
+          (m) => m.MeasurementName === measurement.MeasurementName
+        );
+
+        if (!isThere) {
+          const temp_object = {
+            MeasurementName: measurement.MeasurementName,
+            MeasurementUnit: measurement.MeasurementUnit,
+          };
+          temp_object[size] = measurement.MeasurementValue;
+          formatedCutting.push(temp_object);
+        } else {
+          isThere[size] = measurement.MeasurementValue;
+        }
+      });
+
+      const dressup = await prisma.measurements.findMany({
         where: {
-          Measurements: {
-            some: {
-              TemplateSize: {
-                TemplateId: id,
-                TemplateSizeType: "DRESSUP",
-              },
+          TemplateSize: {
+            TemplateId: id,
+            TemplateSizeType: "DRESSUP",
+            Audit: {
+              IsDeleted: false,
             },
           },
           Audit: {
@@ -364,25 +437,35 @@ const TemplateController = {
           },
         },
         select: {
-          SizeName: true,
-          Measurements: {
-            where: {
-              TemplateSize: {
-                TemplateSizeType: "DRESSUP",
-                TemplateId: id,
-              },
-              Audit: {
-                IsDeleted: false,
-              },
-            },
+          Id: true,
+          MeasurementName: true,
+          MeasurementValue: true,
+          MeasurementUnit: true,
+          Size: {
             select: {
-              Id: true,
-              MeasurementName: true,
-              MeasurementValue: true,
-              MeasurementUnit: true,
+              SizeName: true,
             },
           },
         },
+      });
+      const formatedDressup = [];
+      dressup.forEach((measurement) => {
+        const size = measurement.Size.SizeName;
+
+        const isThere = formatedDressup.find(
+          (m) => m.MeasurementName === measurement.MeasurementName
+        );
+
+        if (!isThere) {
+          const temp_object = {
+            MeasurementName: measurement.MeasurementName,
+            MeasurementUnit: measurement.MeasurementUnit,
+          };
+          temp_object[size] = measurement.MeasurementValue;
+          formatedDressup.push(temp_object);
+        } else {
+          isThere[size] = measurement.MeasurementValue;
+        }
       });
 
       const stages = await prisma.manufacturingStages.findMany({
@@ -411,12 +494,13 @@ const TemplateController = {
         message: "تم البحث بنجاح!",
         data: {
           template: template,
-          cutting: cutting,
-          dressup: dressup,
+          cutting: formatedCutting,
+          dressup: formatedDressup,
           stages: stages,
         },
       });
     } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

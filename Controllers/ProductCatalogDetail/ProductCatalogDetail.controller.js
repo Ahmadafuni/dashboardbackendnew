@@ -54,53 +54,59 @@ const ProductCatalogDetailController = {
   getAllDetails: async (req, res, next) => {
     const catalogueId = req.params.id;
     try {
-      const details = await prisma.productCatalogDetails.findMany({
+      const details = await prisma.productCatalogs.findUnique({
         where: {
-          ProductCatalogId: +catalogueId,
+          Id: +catalogueId,
           Audit: {
             IsDeleted: false,
           },
         },
         select: {
           Id: true,
-          Grammage: true,
-          StandardWeight: true,
-          Description: true,
-          CategoryOne: {
+          ProductCatalogName: true,
+          ProductCatalogDetails: {
             select: {
               Id: true,
-              CategoryName: true,
-            },
-          },
-          CategoryTwo: {
-            select: {
-              Id: true,
-              CategoryName: true,
-            },
-          },
-          ProductCatalog: {
-            select: {
-              Id: true,
-              ProductCatalogName: true,
-            },
-          },
-          Season: true,
-          TemplateType: {
-            select: {
-              Id: true,
-              TemplateTypeName: true,
-            },
-          },
-          Textile: {
-            select: {
-              Id: true,
-              TextileName: true,
-            },
-          },
-          TemplatePattern: {
-            select: {
-              Id: true,
-              TemplatePatternName: true,
+              Grammage: true,
+              StandardWeight: true,
+              Description: true,
+              CategoryOne: {
+                select: {
+                  Id: true,
+                  CategoryName: true,
+                },
+              },
+              CategoryTwo: {
+                select: {
+                  Id: true,
+                  CategoryName: true,
+                },
+              },
+              ProductCatalog: {
+                select: {
+                  Id: true,
+                  ProductCatalogName: true,
+                },
+              },
+              Season: true,
+              TemplateType: {
+                select: {
+                  Id: true,
+                  TemplateTypeName: true,
+                },
+              },
+              Textile: {
+                select: {
+                  Id: true,
+                  TextileName: true,
+                },
+              },
+              TemplatePattern: {
+                select: {
+                  Id: true,
+                  TemplatePatternName: true,
+                },
+              },
             },
           },
         },
@@ -113,7 +119,6 @@ const ProductCatalogDetailController = {
       });
     } catch (error) {
       // Server error or unsolved error
-      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

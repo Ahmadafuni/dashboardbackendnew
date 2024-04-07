@@ -327,6 +327,7 @@ model ProductCatalogCategoryOne {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
 }
 
 model ProductCatalogCategoryTwo {
@@ -336,6 +337,7 @@ model ProductCatalogCategoryTwo {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
 }
 
 model ProductCatalogDetails {
@@ -358,7 +360,6 @@ model ProductCatalogDetails {
   Description       String?
   Audit             AuditRecords              @relation(fields: [AuditId], references: [Id])
   AuditId           Int                       @unique
-  Templates         Templates[]
   OrderDetails      OrderDetails[]
 }
 
@@ -369,6 +370,7 @@ model ProductCatalogs {
   Audit                     AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId                   Int                     @unique
   ProductCatalogDetails     ProductCatalogDetails[]
+  Templates                 Templates[]
 }
 
 model ProductCatalogTextiles {
@@ -431,20 +433,30 @@ model TemplatePatterns {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
 }
 
 model Templates {
-  Id                     Int                   @id @default(autoincrement())
-  ProductCatalogDetail   ProductCatalogDetails @relation(fields: [ProductCatalogDetailId], references: [Id])
-  ProductCatalogDetailId Int
-  TemplateName           String                @db.VarChar(255)
-  Description            String?
-  FilePath               String?
-  Audit                  AuditRecords          @relation(fields: [AuditId], references: [Id])
-  AuditId                Int                   @unique
-  ManufacturingStages    ManufacturingStages[]
-  TemplateSizes          TemplateSizes[]
-  Models                 Models?
+  Id                  Int                       @id @default(autoincrement())
+  TemplateName        String                    @db.VarChar(255)
+  ProductCatalogue    ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId    Int
+  CategoryOne         ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId       Int
+  CategoryTwo         ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId       Int
+  TemplatePattern     TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
+  TemplatePatternId   Int
+  TemplateType        TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
+  TemplateTypeId      Int
+  Season              Season
+  Description         String?
+  FilePath            String?
+  Audit               AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId             Int                       @unique
+  ManufacturingStages ManufacturingStages[]
+  TemplateSizes       TemplateSizes[]
+  Models              Models?
 }
 
 model TemplateSizes {
@@ -466,6 +478,7 @@ model TemplateTypes {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
 }
 
 model TrakingModels {

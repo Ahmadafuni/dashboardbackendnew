@@ -21,6 +21,44 @@ const MeasurementController = {
           TemplateSizeType: type,
         },
       });
+
+      if (!getTemplateSize) {
+        await prisma.templateSizes.create({
+          data: {
+            Name: "Default",
+            Template: { connect: { Id: parseInt(templateId) } },
+            Description: "Default",
+            TemplateSizeType: type,
+            Measurements: {
+              create: {
+                MeasurementName: MeasurementName,
+                MeasurementValue: MeasurementValue,
+                MeasurementUnit: MeasurementUnit,
+                Size: { connect: { Id: +SizeId } },
+                Audit: {
+                  create: {
+                    CreatedById: userId,
+                    UpdatedById: userId,
+                  },
+                },
+              },
+            },
+            Audit: {
+              create: {
+                CreatedById: userId,
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+        // Return response
+        return res.status(201).send({
+          status: 201,
+          message: "Measurement created successfully",
+          data: {},
+        });
+      }
+
       await prisma.measurements.create({
         data: {
           MeasurementName: MeasurementName,
