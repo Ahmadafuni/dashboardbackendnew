@@ -104,6 +104,17 @@ model AuditRecords {
   Tasks                     Tasks?
   Measurements              Measurements[]
   Models                    Models[]
+  Collections               Collections[]
+  ModelVarients             ModelVarients[]
+}
+
+model Collections {
+  Id             Int          @id @default(autoincrement())
+  CollectionName String       @db.VarChar(255)
+  Description    String?
+  Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId        Int
+  Orders         Orders[]
 }
 
 model Colors {
@@ -114,7 +125,7 @@ model Colors {
   Audit             AuditRecords        @relation(fields: [AuditId], references: [Id])
   AuditId           Int                 @unique
   OrderDetailColors OrderDetailColors[]
-  Models            Models[]
+  ModelVarients     ModelVarients[]
 }
 
 model Departments {
@@ -242,25 +253,47 @@ model Measurements {
 }
 
 model Models {
-  Id              Int             @id @default(autoincrement())
-  ModelName       String          @db.VarChar(255)
-  OrderDetail     OrderDetails    @relation(fields: [OrderDetailId], references: [Id])
-  OrderDetailId   Int
-  Color           Colors          @relation(fields: [ColorId], references: [Id])
-  ColorId         Int
-  Size            Sizes           @relation(fields: [SizeId], references: [Id])
-  SizeId          Int
-  Quantity        Int
-  QuantityDetails String
-  Note            String
-  ModelImage      String
-  Orders          Orders?         @relation(fields: [ordersId], references: [Id])
-  ordersId        Int?
-  Template        Templates       @relation(fields: [TemplateId], references: [Id])
-  TemplateId      Int             @unique
-  Audit           AuditRecords    @relation(fields: [AuditId], references: [Id])
-  AuditId         Int
-  TrakingModels   TrakingModels[]
+  Id               Int                       @id @default(autoincrement())
+  Order            Orders?                   @relation(fields: [OrderId], references: [Id])
+  OrderId          Int?
+  OrderNumber      String
+  ProductCatalog   ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId Int
+  CategoryOne      ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId    Int
+  categoryTwo      ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId    Int
+  Textile          ProductCatalogTextiles    @relation(fields: [TextileId], references: [Id])
+  TextileId        Int
+  Template         Templates                 @relation(fields: [TemplateId], references: [Id])
+  TemplateId       Int
+  ModelName        String                    @db.VarChar(255)
+  ModelNumber      String                    @db.VarChar(255)
+  Characteristics  String?
+  Barcode          String?
+  LabelType        String?
+  PrintName        String?
+  PrintLocation    String?
+  Description      String?
+  Status           MainStatus                @default(AWAITING)
+  Images           String?
+  Audit            AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId          Int
+  TrakingModels    TrakingModels[]
+  ModelVarients    ModelVarients[]
+}
+
+model ModelVarients {
+  Id       Int          @id @default(autoincrement())
+  Model    Models       @relation(fields: [ModelId], references: [Id])
+  ModelId  Int
+  Status   MainStatus   @default(AWAITING)
+  Color    Colors       @relation(fields: [ColorId], references: [Id])
+  ColorId  Int
+  Sizes    String
+  Quantity Int
+  Audit    AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId  Int
 }
 
 model OrderDetailColors {
@@ -283,9 +316,6 @@ model OrderDetails {
   AuditId                 Int                    @unique
   OrderDetailColors       OrderDetailColors[]
   OrderDetailSizes        OrderDetailSizes[]
-  Models                  Models[]
-  Orders                  Orders?                @relation(fields: [ordersId], references: [Id])
-  ordersId                Int?
 }
 
 model OrderDetailSizes {
@@ -307,17 +337,19 @@ model OrderDetailTemplateTypes {
 }
 
 model Orders {
-  Id            Int             @id @default(autoincrement())
-  OrderDate     DateTime        @default(now())
-  OrderNumber   String          @unique @db.VarChar(20)
-  MainStatus    MainStatus      @default(AWAITING)
-  TotalAmount   Decimal         @db.Decimal(10, 2)
-  Season        Season
-  Audit         AuditRecords    @relation(fields: [AuditId], references: [Id])
-  AuditId       Int             @unique
-  TrakingModels TrakingModels[]
-  Models        Models[]
-  OrderDetails  OrderDetails[]
+  Id           Int          @id @default(autoincrement())
+  OrderName    String       @db.VarChar(256)
+  OrderNumber  String       @unique @db.VarChar(20)
+  DeadlineDate DateTime
+  Collection   Collections  @relation(fields: [CollectionId], references: [Id])
+  CollectionId Int
+  Quantity     Int
+  Status       Status?      @default(PENDING)
+  Description  String?
+  FilePath     String?
+  Audit        AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId      Int          @unique
+  Models       Models[]
 }
 
 model ProductCatalogCategoryOne {
@@ -328,6 +360,7 @@ model ProductCatalogCategoryOne {
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
   Templates             Templates[]
+  Models                Models[]
 }
 
 model ProductCatalogCategoryTwo {
@@ -338,6 +371,7 @@ model ProductCatalogCategoryTwo {
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
   Templates             Templates[]
+  Models                Models[]
 }
 
 model ProductCatalogDetails {
@@ -371,6 +405,7 @@ model ProductCatalogs {
   AuditId                   Int                     @unique
   ProductCatalogDetails     ProductCatalogDetails[]
   Templates                 Templates[]
+  Models                    Models[]
 }
 
 model ProductCatalogTextiles {
@@ -382,6 +417,7 @@ model ProductCatalogTextiles {
   Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
   AuditId               Int                     @unique
   ProductCatalogDetails ProductCatalogDetails[]
+  Models                Models[]
 }
 
 model Sizes {
@@ -391,7 +427,6 @@ model Sizes {
   Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
   AuditId          Int                @unique
   OrderDetailSizes OrderDetailSizes[]
-  Models           Models[]
   Measurements     Measurements[]
 }
 
@@ -456,7 +491,7 @@ model Templates {
   AuditId             Int                       @unique
   ManufacturingStages ManufacturingStages[]
   TemplateSizes       TemplateSizes[]
-  Models              Models?
+  Models              Models[]
 }
 
 model TemplateSizes {
@@ -487,8 +522,6 @@ model TrakingModels {
   Department        Departments  @relation(fields: [DepartmentId], references: [Id])
   ModelId           Int
   Model             Models       @relation(fields: [ModelId], references: [Id])
-  OrderId           Int
-  Order             Orders       @relation(fields: [OrderId], references: [Id])
   StartTime         DateTime?
   EndTime           DateTime?
   MainStatus        MainStatus   @default(AWAITING)

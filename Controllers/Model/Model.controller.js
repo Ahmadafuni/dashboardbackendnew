@@ -3,38 +3,146 @@ import prisma from "../../client.js";
 const ModelController = {
   createModel: async (req, res, next) => {
     const {
-      order,
-      modelName,
-      template,
-      color,
-      size,
-      quantity,
-      quantityDetails,
-      orderDetails,
-      notes,
+      ProductCatalog,
+      CategoryOne,
+      CategoryTwo,
+      Textile,
+      Template,
+      Characteristics,
+      Barcode,
+      LabelType,
+      PrintName,
+      PrintLocation,
+      Description,
+      Varients,
     } = req.body;
 
-    const parsedOrder = JSON.parse(order);
-    const parsedTemplate = JSON.parse(template);
-    const parsedColor = JSON.parse(color);
-    const parsedSize = JSON.parse(size);
-    const parsedOrderDetails = JSON.parse(orderDetails);
-
-    const file = req.file;
+    const orderId = req.params.id;
+    const files = req.files;
     const userId = req.userId;
     try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: +orderId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!order) {
+        return res.status(404).send({
+          status: 404,
+          message: "Order not found!",
+          data: {},
+        });
+      }
+      if (order.Status !== "PENDING") {
+        return res.status(405).send({
+          status: 405,
+          message: "Order already started. Cann't add new model!",
+          data: {},
+        });
+      }
+
+      const template = await prisma.templates.findUnique({
+        where: {
+          Id: +Template,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!template) {
+        return res.status(404).send({
+          status: 404,
+          message: "Template not found!",
+          data: {},
+        });
+      }
+
+      const pCatalogue = await prisma.productCatalogs.findUnique({
+        where: {
+          Id: +ProductCatalog,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!pCatalogue) {
+        return res.status(404).send({
+          status: 404,
+          message: "Product catalogue not found!",
+          data: {},
+        });
+      }
+
+      const cOne = await prisma.productCatalogCategoryOne.findUnique({
+        where: {
+          Id: +CategoryOne,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!cOne) {
+        return res.status(404).send({
+          status: 404,
+          message: "Category one not found!",
+          data: {},
+        });
+      }
+
+      const modelImages = [];
+      if (files.length > 0) {
+        files.forEach((e) => {
+          modelImages.push(`/${e.destination.split("/")[1]}/${e.filename}`);
+        });
+      }
+      let modelCount = await prisma.models.count({});
+      modelCount++;
+
       const model = await prisma.models.create({
         data: {
-          ModelName: modelName,
-          Note: notes,
-          Quantity: parseInt(quantity),
-          QuantityDetails: quantityDetails,
-          OrderDetail: { connect: { Id: parsedOrderDetails.id } },
-          Color: { connect: { Id: parsedColor.id } },
-          Orders: { connect: { Id: parsedOrder.id } },
-          Size: { connect: { Id: parsedSize.id } },
-          Template: { connect: { Id: parsedTemplate.id } },
-          ModelImage: `/${file.destination.split("/")[1]}/${file.filename}`,
+          ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
+          ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
+          Order: {
+            connect: {
+              Id: +orderId,
+            },
+          },
+          OrderNumber: order.OrderNumber,
+          CategoryOne: {
+            connect: {
+              Id: +CategoryOne,
+            },
+          },
+          categoryTwo: {
+            connect: {
+              Id: +CategoryTwo,
+            },
+          },
+          Textile: {
+            connect: {
+              Id: +Textile,
+            },
+          },
+          ProductCatalog: {
+            connect: {
+              Id: +ProductCatalog,
+            },
+          },
+          Template: {
+            connect: {
+              Id: +Template,
+            },
+          },
+          Characteristics: Characteristics,
+          Barcode: Barcode,
+          LabelType: LabelType,
+          PrintName: PrintName,
+          Description: Description,
+          PrintLocation: PrintLocation,
+          Images: modelImages.join(","),
           Audit: {
             create: {
               CreatedById: userId,
@@ -43,31 +151,32 @@ const ModelController = {
           },
         },
       });
+      const revertVarients = JSON.parse(Varients);
 
-      // Assuming `model` is the created model instance
-      const manufacturingStages = await prisma.manufacturingStages.findMany({
-        where: {
-          TemplateId: model.TemplateId,
-        },
-        include: {
-          Department: true,
-        },
-      });
-
-      // Iterate over the manufacturing stages to create TrakingModels
-      for (const stage of manufacturingStages) {
-        const isInitialStage = stage.StageNumber === 1;
-        await prisma.trakingModels.create({
+      for (let i = 0; i < revertVarients.length; i++) {
+        await prisma.modelVarients.create({
           data: {
-            DepartmentId: stage.Department.Id,
-            ModelId: model.Id,
-            OrderId: parsedOrder.id,
-            MainStatus: isInitialStage ? "TODO" : "AWAITING",
-            QuantityReceived: isInitialStage ? parseInt(quantity) : 0,
+            Model: {
+              connect: {
+                Id: model.Id,
+              },
+            },
+            Color: {
+              connect: {
+                Id: +revertVarients[i].Color,
+              },
+            },
+            Sizes: JSON.stringify(revertVarients[i].Sizes),
+            Quantity: +revertVarients[i].Quantity,
+            Audit: {
+              create: {
+                CreatedById: userId,
+                UpdatedById: userId,
+              },
+            },
           },
         });
       }
-
       // Return response
       return res.status(201).send({
         status: 201,
@@ -85,82 +194,30 @@ const ModelController = {
     }
   },
   getModels: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
+    const orderId = req.params.id;
     try {
-      const skip = (page - 1) * itemsPerPage;
       const models = await prisma.models.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
+          OrderId: +orderId,
           Audit: {
             IsDeleted: false,
           },
         },
-        select: {
-          Id: true,
-          ModelName: true,
-          Quantity: true,
-          QuantityDetails: true,
-          Note: true,
-          Color: {
-            select: {
-              Id: true,
-              ColorName: true,
-              ColorCode: true,
-            },
-          },
-          Size: {
-            select: {
-              Id: true,
-              SizeName: true,
-            },
-          },
-          Orders: {
-            select: {
-              Id: true,
-              OrderNumber: true,
-            },
-          },
-          Template: {
-            select: {
-              Id: true,
-              TemplateName: true,
-            },
-          },
-          OrderDetail: {
-            select: {
-              Id: true,
-              QuantityDetails: true,
-            },
-          },
+        include: {
+          CategoryOne: true,
+          categoryTwo: true,
+          ProductCatalog: true,
+          Template: true,
+          Textile: true,
         },
       });
-
-      const totalTemplates = await prisma.models.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب النماذج بنجاح!",
-        data: {
-          models,
-          count: totalTemplates,
-        },
+        data: models,
       });
     } catch (error) {
-      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -179,44 +236,6 @@ const ModelController = {
             IsDeleted: false,
           },
         },
-        select: {
-          Id: true,
-          ModelName: true,
-          Quantity: true,
-          QuantityDetails: true,
-          Note: true,
-          Color: {
-            select: {
-              Id: true,
-              ColorName: true,
-              ColorCode: true,
-            },
-          },
-          Size: {
-            select: {
-              Id: true,
-              SizeName: true,
-            },
-          },
-          Orders: {
-            select: {
-              Id: true,
-              OrderNumber: true,
-            },
-          },
-          Template: {
-            select: {
-              Id: true,
-              TemplateName: true,
-            },
-          },
-          OrderDetail: {
-            select: {
-              Id: true,
-              QuantityDetails: true,
-            },
-          },
-        },
       });
       if (!model) {
         // Return response
@@ -226,11 +245,50 @@ const ModelController = {
           data: {},
         });
       }
+      const sizes = await prisma.sizes
+        .findMany({
+          where: {
+            Measurements: {
+              some: {
+                TemplateSize: {
+                  TemplateId: model.TemplateId,
+                  TemplateSizeType: "CUTTING",
+                },
+              },
+            },
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        })
+        .then((sizes) =>
+          sizes.map((size) => ({
+            value: size.Id.toString(),
+            label: size.SizeName,
+          }))
+        );
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب النماذج بنجاح!",
-        data: model,
+        data: {
+          sizes: sizes,
+          model: {
+            Textile: model.TextileId.toString(),
+            Template: model.TemplateId.toString(),
+            TotalQuantity: model.TotalQuantity.toString(),
+            Quantity: model.Quantity.toString(),
+            ModelName: model.ModelName,
+            Size: model.SizeId.toString(),
+            Color: model.ColorId.toString(),
+            Characteristics: model.Characteristics,
+            Barcode: model.Barcode,
+            LabelType: model.LabelType,
+            PrintName: model.PrintName,
+            PrintLocation: model.PrintLocation,
+            Description: model.Description,
+          },
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -275,42 +333,112 @@ const ModelController = {
   },
   updateModel: async (req, res, next) => {
     const {
-      order,
-      modelName,
-      template,
-      color,
-      size,
-      quantity,
-      quantityDetails,
-      orderDetails,
-      notes,
+      // ProductCatalog,
+      // CategoryOne,
+      // CategoryTwo,
+      Textile,
+      Template,
+      TotalQuantity,
+      Size,
+      Color,
+      Characteristics,
+      Barcode,
+      LabelType,
+      PrintName,
+      PrintLocation,
+      Description,
+      Quantity,
+      ModelName,
     } = req.body;
 
-    const parsedOrder = JSON.parse(order);
-    const parsedTemplate = JSON.parse(template);
-    const parsedColor = JSON.parse(color);
-    const parsedSize = JSON.parse(size);
-    const parsedOrderDetails = JSON.parse(orderDetails);
-
-    const file = req.file;
+    const files = req.files;
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
+      const template = await prisma.templates.findUnique({
+        where: {
+          Id: +Template,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          ProductCatalogue: true,
+          CategoryOne: true,
+          CategoryTwo: true,
+        },
+      });
+      if (!template) {
+        return res.status(404).send({
+          status: 404,
+          message: "Template not found!",
+          data: {},
+        });
+      }
+
+      const modelImages = [];
+      if (files.length > 0) {
+        files.forEach((e) => {
+          modelImages.push(`/${e.destination.split("/")[1]}/${e.filename}`);
+        });
+      }
+
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: id,
+        },
+      });
+
       await prisma.models.update({
         where: {
-          Id: +id,
+          Id: id,
         },
         data: {
-          ModelName: modelName,
-          Note: notes,
-          Quantity: parseInt(quantity),
-          QuantityDetails: quantityDetails,
-          OrderDetail: { connect: { Id: parsedOrderDetails.id } },
-          Color: { connect: { Id: parsedColor.id } },
-          Orders: { connect: { Id: parsedOrder.id } },
-          Size: { connect: { Id: parsedSize.id } },
-          Template: { connect: { Id: parsedTemplate.id } },
-          ModelImage: `/${file.destination.split("/")[1]}/${file.filename}`,
+          ModelName: ModelName,
+          CategoryOne: {
+            connect: {
+              Id: template.CategoryOneId,
+            },
+          },
+          categoryTwo: {
+            connect: {
+              Id: template.CategoryTwoId,
+            },
+          },
+          Color: {
+            connect: {
+              Id: +Color,
+            },
+          },
+          Textile: {
+            connect: {
+              Id: +Textile,
+            },
+          },
+          ProductCatalog: {
+            connect: {
+              Id: template.ProductCatalogId,
+            },
+          },
+          Quantity: +Quantity,
+          Size: {
+            connect: {
+              Id: +Size,
+            },
+          },
+          Template: {
+            connect: {
+              Id: +Template,
+            },
+          },
+          TotalQuantity: +TotalQuantity,
+          Characteristics: Characteristics,
+          Barcode: Barcode,
+          LabelType: LabelType,
+          PrintName: PrintName,
+          Description: Description,
+          PrintLocation: PrintLocation,
+          Images: modelImages.length > 0 ? modelImages.join(",") : model.Images,
           Audit: {
             update: {
               data: {

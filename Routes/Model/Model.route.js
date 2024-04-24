@@ -6,9 +6,9 @@ import ModelController from "../../Controllers/Model/Model.controller.js";
 const router = express.Router();
 
 router.post(
-  "/",
+  "/:id",
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
-  uploadModel.single("model"),
+  uploadModel.array("models"),
   ModelController.createModel
 );
 router.get(
@@ -21,12 +21,13 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "FACTORYMANAGER",
   ]),
   ModelController.getProdModels
 );
 
 router.get(
-  "/all",
+  "/all/:id",
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModels
 );
@@ -39,20 +40,20 @@ router.get(
 
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModelById
 );
 
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ModelController.deleteModel
 );
 
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
-  uploadModel.single("model"),
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  uploadModel.array("models"),
   ModelController.updateModel
 );
 router.get(

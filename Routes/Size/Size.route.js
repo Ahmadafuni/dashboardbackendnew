@@ -39,4 +39,9 @@ router.get(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.searchSize
 );
+router.get(
+  "/by-template/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  SizeController.getSizesByTemplate
+);
 export { router as SizeRoute };

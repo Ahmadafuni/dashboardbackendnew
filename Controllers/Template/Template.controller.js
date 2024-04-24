@@ -272,8 +272,8 @@ const TemplateController = {
         })
         .then((templates) =>
           templates.map((template) => ({
-            id: template.Id,
-            name: template.TemplateName,
+            value: template.Id.toString(),
+            label: template.TemplateName,
           }))
         );
 

@@ -2,20 +2,27 @@ import prisma from "../../client.js";
 
 const OrderController = {
   createOrder: async (req, res, next) => {
+    const { orderName, collection, description, deadline, quantity } = req.body;
+    const file = req.file;
     const userId = req.userId;
-
     try {
-      // Destructure the order data directly from the request
-      const { orderNumber, orderDate, totalAmount, status, season } = req.body;
-
-      // Create a new order with the provided or default details
+      let currentOrder = await prisma.orders.count();
+      currentOrder++;
       const createdOrder = await prisma.orders.create({
         data: {
-          OrderNumber: orderNumber,
-          OrderDate: orderDate,
-          TotalAmount: totalAmount,
-          MainStatus: status,
-          Season: { connect: { Id: season.id } },
+          OrderNumber: `FO${currentOrder.toString().padStart(18, "0")}`,
+          OrderName: orderName,
+          Collection: {
+            connect: {
+              Id: +collection,
+            },
+          },
+          Quantity: +quantity,
+          Description: description,
+          DeadlineDate: new Date(deadline),
+          FilePath: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : "",
           Audit: {
             create: {
               CreatedById: userId,
@@ -33,7 +40,6 @@ const OrderController = {
       });
     } catch (error) {
       // Server error or unsolved error
-      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -42,14 +48,8 @@ const OrderController = {
     }
   },
   getOrders: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const orders = await prisma.orders.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
@@ -57,39 +57,25 @@ const OrderController = {
         },
         select: {
           Id: true,
+          OrderName: true,
           OrderNumber: true,
-          OrderDate: true,
-          TotalAmount: true,
-          MainStatus: true,
-          Season: {
+          Collection: {
             select: {
-              Id: true,
-              SeasonName: true,
+              CollectionName: true,
             },
           },
+          Description: true,
+          DeadlineDate: true,
+          Quantity: true,
+          FilePath: true,
+          Status: true,
         },
       });
-
-      const totalTemplates = await prisma.orders.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب الطلبات بنجاح!",
-        data: {
-          orders,
-          count: totalTemplates,
-        },
+        data: orders,
       });
     } catch (error) {
       console.log(error);
@@ -111,30 +97,6 @@ const OrderController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!order) {
         // Return response
@@ -148,7 +110,13 @@ const OrderController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الطلبات بنجاح!",
-        data: order,
+        data: {
+          collection: order.CollectionId.toString(),
+          description: order.Description,
+          orderName: order.OrderName,
+          quantity: order.Quantity.toString(),
+          deadline: order.DeadlineDate.toISOString().split("T")[0],
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -192,23 +160,38 @@ const OrderController = {
     }
   },
   updateOrder: async (req, res, next) => {
+    const { orderName, collection, description, deadline, quantity } = req.body;
+    const file = req.file;
     const id = parseInt(req.params.id);
     const userId = req.userId;
 
     try {
-      // Destructure the order data directly from the request
-      const { orderDate, totalAmount, status, season } = req.body;
-
       // Update the order with the provided details
+      const isThere = await prisma.orders.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
       const updatedOrder = await prisma.orders.update({
         where: {
           Id: id,
         },
         data: {
-          OrderDate: orderDate,
-          TotalAmount: totalAmount,
-          MainStatus: status,
-          Season: { connect: { Id: season.id } },
+          OrderName: orderName,
+          Collection: {
+            connect: {
+              Id: +collection,
+            },
+          },
+          Quantity: +quantity,
+          Description: description,
+          DeadlineDate: new Date(deadline),
+          FilePath: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : isThere.FilePath,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -429,6 +412,91 @@ const OrderController = {
         status: 200,
         message: "تم البحث عن الطلب بنجاح!",
         data: orders,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  startOrder: async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          Status: "PENDING",
+        },
+      });
+      if (!order) {
+        return res.status(405).send({
+          status: 405,
+          message: "Order not found or the order already started!",
+          data: {},
+        });
+      }
+
+      const models = await prisma.models.count({
+        where: {
+          Order: {
+            Id: +id,
+            Status: "PENDING",
+          },
+          Status: "AWAITING",
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (models <= 0) {
+        return res.status(405).send({
+          status: 405,
+          message:
+            "Can't start the order. Either there is no model added to the order or the order already started!",
+          data: {},
+        });
+      }
+
+      await prisma.orders.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Status: "ONGOING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+
+      await prisma.models.updateMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          Status: "AWAITING",
+        },
+        data: {
+          Status: "TODO",
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Order Started!",
+        data: {},
       });
     } catch (error) {
       // Server error or unsolved error

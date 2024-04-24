@@ -37,6 +37,7 @@ import { MaterialMovementRoute } from "./Routes/MaterialMovement/MaterialMovemen
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { MeasurementRoute } from "./Routes/Measurement/Measurement.route.js";
+import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
 
 // const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -86,10 +87,11 @@ app.use("/color", ColorRoute);
 app.use("/orderdetailcolor", OrderDetailColorRoute);
 app.use("/orderdetailsize", OrderDetailSizeRoute);
 app.use("/orderdetail", OrderDetailRoute);
-app.use("/order", OrderRoute);
+app.use("/orders", OrderRoute);
 app.use("/model", ModelRoute);
 app.use("/trackingmodels", TrackingModelRoute);
 app.use("/measurements", MeasurementRoute);
+app.use("/collections", CollectionRoute);
 
 // 404 no route found
 app.use((req, res, next) => {
