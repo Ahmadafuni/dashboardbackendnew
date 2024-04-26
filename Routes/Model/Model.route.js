@@ -61,4 +61,29 @@ router.get(
   verifyUser(["STOREMANAGER", "ENGINEERING"]),
   ModelController.searchModel
 );
+router.get(
+  "/varients/all/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.getAllModelVarients
+);
+router.post(
+  "/varients/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.createModelVarient
+);
+router.get(
+  "/varients/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.getModelVarientById
+);
+router.put(
+  "/varients/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.updateModelVarient
+);
+router.delete(
+  "/varients/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.deleteModelVarient
+);
 export { router as ModelRoute };

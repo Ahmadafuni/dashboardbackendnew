@@ -245,49 +245,23 @@ const ModelController = {
           data: {},
         });
       }
-      const sizes = await prisma.sizes
-        .findMany({
-          where: {
-            Measurements: {
-              some: {
-                TemplateSize: {
-                  TemplateId: model.TemplateId,
-                  TemplateSizeType: "CUTTING",
-                },
-              },
-            },
-            Audit: {
-              IsDeleted: false,
-            },
-          },
-        })
-        .then((sizes) =>
-          sizes.map((size) => ({
-            value: size.Id.toString(),
-            label: size.SizeName,
-          }))
-        );
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب النماذج بنجاح!",
         data: {
-          sizes: sizes,
-          model: {
-            Textile: model.TextileId.toString(),
-            Template: model.TemplateId.toString(),
-            TotalQuantity: model.TotalQuantity.toString(),
-            Quantity: model.Quantity.toString(),
-            ModelName: model.ModelName,
-            Size: model.SizeId.toString(),
-            Color: model.ColorId.toString(),
-            Characteristics: model.Characteristics,
-            Barcode: model.Barcode,
-            LabelType: model.LabelType,
-            PrintName: model.PrintName,
-            PrintLocation: model.PrintLocation,
-            Description: model.Description,
-          },
+          ProductCatalog: model.ProductCatalogId.toString(),
+          CategoryOne: model.CategoryOneId.toString(),
+          CategoryTwo: model.CategoryTwoId.toString(),
+          Textile: model.TextileId.toString(),
+          Template: model.TemplateId.toString(),
+          ModelName: model.ModelName,
+          Characteristics: model.Characteristics,
+          Barcode: model.Barcode,
+          LabelType: model.LabelType,
+          PrintName: model.PrintName,
+          PrintLocation: model.PrintLocation,
+          Description: model.Description,
         },
       });
     } catch (error) {
@@ -333,21 +307,17 @@ const ModelController = {
   },
   updateModel: async (req, res, next) => {
     const {
-      // ProductCatalog,
-      // CategoryOne,
-      // CategoryTwo,
+      ProductCatalog,
+      CategoryOne,
+      CategoryTwo,
       Textile,
       Template,
-      TotalQuantity,
-      Size,
-      Color,
       Characteristics,
       Barcode,
       LabelType,
       PrintName,
       PrintLocation,
       Description,
-      Quantity,
       ModelName,
     } = req.body;
 
@@ -361,11 +331,6 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-        },
-        include: {
-          ProductCatalogue: true,
-          CategoryOne: true,
-          CategoryTwo: true,
         },
       });
       if (!template) {
@@ -397,17 +362,12 @@ const ModelController = {
           ModelName: ModelName,
           CategoryOne: {
             connect: {
-              Id: template.CategoryOneId,
+              Id: +CategoryOne,
             },
           },
           categoryTwo: {
             connect: {
-              Id: template.CategoryTwoId,
-            },
-          },
-          Color: {
-            connect: {
-              Id: +Color,
+              Id: +CategoryTwo,
             },
           },
           Textile: {
@@ -417,13 +377,7 @@ const ModelController = {
           },
           ProductCatalog: {
             connect: {
-              Id: template.ProductCatalogId,
-            },
-          },
-          Quantity: +Quantity,
-          Size: {
-            connect: {
-              Id: +Size,
+              Id: +ProductCatalog,
             },
           },
           Template: {
@@ -431,7 +385,6 @@ const ModelController = {
               Id: +Template,
             },
           },
-          TotalQuantity: +TotalQuantity,
           Characteristics: Characteristics,
           Barcode: Barcode,
           LabelType: LabelType,
@@ -702,6 +655,232 @@ const ModelController = {
         status: 200,
         message: "تم البحث عن النماذج بنجاح!",
         data: datas,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getAllModelVarients: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const varients = await prisma.modelVarients
+        .findMany({
+          where: {
+            ModelId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          select: {
+            Id: true,
+            Color: {
+              select: {
+                ColorName: true,
+              },
+            },
+            Sizes: true,
+            Quantity: true,
+            Status: true,
+            Model: {
+              select: {
+                ModelName: true,
+                TemplateId: true,
+              },
+            },
+          },
+        })
+        .then((varientss) =>
+          varientss.map((e) => ({
+            Id: e.Id,
+            Color: e.Color.ColorName,
+            Sizes: JSON.parse(e.Sizes),
+            Model: e.Model.ModelName,
+            Status: e.Status,
+            Quantity: e.Quantity,
+            TemplateId: e.Model.TemplateId,
+          }))
+        );
+      // Return Response
+      return res.status(200).send({
+        status: 200,
+        message: "Model varients fetched successfully!",
+        data: varients,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getModelVarientById: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const varient = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (!varient) {
+        return res.status(404).send({
+          status: 404,
+          message: "Varient not found!",
+          data: {},
+        });
+      }
+      return res.status(200).send({
+        status: 200,
+        message: "Model varients fetched successfully!",
+        data: {
+          Color: varient.ColorId.toString(),
+          Sizes: JSON.parse(varient.Sizes),
+          Quantity: varient.Quantity.toString(),
+        },
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  createModelVarient: async (req, res, next) => {
+    const id = req.params.id;
+    const { Sizes, Color, Quantity } = req.body;
+    const userId = req.userId;
+    try {
+      await prisma.modelVarients.create({
+        data: {
+          Model: {
+            connect: {
+              Id: +id,
+            },
+          },
+          Color: {
+            connect: {
+              Id: +Color,
+            },
+          },
+          Sizes: JSON.stringify(Sizes),
+          Quantity: +Quantity,
+          Audit: {
+            create: {
+              CreatedById: +userId,
+              UpdatedById: +userId,
+            },
+          },
+        },
+      });
+      return res.status(201).send({
+        status: 201,
+        message: "Model varient created successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  updateModelVarient: async (req, res, next) => {
+    const id = req.params.id;
+    const { Sizes, Color, Quantity } = req.body;
+    const userId = req.userId;
+    try {
+      const varient = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (varient.Status !== "AWAITING") {
+        return res.status(405).send({
+          status: 405,
+          message: "Model varient already in production. Cann't update!",
+          data: {},
+        });
+      }
+
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          Color: {
+            connect: {
+              Id: +Color,
+            },
+          },
+          Sizes: JSON.stringify(Sizes),
+          Quantity: +Quantity,
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: +userId,
+              },
+            },
+          },
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "Model varient updated successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  deleteModelVarient: async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    try {
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: +userId,
+                IsDeleted: true,
+              },
+            },
+          },
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "Model varient deleted successfully!",
+        data: {},
       });
     } catch (error) {
       // Server error or unsolved error

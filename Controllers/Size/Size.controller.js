@@ -276,6 +276,55 @@ const SizeController = {
       });
     }
   },
+  getSizesByModel: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      const sizeNames = await prisma.sizes
+        .findMany({
+          where: {
+            Measurements: {
+              some: {
+                TemplateSize: {
+                  TemplateId: model.TemplateId,
+                  TemplateSizeType: "CUTTING",
+                },
+              },
+            },
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        })
+        .then((sizes) =>
+          sizes.map((size) => ({
+            value: size.Id.toString(),
+            label: size.SizeName,
+          }))
+        );
+
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "Size list fatched!",
+        data: sizeNames,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 
 export default SizeController;
