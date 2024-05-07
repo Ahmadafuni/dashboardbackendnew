@@ -73,6 +73,8 @@ const AuthenticationController = {
             email: user.Email,
             userImage: user.PhotoPath,
             userRole: user.Department.Category,
+            userDepartment: user.Department.Name,
+            userDepartmentId: user.Department.Id,
           },
         },
       });
@@ -114,6 +116,8 @@ const AuthenticationController = {
           email: user.Email,
           userImage: user.PhotoPath,
           userRole: user.Department.Category,
+          userDepartment: user.Department.Name,
+          userDepartmentId: user.Department.Id,
         },
         status: 200,
         message: "الجلسة صالحة!",

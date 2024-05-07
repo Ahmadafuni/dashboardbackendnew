@@ -38,6 +38,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { MeasurementRoute } from "./Routes/Measurement/Measurement.route.js";
 import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
+import { NoteRoute } from "./Routes/Note/Note.route.js";
 
 // const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -92,6 +93,7 @@ app.use("/model", ModelRoute);
 app.use("/trackingmodels", TrackingModelRoute);
 app.use("/measurements", MeasurementRoute);
 app.use("/collections", CollectionRoute);
+app.use("/notes", NoteRoute);
 
 // 404 no route found
 app.use((req, res, next) => {

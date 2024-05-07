@@ -2,73 +2,28 @@ import prisma from "../../client.js";
 
 const TaskController = {
   createTask: async (req, res, next) => {
-    const { taskName, dueDate, priority, assignedToDepartment, notes } =
-      req.body;
+    const { TaskName, DueDate, AssignedToDepartmentId, Description } = req.body;
     const userId = req.userId;
-    const userRole = req.userRole;
+    const userDepartmentId = req.userDepartmentId;
+    const file = req.file;
     try {
-      // Find the department where the managerId matches the userId
-      if (userRole === "FACTORYMANAGER") {
-        await prisma.tasks.create({
-          data: {
-            TaskName: taskName,
-            Priority: priority,
-            Notes: notes,
-            DueAt: new Date(dueDate),
-            AssignedToDepartment: {
-              connect: {
-                Id: assignedToDepartment,
-              },
-            },
-            CreatedByManager: {
-              connect: {
-                Id: userId,
-              },
-            },
-            Audit: {
-              create: {
-                CreatedById: userId,
-                UpdatedById: userId,
-              },
-            },
-          },
-        });
-        // Return response
-        return res.status(201).send({
-          status: 201,
-          message: "تم إنشاء المهمة بنجاح!",
-          data: {},
-        });
-      }
-
-      const department = await prisma.departments.findFirst({
-        where: {
-          ManagerId: userId,
-        },
-      });
-
-      if (!department && userRole !== "FACTORYMANAGER") {
-        return res.status(404).send({
-          status: 404,
-          message: "Department for the manager not found.",
-          data: {},
-        });
-      }
-
       await prisma.tasks.create({
         data: {
-          TaskName: taskName,
-          Priority: priority,
-          Notes: notes,
-          DueAt: new Date(dueDate),
+          TaskName: TaskName,
+          DueAt: new Date(DueDate),
+          Description: Description,
+          AssignedFile: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : "",
+          FeedbackFile: "",
           AssignedToDepartment: {
             connect: {
-              Id: assignedToDepartment,
+              Id: +AssignedToDepartmentId,
             },
           },
           CreatedByDepartment: {
             connect: {
-              Id: department.Id,
+              Id: +userDepartmentId,
             },
           },
           Audit: {
@@ -86,7 +41,6 @@ const TaskController = {
         data: {},
       });
     } catch (error) {
-      console.log("the task error", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -96,63 +50,30 @@ const TaskController = {
     }
   },
   getAllTasks: async (req, res, next) => {
-    const userId = req.userId;
-
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
-    const skip = (page - 1) * itemsPerPage;
-
+    const userDepartmentId = req.userDepartmentId;
     try {
       const tasks = await prisma.tasks.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: { IsDeleted: false },
-        },
-        include: {
-          AssignedToDepartment: true,
-          CreatedByDepartment: true,
-          CreatedByManager: true,
-        },
-      });
-      // Format tasks
-      const formattedTasks = tasks.map((task) => ({
-        id: task.Id,
-        taskName: task.TaskName,
-        dueDate: task.DueAt.toISOString(),
-        status: task.Status,
-        priority: task.Priority,
-        assignedToDepartment: {
-          id: task.AssignedToDepartment.Id,
-          name: task.AssignedToDepartment.Name,
-        },
-        createdByDepartment: {
-          id: task.CreatedByDepartment?.Id,
-          name: task.CreatedByDepartment?.Name,
-        },
-        createdByManager: {
-          id: task.CreatedByManager?.Id,
-          name:
-            task.CreatedByManager?.Firstname +
-            " " +
-            task.CreatedByManager?.Lastname,
-        },
-        notes: task.Notes,
-      }));
-
-      const totalDeparts = await prisma.departments.count({
-        where: {
-          AND: [
-            {
-              Id: {
-                not: userId,
-              },
-              Audit: {
-                IsDeleted: false,
-              },
-            },
+          OR: [
+            { CreatedByDepartmentId: userDepartmentId },
+            { AssignedToDepartmentId: userDepartmentId },
           ],
+        },
+        select: {
+          Id: true,
+          TaskName: true,
+          DueAt: true,
+          Description: true,
+          AssignedFile: true,
+          Status: true,
+          Feedback: true,
+          AssignedToDepartment: {
+            select: {
+              Id: true,
+              Name: true,
+            },
+          },
         },
       });
 
@@ -160,9 +81,46 @@ const TaskController = {
       return res.status(200).send({
         status: 200,
         message: "تم استرجاع المهام بنجاح!",
+        data: tasks,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getTaskById: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const task = await prisma.tasks.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (!task) {
+        return res.status(404).send({
+          status: 404,
+          message: "Task not found!",
+          data: {},
+        });
+      }
+
+      // Return response with formatted tasks
+      return res.status(200).send({
+        status: 200,
+        message: "تم استرجاع المهام بنجاح!",
         data: {
-          formattedTasks,
-          count: totalDeparts,
+          TaskName: task.TaskName,
+          DueDate: task.DueAt,
+          AssignedToDepartmentId: task.AssignedToDepartmentId.toString(),
+          Description: task.Description,
         },
       });
     } catch (error) {
@@ -176,19 +134,53 @@ const TaskController = {
   },
   deleteTask: async (req, res, next) => {
     const taskId = parseInt(req.params.id);
+    const userDepartmentId = req.userDepartmentId;
+    const userId = req.userId;
     try {
-      const deletedTask = await prisma.tasks.delete({
+      const task = await prisma.tasks.findUnique({
+        where: {
+          Id: taskId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (!task) {
+        return res.status(404).send({
+          status: 404,
+          message: "Task not found!",
+          data: {},
+        });
+      }
+
+      if (task.CreatedByDepartmentId !== +userDepartmentId) {
+        return res.status(405).send({
+          status: 405,
+          message: "Not permitted to update task!",
+          data: {},
+        });
+      }
+
+      await prisma.tasks.update({
         where: {
           Id: taskId,
         },
+        data: {
+          Audit: {
+            update: {
+              IsDeleted: true,
+              UpdatedById: userId,
+            },
+          },
+        },
       });
-      if (deletedTask) {
-        return res.status(200).send({
-          status: 200,
-          message: "تم حذف المهمة بنجاح!",
-          data: deletedTask,
-        });
-      }
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم حذف المهمة بنجاح!",
+        data: {},
+      });
     } catch (error) {
       return res.status(500).send({
         status: 500,
@@ -198,50 +190,76 @@ const TaskController = {
     }
   },
   updateTask: async (req, res, next) => {
-    const taskId = parseInt(req.params.id);
-    const { taskName, dueDate, status, priority, assignedToDepartment, notes } =
-      req.body;
-
-    // Check if assignedToDepartment is an object (not updated) or direct ID (updated)
-    const assignedToDepartmentId =
-      typeof assignedToDepartment === "object"
-        ? assignedToDepartment.id
-        : assignedToDepartment;
-
-    // Prepare the data for updating, mapping frontend names to DB field names
-    const updateData = {
-      TaskName: taskName,
-      DueAt: new Date(dueDate),
-      Status: status,
-      Priority: priority,
-      AssignedToDepartment: {
-        connect: {
-          Id: assignedToDepartmentId,
-        },
-      },
-      Notes: notes,
-    };
-
-    Object.keys(updateData).forEach(
-      (key) => updateData[key] === undefined && delete updateData[key]
-    );
+    const { TaskName, DueDate, AssignedToDepartmentId, Description } = req.body;
+    const id = req.params.id;
+    const userId = req.userId;
+    const userDepartmentId = req.userDepartmentId;
+    const file = req.file;
 
     try {
-      const updatedTask = await prisma.tasks.update({
+      const task = await prisma.tasks.findUnique({
         where: {
-          Id: taskId,
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
         },
-        data: updateData,
       });
-      if (updatedTask) {
-        return res.status(200).send({
-          status: 200,
-          message: "تم تحديث المهمة بنجاح!",
-          data: updatedTask,
+
+      if (!task) {
+        return res.status(404).send({
+          status: 404,
+          message: "Task not found!",
+          data: {},
         });
       }
+
+      if (task.Status !== "PENDING") {
+        return res.status(405).send({
+          status: 405,
+          message: "Task already started or completed!",
+          data: {},
+        });
+      }
+
+      if (task.CreatedByDepartmentId !== +userDepartmentId) {
+        return res.status(405).send({
+          status: 405,
+          message: "Not permitted to update task!",
+          data: {},
+        });
+      }
+
+      await prisma.tasks.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          TaskName: TaskName,
+          DueAt: new Date(DueDate),
+          Description: Description,
+          AssignedFile: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : task.AssignedFile,
+          AssignedToDepartment: {
+            connect: {
+              Id: +AssignedToDepartmentId,
+            },
+          },
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم تحديث المهمة بنجاح!",
+        data: {},
+      });
     } catch (error) {
-      console.log("THE ERROR", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -369,6 +387,153 @@ const TaskController = {
         status: 200,
         message: "تم جلب المهام بنجاح!",
         data: formattedTasks,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  startTask: async (req, res, next) => {
+    const id = req.params.id;
+    const userDepartmentId = req.userDepartmentId;
+    try {
+      const task = await prisma.tasks.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (!task) {
+        return res.status(404).send({
+          status: 404,
+          message: "Task not found!",
+          data: {},
+        });
+      }
+
+      if (task.AssignedToDepartmentId !== userDepartmentId) {
+        return res.status(405).send({
+          status: 405,
+          message: "You are not permitted to start the task!",
+          data: {},
+        });
+      }
+
+      if (task.Status !== "PENDING") {
+        return res.status(409).send({
+          status: 409,
+          message: "Task already started or in progress!",
+          data: {},
+        });
+      }
+
+      await prisma.tasks.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Status: "ONGOING",
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Task started successfully!",
+        data: {},
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getSubmitFeedback: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const feedback = await prisma.tasks.findUnique({
+        where: {
+          Id: +id,
+        },
+        select: {
+          Feedback: true,
+          FeedbackFile: true,
+        },
+      });
+      console.log(feedback);
+      return res.status(200).send({
+        status: 200,
+        message: "Feedback fetched successfully!",
+        data: {
+          Feedback: feedback.Feedback ? feedback.Feedback : "",
+          FeedbackFile: feedback.FeedbackFile,
+        },
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  submitFeedback: async (req, res, next) => {
+    const id = req.params.id;
+    const { Feedback } = req.body;
+    const userDepartmentId = req.userDepartmentId;
+    const file = req.file;
+    try {
+      const task = await prisma.tasks.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (!task) {
+        return res.status(404).send({
+          status: 404,
+          message: "Task not found!",
+          data: {},
+        });
+      }
+
+      if (task.AssignedToDepartmentId !== userDepartmentId) {
+        return res.status(405).send({
+          status: 405,
+          message: "You are not permitted to start the task!",
+          data: {},
+        });
+      }
+
+      await prisma.tasks.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Feedback: Feedback,
+          Status: "COMPLETED",
+          FeedbackFile: file
+            ? `/${file.destination.split("/")[1]}/${file.filename}`
+            : !task.FeedbackFile
+            ? ""
+            : task.FeedbackFile,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Task submited successfully!",
+        data: {},
       });
     } catch (error) {
       return res.status(500).send({

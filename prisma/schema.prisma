@@ -67,6 +67,12 @@ enum Season {
   SPRING
 }
 
+enum NoteType {
+  GENERAL
+  REMINDER
+  ATTENTION
+}
+
 model AuditRecords {
   Id                        Int                        @id @default(autoincrement())
   CreatedAt                 DateTime                   @default(now())
@@ -102,10 +108,11 @@ model AuditRecords {
   Users                     Users?
   Warehouses                Warehouses?
   Tasks                     Tasks?
-  Measurements              Measurements[]
-  Models                    Models[]
-  Collections               Collections[]
-  ModelVarients             ModelVarients[]
+  Measurements              Measurements?
+  Models                    Models?
+  Collections               Collections?
+  ModelVarients             ModelVarients?
+  Notes                     Notes?
 }
 
 model Collections {
@@ -113,7 +120,7 @@ model Collections {
   CollectionName String       @db.VarChar(255)
   Description    String?
   Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
-  AuditId        Int
+  AuditId        Int          @unique
   Orders         Orders[]
 }
 
@@ -147,6 +154,8 @@ model Departments {
   ReceivedFromTrakingModels TrakingModels[]       @relation("ReceivedFrom")
   DeliveredToTrakingModels  TrakingModels[]       @relation("DeliveredTo")
   Users                     Users[]
+  AssignedDepartment        Notes[]               @relation("AssignedDepartment")
+  CreatedDepartment         Notes[]               @relation("CreatedDepartment")
 }
 
 model InternalOrders {
@@ -249,7 +258,7 @@ model Measurements {
   Size             Sizes         @relation(fields: [SizeId], references: [Id])
   SizeId           Int
   Audit            AuditRecords  @relation(fields: [AuditId], references: [Id])
-  AuditId          Int
+  AuditId          Int           @unique
 }
 
 model Models {
@@ -269,6 +278,7 @@ model Models {
   TemplateId       Int
   ModelName        String                    @db.VarChar(255)
   ModelNumber      String                    @db.VarChar(255)
+  DemoModelNumber  String?                   @db.VarChar(255)
   Characteristics  String?
   Barcode          String?
   LabelType        String?
@@ -278,7 +288,7 @@ model Models {
   Status           MainStatus                @default(AWAITING)
   Images           String?
   Audit            AuditRecords              @relation(fields: [AuditId], references: [Id])
-  AuditId          Int
+  AuditId          Int                       @unique
   TrakingModels    TrakingModels[]
   ModelVarients    ModelVarients[]
 }
@@ -293,7 +303,19 @@ model ModelVarients {
   Sizes    String
   Quantity Int
   Audit    AuditRecords @relation(fields: [AuditId], references: [Id])
-  AuditId  Int
+  AuditId  Int          @unique
+}
+
+model Notes {
+  Id                     Int          @id @default(autoincrement())
+  NoteType               NoteType     @default(GENERAL)
+  CreatedDepartment      Departments? @relation(name: "CreatedDepartment", fields: [CreatedDepartmentId], references: [Id])
+  CreatedDepartmentId    Int?
+  AssignedToDepartment   Departments? @relation(name: "AssignedDepartment", fields: [AssignedToDepartmentId], references: [Id])
+  AssignedToDepartmentId Int?
+  Description            String
+  Audit                  AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId                Int          @unique
 }
 
 model OrderDetailColors {
@@ -446,17 +468,16 @@ model Suppliers {
 model Tasks {
   Id                     Int          @id @default(autoincrement())
   TaskName               String       @db.VarChar(255)
-  CreatedAt              DateTime     @default(now())
   DueAt                  DateTime
   Status                 Status       @default(PENDING)
-  Priority               Priority     @default(LOW)
-  AssignedToDepartmentId Int
-  AssignedToDepartment   Departments  @relation(name: "AssignedTo", fields: [AssignedToDepartmentId], references: [Id])
-  Notes                  String       @db.VarChar(255)
-  CreatedByDepartmentId  Int?
+  Description            String?
+  Feedback               String?
+  AssignedFile           String?
+  FeedbackFile           String?
+  AssignedToDepartment   Departments? @relation(name: "AssignedTo", fields: [AssignedToDepartmentId], references: [Id])
+  AssignedToDepartmentId Int?
   CreatedByDepartment    Departments? @relation(name: "CreatedBy", fields: [CreatedByDepartmentId], references: [Id])
-  CreatedByManager       Users?       @relation(name: "CreatedByManager", fields: [CreatedByManagerId], references: [Id])
-  CreatedByManagerId     Int?
+  CreatedByDepartmentId  Int?
   Audit                  AuditRecords @relation(fields: [AuditId], references: [Id])
   AuditId                Int          @unique
 }
@@ -559,7 +580,6 @@ model Users {
   AuditCreatedBy AuditRecords[]   @relation(name: "CreatedBy")
   AuditUpdatedBy AuditRecords[]   @relation(name: "UpdatedBy")
   InternalOrders InternalOrders[]
-  Tasks          Tasks[]          @relation(name: "CreatedByManager")
 }
 
 model Warehouses {

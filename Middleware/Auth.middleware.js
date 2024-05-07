@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import prisma from "../client.js";
 
 export const verifyUser = (roles) => {
   return async (req, res, next) => {
@@ -28,12 +29,22 @@ export const verifyUser = (roles) => {
           data: {},
         });
       }
+
+      const user = await prisma.users.findUnique({
+        where: {
+          Id: +accessDecoded.id,
+          Audit: { IsDeleted: false },
+        },
+        include: {
+          Department: true,
+        },
+      });
       // Send user id
-      req.userId = accessDecoded.id;
-      req.userRole = accessDecoded.role;
+      req.userId = user.Id;
+      req.userRole = user.Department.Category;
+      req.userDepartmentId = user.DepartmentId;
       next();
     } catch (error) {
-      console.log("THE error", error);
       if (
         error instanceof jwt.JsonWebTokenError ||
         error instanceof jwt.TokenExpiredError ||

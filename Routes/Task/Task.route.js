@@ -1,12 +1,14 @@
 import express from "express";
 import { verifyUser } from "../../Middleware/Auth.middleware.js";
 import TaskController from "../../Controllers/Task/Task.controller.js";
+import { uploadTask } from "../../Middleware/Upload.middleware.js";
 
 const router = express.Router();
 
 router.post(
   "/",
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  uploadTask.single("task"),
   TaskController.createTask
 );
 
@@ -21,6 +23,30 @@ router.get(
     "QUALITYASSURANCE",
   ]),
   TaskController.getAllTasks
+);
+router.get(
+  "/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  TaskController.getTaskById
+);
+router.get(
+  "/start/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  TaskController.startTask
 );
 router.get(
   "/",
@@ -48,8 +74,41 @@ router.delete(
 );
 router.put(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING", "CUTTING"]),
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  uploadTask.single("task"),
   TaskController.updateTask
+);
+router.get(
+  "/feedback/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  TaskController.getSubmitFeedback
+);
+router.put(
+  "/feedback/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  uploadTask.single("task"),
+  TaskController.submitFeedback
 );
 // router.get(
 //   "/search/:query",

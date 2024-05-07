@@ -15,6 +15,7 @@ const ModelController = {
       PrintLocation,
       Description,
       Varients,
+      DemoModelNumber,
     } = req.body;
 
     const orderId = req.params.id;
@@ -105,6 +106,7 @@ const ModelController = {
         data: {
           ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
           ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
+          DemoModelNumber: DemoModelNumber,
           Order: {
             connect: {
               Id: +orderId,
@@ -262,6 +264,7 @@ const ModelController = {
           PrintName: model.PrintName,
           PrintLocation: model.PrintLocation,
           Description: model.Description,
+          DemoModelNumber: model.DemoModelNumber,
         },
       });
     } catch (error) {
@@ -319,6 +322,7 @@ const ModelController = {
       PrintLocation,
       Description,
       ModelName,
+      DemoModelNumber,
     } = req.body;
 
     const files = req.files;
@@ -360,6 +364,7 @@ const ModelController = {
         },
         data: {
           ModelName: ModelName,
+          DemoModelNumber: DemoModelNumber,
           CategoryOne: {
             connect: {
               Id: +CategoryOne,
@@ -762,6 +767,23 @@ const ModelController = {
     const { Sizes, Color, Quantity } = req.body;
     const userId = req.userId;
     try {
+      const isThere = await prisma.modelVarients.findFirst({
+        where: {
+          ColorId: +Color,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (isThere) {
+        return res.status(409).send({
+          status: 409,
+          message: "Color already exist!",
+          data: {},
+        });
+      }
+
       await prisma.modelVarients.create({
         data: {
           Model: {
