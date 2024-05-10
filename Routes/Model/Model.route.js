@@ -27,6 +27,21 @@ router.get(
 );
 
 router.get(
+  "/model-summary/:id",
+  verifyUser([
+    "STOREMANAGER",
+    "ENGINEERING",
+    "CURRINT",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "FACTORYMANAGER",
+  ]),
+  ModelController.getModelSummary
+);
+
+router.get(
   "/all/:id",
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModels

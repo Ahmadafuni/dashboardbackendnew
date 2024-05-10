@@ -403,6 +403,14 @@ const TemplateController = {
           },
         },
       });
+
+      const cuttingSizes = [];
+      cutting.forEach((m) => {
+        if (!cuttingSizes.includes(m.Size.SizeName)) {
+          cuttingSizes.push(m.Size.SizeName);
+        }
+      });
+
       const formatedCutting = [];
       cutting.forEach((measurement) => {
         const size = measurement.Size.SizeName;
@@ -423,6 +431,13 @@ const TemplateController = {
         }
       });
 
+      formatedCutting.forEach((m) => {
+        cuttingSizes.forEach((s) => {
+          if (!m[s]) {
+            m[s] = "0";
+          }
+        });
+      });
       const dressup = await prisma.measurements.findMany({
         where: {
           TemplateSize: {
@@ -448,6 +463,14 @@ const TemplateController = {
           },
         },
       });
+
+      const dressupSizes = [];
+      dressup.forEach((m) => {
+        if (!dressupSizes.includes(m.Size.SizeName)) {
+          dressupSizes.push(m.Size.SizeName);
+        }
+      });
+
       const formatedDressup = [];
       dressup.forEach((measurement) => {
         const size = measurement.Size.SizeName;
@@ -466,6 +489,14 @@ const TemplateController = {
         } else {
           isThere[size] = measurement.MeasurementValue;
         }
+      });
+
+      formatedDressup.forEach((m) => {
+        dressupSizes.forEach((s) => {
+          if (!m[s]) {
+            m[s] = "0";
+          }
+        });
       });
 
       const stages = await prisma.manufacturingStages.findMany({

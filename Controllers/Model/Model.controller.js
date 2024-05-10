@@ -913,6 +913,210 @@ const ModelController = {
       });
     }
   },
+  getModelSummary: async (req, res, next) => {
+    const id = req.params.id;
+    try {
+      const modelSummary = {};
+
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          Template: true,
+          CategoryOne: true,
+          categoryTwo: true,
+          Order: true,
+          ProductCatalog: true,
+          Textile: true,
+          Audit: true,
+          ModelVarients: {
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            include: {
+              Color: true,
+            },
+          },
+        },
+      });
+
+      const sizes = [];
+      model.ModelVarients.forEach((e) => {
+        JSON.parse(e.Sizes).forEach((f) => {
+          if (!sizes.includes(f.label)) {
+            sizes.push(f.label);
+          }
+        });
+      });
+
+      modelSummary.modelInfo = {
+        ModelDate: model.Audit.CreatedAt.toDateString(),
+        ModelName: model.ModelName,
+        ModelNumber: model.ModelNumber,
+        OrderNumber: model.OrderNumber,
+        Template: model.Template.TemplateName,
+        CategoryOne: model.CategoryOne.CategoryName,
+        CategoryTwo: model.categoryTwo.CategoryName,
+        ProductCatalog: model.ProductCatalog.ProductCatalogName,
+        FabricType: model.Textile.TextileType,
+        Specification: model.Textile.TextileName,
+        Characteristics: model.Characteristics,
+        Barcode: model.Barcode,
+        LabelType: model.LabelType,
+        PrintName: model.PrintName,
+        PrintLocation: model.PrintLocation,
+        Description: model.Description,
+        DeliveryDate: model.Order.DeadlineDate.toDateString(),
+        Quantity: model.ModelVarients.reduce((a, c) => a + c.Quantity, 0),
+        Colors: model.ModelVarients.map((v) => v.Color.ColorName).join("-"),
+        Sizes: sizes.join("-"),
+        Images: model.Images,
+      };
+
+      const cutting = await prisma.measurements.findMany({
+        where: {
+          TemplateSize: {
+            TemplateId: model.TemplateId,
+            TemplateSizeType: "CUTTING",
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Id: true,
+          MeasurementName: true,
+          MeasurementValue: true,
+          MeasurementUnit: true,
+          Size: {
+            select: {
+              SizeName: true,
+            },
+          },
+        },
+      });
+
+      const cuttingSizes = [];
+      cutting.forEach((m) => {
+        if (!cuttingSizes.includes(m.Size.SizeName)) {
+          cuttingSizes.push(m.Size.SizeName);
+        }
+      });
+
+      const formatedCutting = [];
+      cutting.forEach((measurement) => {
+        const size = measurement.Size.SizeName;
+
+        const isThere = formatedCutting.find(
+          (m) => m.MeasurementName === measurement.MeasurementName
+        );
+
+        if (!isThere) {
+          const temp_object = {
+            MeasurementName: measurement.MeasurementName,
+            MeasurementUnit: measurement.MeasurementUnit,
+          };
+          temp_object[size] = measurement.MeasurementValue;
+          formatedCutting.push(temp_object);
+        } else {
+          isThere[size] = measurement.MeasurementValue;
+        }
+      });
+
+      formatedCutting.forEach((m) => {
+        cuttingSizes.forEach((s) => {
+          if (!m[s]) {
+            m[s] = "0";
+          }
+        });
+      });
+      const dressup = await prisma.measurements.findMany({
+        where: {
+          TemplateSize: {
+            TemplateId: model.TemplateId,
+            TemplateSizeType: "DRESSUP",
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Id: true,
+          MeasurementName: true,
+          MeasurementValue: true,
+          MeasurementUnit: true,
+          Size: {
+            select: {
+              SizeName: true,
+            },
+          },
+        },
+      });
+
+      const dressupSizes = [];
+      dressup.forEach((m) => {
+        if (!dressupSizes.includes(m.Size.SizeName)) {
+          dressupSizes.push(m.Size.SizeName);
+        }
+      });
+
+      const formatedDressup = [];
+      dressup.forEach((measurement) => {
+        const size = measurement.Size.SizeName;
+
+        const isThere = formatedDressup.find(
+          (m) => m.MeasurementName === measurement.MeasurementName
+        );
+
+        if (!isThere) {
+          const temp_object = {
+            MeasurementName: measurement.MeasurementName,
+            MeasurementUnit: measurement.MeasurementUnit,
+          };
+          temp_object[size] = measurement.MeasurementValue;
+          formatedDressup.push(temp_object);
+        } else {
+          isThere[size] = measurement.MeasurementValue;
+        }
+      });
+
+      formatedDressup.forEach((m) => {
+        dressupSizes.forEach((s) => {
+          if (!m[s]) {
+            m[s] = "0";
+          }
+        });
+      });
+
+      modelSummary.cutting = formatedCutting;
+      modelSummary.dressup = formatedDressup;
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model summary fetched successfully!",
+        data: modelSummary,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 
 export default ModelController;
