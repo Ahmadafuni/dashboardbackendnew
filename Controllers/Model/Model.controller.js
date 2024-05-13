@@ -770,6 +770,7 @@ const ModelController = {
       const isThere = await prisma.modelVarients.findFirst({
         where: {
           ColorId: +Color,
+          ModelId: +id,
           Audit: {
             IsDeleted: false,
           },
