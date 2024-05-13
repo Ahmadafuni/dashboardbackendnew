@@ -264,7 +264,7 @@ const ModelController = {
           PrintName: model.PrintName,
           PrintLocation: model.PrintLocation,
           Description: model.Description,
-          DemoModelNumber: model.DemoModelNumber,
+          DemoModelNumber: !model.DemoModelNumber ? "" : model.DemoModelNumber,
         },
       });
     } catch (error) {
