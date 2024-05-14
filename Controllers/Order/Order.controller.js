@@ -507,5 +507,72 @@ const OrderController = {
       });
     }
   },
+  holdOrder: async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          Status: "ONGOING",
+        },
+      });
+
+      if (!order) {
+        return res.status(405).send({
+          status: 405,
+          message: "Order not found or the order already completed!",
+          data: {},
+        });
+      }
+
+      await prisma.orders.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Status: "PENDING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+
+      await prisma.models.updateMany({
+        where: {
+          OrderId: order.Id,
+          NOT: {
+            Status: "DONE",
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          Status: "AWAITING",
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Order on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 export default OrderController;

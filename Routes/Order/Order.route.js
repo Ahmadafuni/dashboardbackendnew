@@ -51,4 +51,9 @@ router.get(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   OrderController.startOrder
 );
+router.get(
+  "/hold/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  OrderController.holdOrder
+);
 export { router as OrderRoute };
