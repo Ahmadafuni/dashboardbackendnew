@@ -55,6 +55,19 @@ router.get(
 );
 
 router.get(
+  "/current/task",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  TaskController.getCurrentTasks
+);
+
+router.get(
   "/search/:query",
   verifyUser([
     "FACTORYMANAGER",

@@ -61,6 +61,26 @@ const ModelController = {
         });
       }
 
+      const mStages = await prisma.manufacturingStages.findMany({
+        where: {
+          TemplateId: template.Id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+
+      if (mStages.length <= 0) {
+        return res.status(405).send({
+          status: 405,
+          message: "Please add stages to template!",
+          data: {},
+        });
+      }
+
       const pCatalogue = await prisma.productCatalogs.findUnique({
         where: {
           Id: +ProductCatalog,
@@ -174,6 +194,21 @@ const ModelController = {
               create: {
                 CreatedById: userId,
                 UpdatedById: userId,
+              },
+            },
+            TrakingModels: {
+              create: {
+                CurrentDepartment: {
+                  connect: {
+                    Id: mStages[0].DepartmentId,
+                  },
+                },
+                Audit: {
+                  create: {
+                    CreatedById: userId,
+                    UpdatedById: userId,
+                  },
+                },
               },
             },
           },

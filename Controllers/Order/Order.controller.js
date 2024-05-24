@@ -144,6 +144,69 @@ const OrderController = {
           },
         },
       });
+      // Delete all models
+      const models = await prisma.models.findMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      for (var model of models) {
+        await prisma.models.update({
+          where: {
+            Id: model.Id,
+          },
+          data: {
+            Audit: {
+              update: {
+                IsDeleted: true,
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+      }
+      // Delete all variants
+      const mVariants = await prisma.modelVarients.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          Model: {
+            OrderId: +id,
+          },
+        },
+      });
+
+      for (const variant of mVariants) {
+        await prisma.modelVarients.update({
+          where: {
+            Id: variant.Id,
+          },
+          data: {
+            Audit: {
+              update: {
+                IsDeleted: true,
+                UpdatedById: userId,
+              },
+            },
+            TrakingModels: {
+              update: {
+                Audit: {
+                  update: {
+                    IsDeleted: true,
+                    UpdatedById: userId,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
       // Return response
       return res.status(200).send({
         status: 200,
@@ -152,6 +215,7 @@ const OrderController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -447,9 +511,7 @@ const OrderController = {
         where: {
           Order: {
             Id: +id,
-            Status: "PENDING",
           },
-          Status: "AWAITING",
           Audit: {
             IsDeleted: false,
           },
@@ -480,16 +542,35 @@ const OrderController = {
         },
       });
 
-      await prisma.models.updateMany({
+      await prisma.modelVarients.updateMany({
         where: {
-          OrderId: +id,
           Audit: {
             IsDeleted: false,
           },
-          Status: "AWAITING",
+          Model: {
+            OrderId: +id,
+          },
         },
         data: {
           Status: "TODO",
+        },
+      });
+
+      await prisma.trakingModels.updateMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              OrderId: +id,
+            },
+          },
+          MainStatus: "AWAITING",
+        },
+        data: {
+          MainStatus: "TODO",
+          StartTime: new Date(),
         },
       });
 
@@ -542,21 +623,6 @@ const OrderController = {
               },
             },
           },
-        },
-      });
-
-      await prisma.models.updateMany({
-        where: {
-          OrderId: order.Id,
-          NOT: {
-            Status: "DONE",
-          },
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        data: {
-          Status: "AWAITING",
         },
       });
 

@@ -1,4 +1,5 @@
 import prisma from "../../client.js";
+import { io, socketUserList } from "../../server.js";
 
 const NoteController = {
   createNote: async (req, res, next) => {
@@ -28,6 +29,29 @@ const NoteController = {
           },
         },
       });
+
+      await prisma.notifications.create({
+        data: {
+          Title: `${NoteType}`,
+          Description: Description,
+          ToDepartment: {
+            connect: {
+              Id: +AssignedToDepartmentId,
+            },
+          },
+        },
+      });
+
+      // Send Notification
+      const sUser = socketUserList.filter(
+        (user) => user.dep === +AssignedToDepartmentId
+      );
+      if (sUser.length > 0) {
+        sUser.forEach((user) => {
+          io.to(user.sId).emit("notification", 1);
+        });
+      }
+      // Return Response
       return res.status(201).send({
         status: 201,
         message: "New note created successfully!",
@@ -194,6 +218,17 @@ const NoteController = {
             IsDeleted: false,
           },
         },
+        select: {
+          Id: true,
+          NoteType: true,
+          CreatedDepartment: {
+            select: {
+              Id: true,
+              Name: true,
+            },
+          },
+          Description: true,
+        },
       });
       return res.status(200).send({
         status: 200,
@@ -202,7 +237,6 @@ const NoteController = {
       });
     } catch (error) {
       // Server error or unsolved error
-      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

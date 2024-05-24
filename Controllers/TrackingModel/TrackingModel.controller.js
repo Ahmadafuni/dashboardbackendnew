@@ -230,6 +230,103 @@ const TrackingModelController = {
       });
     }
   },
+  getAllTrackingBydepartment: async (req, res, next) => {
+    const userDepartmentId = req.userDepartmentId;
+    try {
+      const awaiting = await prisma.modelVarients.findMany({
+        where: {
+          Status: "TODO",
+          Audit: {
+            IsDeleted: false,
+          },
+          TrakingModels: {
+            CurrentDepartmentId: userDepartmentId,
+          },
+        },
+        include: {
+          Model: {
+            select: {
+              ModelNumber: true,
+            },
+          },
+          Color: {
+            select: {
+              ColorName: true,
+            },
+          },
+        },
+      });
+      const inProgress = await prisma.modelVarients.findMany({
+        where: {
+          Status: "INPROGRESS",
+          Audit: {
+            IsDeleted: false,
+          },
+          TrakingModels: {
+            CurrentDepartmentId: userDepartmentId,
+          },
+        },
+        include: {
+          Model: {
+            select: {
+              ModelNumber: true,
+            },
+          },
+          Color: {
+            select: {
+              ColorName: true,
+            },
+          },
+        },
+      });
+      const completed = await prisma.modelVarients.findMany({
+        where: {
+          Status: "DONE",
+          Audit: {
+            IsDeleted: false,
+          },
+          TrakingModels: {
+            CurrentDepartmentId: userDepartmentId,
+          },
+        },
+        include: {
+          Model: {
+            select: {
+              ModelNumber: true,
+            },
+          },
+          Color: {
+            select: {
+              ColorName: true,
+            },
+          },
+        },
+      });
+      const givingConfirmation = await prisma.modelVarients.findMany({
+        where: {
+          Status: "CHECKING",
+          Audit: {
+            IsDeleted: false,
+          },
+          TrakingModels: {
+            DeliveredToId: userDepartmentId,
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "",
+        data: { awaiting, completed, inProgress, givingConfirmation },
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 
 export default TrackingModelController;

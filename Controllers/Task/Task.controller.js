@@ -1,4 +1,5 @@
 import prisma from "../../client.js";
+import { io, socketUserList } from "../../server.js";
 
 const TaskController = {
   createTask: async (req, res, next) => {
@@ -34,6 +35,28 @@ const TaskController = {
           },
         },
       });
+      // Add Notification
+      await prisma.notifications.create({
+        data: {
+          Title: TaskName,
+          Description: Description,
+          ToDepartment: {
+            connect: {
+              Id: +AssignedToDepartmentId,
+            },
+          },
+        },
+      });
+
+      // Send Notification
+      const sUser = socketUserList.filter(
+        (user) => user.dep === +AssignedToDepartmentId
+      );
+      if (sUser.length > 0) {
+        sUser.forEach((user) => {
+          io.to(user.sId).emit("notification", 1);
+        });
+      }
       // Return response
       return res.status(201).send({
         status: 201,
@@ -55,10 +78,7 @@ const TaskController = {
       const tasks = await prisma.tasks.findMany({
         where: {
           Audit: { IsDeleted: false },
-          OR: [
-            { CreatedByDepartmentId: userDepartmentId },
-            { AssignedToDepartmentId: userDepartmentId },
-          ],
+          CreatedByDepartmentId: userDepartmentId,
         },
         select: {
           Id: true,
@@ -69,6 +89,46 @@ const TaskController = {
           Status: true,
           Feedback: true,
           AssignedToDepartment: {
+            select: {
+              Id: true,
+              Name: true,
+            },
+          },
+        },
+      });
+
+      // Return response with formatted tasks
+      return res.status(200).send({
+        status: 200,
+        message: "تم استرجاع المهام بنجاح!",
+        data: tasks,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getCurrentTasks: async (req, res, next) => {
+    const userDepartmentId = req.userDepartmentId;
+    try {
+      const tasks = await prisma.tasks.findMany({
+        where: {
+          Audit: { IsDeleted: false },
+          AssignedToDepartmentId: userDepartmentId,
+        },
+        select: {
+          Id: true,
+          TaskName: true,
+          DueAt: true,
+          Description: true,
+          AssignedFile: true,
+          Status: true,
+          Feedback: true,
+          CreatedByDepartment: {
             select: {
               Id: true,
               Name: true,

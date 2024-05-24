@@ -17,6 +17,19 @@ router.get(
   TrackingModelController.getAllTrackingModels
 );
 
+router.get(
+  "/current/dep",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+  ]),
+  TrackingModelController.getAllTrackingBydepartment
+);
+
 router.put(
   "/:id",
   verifyUser([

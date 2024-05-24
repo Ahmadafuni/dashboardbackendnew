@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import createHttpError from "http-errors";
 import cors from "cors";
+import http from "http";
 import dotenv from "dotenv";
 // Routes
 import { TaskRoute } from "./Routes/Task/Task.route.js";
@@ -34,23 +35,21 @@ import { ModelRoute } from "./Routes/Model/Model.route.js";
 import { TrackingModelRoute } from "./Routes/TrackingModel/TrackingModel.route.js";
 import { ReportsRoute } from "./Routes/Reports/Reports.route.js";
 import { MaterialMovementRoute } from "./Routes/MaterialMovement/MaterialMovement.route.js";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import { MeasurementRoute } from "./Routes/Measurement/Measurement.route.js";
 import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
 import { NoteRoute } from "./Routes/Note/Note.route.js";
+import { Server } from "socket.io";
+import { NotificationRoute } from "./Routes/Notification/Notification.route.js";
 
-// const __dirname = dirname(fileURLToPath(import.meta.url));
+// Socket User List
+export let socketUserList = [];
 
 const app = express();
-
-// app.use("/profile", express.static(`${__dirname}/public/profiles`));
 
 let corsOptions = {
   origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
   credentials: true,
 };
-
 app.use(cors(corsOptions));
 
 // app setup
@@ -59,6 +58,30 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static("public"));
+
+// Setting server
+const server = http.createServer(app);
+export const io = new Server(server, { cors: corsOptions });
+
+// Add new sUser
+const addNewUser = (dep, sId) => {
+  !socketUserList.some((user) => user.sId === sId) &&
+    socketUserList.push({ dep: dep, sId: sId });
+};
+// Rmove sUser
+const removeUser = (sId) => {
+  const temp_user = socketUserList.filter((user) => user.sId !== sId);
+  socketUserList = [...temp_user];
+};
+io.on("connection", (socket) => {
+  socket.on("register", (dep) => {
+    addNewUser(dep, socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+  });
+});
 
 // Set Routes
 app.use("/reports", ReportsRoute);
@@ -94,6 +117,7 @@ app.use("/trackingmodels", TrackingModelRoute);
 app.use("/measurements", MeasurementRoute);
 app.use("/collections", CollectionRoute);
 app.use("/notes", NoteRoute);
+app.use("/notification", NotificationRoute);
 
 // 404 no route found
 app.use((req, res, next) => {
@@ -112,6 +136,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3002;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Server started on port " + PORT + "...");
 });
