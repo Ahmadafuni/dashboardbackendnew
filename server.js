@@ -47,7 +47,7 @@ export let socketUserList = [];
 const app = express();
 
 let corsOptions = {
-  origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
+  origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com","http://213.130.147.103"],
   credentials: true,
 };
 app.use(cors(corsOptions));
