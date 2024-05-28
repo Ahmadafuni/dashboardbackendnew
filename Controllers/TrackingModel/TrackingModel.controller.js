@@ -240,7 +240,9 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           TrakingModels: {
-            CurrentDepartmentId: userDepartmentId,
+            CurrentStage: {
+              DepartmentId: userDepartmentId,
+            },
           },
         },
         include: {
@@ -263,7 +265,9 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           TrakingModels: {
-            CurrentDepartmentId: userDepartmentId,
+            CurrentStage: {
+              DepartmentId: userDepartmentId,
+            },
           },
         },
         include: {
@@ -286,7 +290,9 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           TrakingModels: {
-            CurrentDepartmentId: userDepartmentId,
+            CurrentStage: {
+              DepartmentId: userDepartmentId,
+            },
           },
         },
         include: {
@@ -309,7 +315,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           TrakingModels: {
-            DeliveredToId: userDepartmentId,
+            NextStageId: userDepartmentId,
           },
         },
       });

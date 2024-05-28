@@ -75,46 +75,47 @@ enum NoteType {
 }
 
 model AuditRecords {
-  Id                        Int                        @id @default(autoincrement())
-  CreatedAt                 DateTime                   @default(now())
-  UpdatedAt                 DateTime                   @updatedAt
-  CreatedById               Int?
-  UpdatedById               Int?
-  CreatedBy                 Users?                     @relation(name: "CreatedBy", fields: [CreatedById], references: [Id])
-  UpdatedBy                 Users?                     @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
-  IsDeleted                 Boolean                    @default(false)
-  Colors                    Colors?
-  Departments               Departments?
-  InternalOrders            InternalOrders?
-  ManufacturingStages       ManufacturingStages?
-  MaterialCategories        MaterialCategories?
-  MaterialMovements         MaterialMovements?
-  Materials                 Materials?
-  OrderDetailColors         OrderDetailColors?
-  OrderDetails              OrderDetails?
-  OrderDetailSizes          OrderDetailSizes?
-  OrderDetailTemplateTypes  OrderDetailTemplateTypes?
-  Orders                    Orders?
-  ProductCatalogCategoryOne ProductCatalogCategoryOne?
-  ProductCatalogCategoryTwo ProductCatalogCategoryTwo?
-  ProductCatalogDetails     ProductCatalogDetails?
-  ProductCatalogs           ProductCatalogs?
-  ProductCatalogTextiles    ProductCatalogTextiles?
-  Sizes                     Sizes?
-  Suppliers                 Suppliers?
-  TemplatePatterns          TemplatePatterns?
-  Templates                 Templates?
-  TemplateSizes             TemplateSizes?
-  TemplateTypes             TemplateTypes?
-  Users                     Users?
-  Warehouses                Warehouses?
-  Tasks                     Tasks?
-  Measurements              Measurements?
-  Models                    Models?
-  Collections               Collections?
-  ModelVarients             ModelVarients?
-  Notes                     Notes?
-  TrakingModels             TrakingModels?
+  Id                          Int                          @id @default(autoincrement())
+  CreatedAt                   DateTime                     @default(now())
+  UpdatedAt                   DateTime                     @updatedAt
+  CreatedById                 Int?
+  UpdatedById                 Int?
+  CreatedBy                   Users?                       @relation(name: "CreatedBy", fields: [CreatedById], references: [Id])
+  UpdatedBy                   Users?                       @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
+  IsDeleted                   Boolean                      @default(false)
+  Colors                      Colors?
+  Departments                 Departments?
+  InternalOrders              InternalOrders?
+  ManufacturingStages         ManufacturingStages?
+  MaterialCategories          MaterialCategories?
+  MaterialMovements           MaterialMovements?
+  Materials                   Materials?
+  OrderDetailColors           OrderDetailColors?
+  OrderDetails                OrderDetails?
+  OrderDetailSizes            OrderDetailSizes?
+  OrderDetailTemplateTypes    OrderDetailTemplateTypes?
+  Orders                      Orders?
+  ProductCatalogCategoryOne   ProductCatalogCategoryOne?
+  ProductCatalogCategoryTwo   ProductCatalogCategoryTwo?
+  ProductCatalogDetails       ProductCatalogDetails?
+  ProductCatalogs             ProductCatalogs?
+  ProductCatalogTextiles      ProductCatalogTextiles?
+  Sizes                       Sizes?
+  Suppliers                   Suppliers?
+  TemplatePatterns            TemplatePatterns?
+  Templates                   Templates?
+  TemplateSizes               TemplateSizes?
+  TemplateTypes               TemplateTypes?
+  Users                       Users?
+  Warehouses                  Warehouses?
+  Tasks                       Tasks?
+  Measurements                Measurements?
+  Models                      Models?
+  Collections                 Collections?
+  ModelVarients               ModelVarients?
+  Notes                       Notes?
+  TrakingModels               TrakingModels?
+  TrackingModelStageDurations TrackingModelStageDurations?
 }
 
 model Collections {
@@ -138,26 +139,24 @@ model Colors {
 }
 
 model Departments {
-  Id                             Int                   @id @default(autoincrement())
-  Name                           String                @unique @db.VarChar(255)
-  NameShort                      String                @unique @db.VarChar(255)
-  Location                       String?               @db.VarChar(255)
-  Description                    String?
-  Category                       DepartmentCategory
-  Audit                          AuditRecords          @relation(fields: [AuditId], references: [Id])
-  AuditId                        Int                   @unique
-  AssignedTasks                  Tasks[]               @relation(name: "AssignedTo")
-  CreatedTasks                   Tasks[]               @relation(name: "CreatedBy")
-  InternalOrders                 InternalOrders[]
-  FromMaterialMovements          MaterialMovements[]   @relation(name: "FromDepartment")
-  ToMateralMovements             MaterialMovements[]   @relation(name: "ToDepartment")
-  ManufacturingStages            ManufacturingStages[]
-  CurrentDepartmentTrakingModels TrakingModels[]       @relation("CurrentDepartment")
-  DeliveredToTrakingModels       TrakingModels[]       @relation("DeliveredTo")
-  Users                          Users[]
-  AssignedDepartment             Notes[]               @relation("AssignedDepartment")
-  CreatedDepartment              Notes[]               @relation("CreatedDepartment")
-  Notifications                  Notifications[]
+  Id                    Int                   @id @default(autoincrement())
+  Name                  String                @unique @db.VarChar(255)
+  NameShort             String                @unique @db.VarChar(255)
+  Location              String?               @db.VarChar(255)
+  Description           String?
+  Category              DepartmentCategory
+  Audit                 AuditRecords          @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                   @unique
+  AssignedTasks         Tasks[]               @relation(name: "AssignedTo")
+  CreatedTasks          Tasks[]               @relation(name: "CreatedBy")
+  InternalOrders        InternalOrders[]
+  FromMaterialMovements MaterialMovements[]   @relation(name: "FromDepartment")
+  ToMateralMovements    MaterialMovements[]   @relation(name: "ToDepartment")
+  ManufacturingStages   ManufacturingStages[]
+  Users                 Users[]
+  AssignedDepartment    Notes[]               @relation("AssignedDepartment")
+  CreatedDepartment     Notes[]               @relation("CreatedDepartment")
+  Notifications         Notifications[]
 }
 
 model InternalOrders {
@@ -182,17 +181,20 @@ model InternalOrders {
 }
 
 model ManufacturingStages {
-  Id              Int          @id @default(autoincrement())
-  StageNumber     Int
-  StageName       String       @db.VarChar(255)
-  WorkDescription String?
-  Duration        Int
-  Template        Templates    @relation(fields: [TemplateId], references: [Id])
-  TemplateId      Int
-  Department      Departments  @relation(fields: [DepartmentId], references: [Id])
-  DepartmentId    Int
-  Audit           AuditRecords @relation(fields: [AuditId], references: [Id])
-  AuditId         Int          @unique
+  Id                          Int                           @id @default(autoincrement())
+  StageNumber                 Int
+  StageName                   String                        @db.VarChar(255)
+  WorkDescription             String?
+  Duration                    Int
+  Template                    Templates                     @relation(fields: [TemplateId], references: [Id])
+  TemplateId                  Int
+  Department                  Departments                   @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId                Int
+  Audit                       AuditRecords                  @relation(fields: [AuditId], references: [Id])
+  AuditId                     Int                           @unique
+  TrackingModelStageDurations TrackingModelStageDurations[]
+  CurrentTrakingModels        TrakingModels[]               @relation("CurrentStage")
+  NextTrakingModels           TrakingModels[]               @relation("NextStage")
 }
 
 model MaterialCategories {
@@ -550,26 +552,39 @@ model TemplateTypes {
 }
 
 model TrakingModels {
-  Id                  Int           @id @default(autoincrement())
-  CurrentDepartment   Departments   @relation("CurrentDepartment", fields: [CurrentDepartmentId], references: [Id])
-  CurrentDepartmentId Int
-  DeliveredTo         Departments?  @relation("DeliveredTo", fields: [DeliveredToId], references: [Id])
-  DeliveredToId       Int?
-  StartTime           DateTime?
-  EndTime             DateTime?
-  MainStatus          MainStatus    @default(AWAITING)
-  QuantityReceived    Int?
-  QuantityDelivered   Int?
-  DamagedItem         Int?          @default(0)
-  ReplacedItem        Int?          @default(0)
-  Cloth               String?
-  QuantityInKg        String?
-  QuantityInNum       Int?
-  Notes               String?
-  ModelVariant        ModelVarients @relation(fields: [ModelVariantId], references: [Id])
-  ModelVariantId      Int           @unique
-  Audit               AuditRecords  @relation(fields: [AuditId], references: [Id])
-  AuditId             Int           @unique
+  Id                          Int                           @id @default(autoincrement())
+  CurrentStage                ManufacturingStages           @relation("CurrentStage", fields: [CurrentStageId], references: [Id])
+  CurrentStageId              Int
+  NextStage                   ManufacturingStages?          @relation("NextStage", fields: [NextStageId], references: [Id])
+  NextStageId                 Int?
+  StartTime                   DateTime?
+  EndTime                     DateTime?
+  MainStatus                  MainStatus                    @default(AWAITING)
+  QuantityReceived            Int?
+  QuantityDelivered           Int?
+  DamagedItem                 Int?                          @default(0)
+  ReplacedItem                Int?                          @default(0)
+  Cloth                       String?
+  QuantityInKg                String?
+  QuantityInNum               Int?
+  Notes                       String?
+  ModelVariant                ModelVarients                 @relation(fields: [ModelVariantId], references: [Id])
+  ModelVariantId              Int                           @unique
+  Audit                       AuditRecords                  @relation(fields: [AuditId], references: [Id])
+  AuditId                     Int                           @unique
+  TrackingModelStageDurations TrackingModelStageDurations[]
+}
+
+model TrackingModelStageDurations {
+  Id         Int                 @id @default(autoincrement())
+  Tracking   TrakingModels       @relation(fields: [TrackingId], references: [Id])
+  TrackingId Int
+  Stage      ManufacturingStages @relation(fields: [StageId], references: [Id])
+  StageId    Int
+  StartTime  DateTime            @default(now())
+  EndTime    DateTime?
+  Audit      AuditRecords        @relation(fields: [AuditId], references: [Id])
+  AuditId    Int                 @unique
 }
 
 model Users {

@@ -550,13 +550,14 @@ const OrderController = {
           Model: {
             OrderId: +id,
           },
+          Status: "AWAITING",
         },
         data: {
           Status: "TODO",
         },
       });
 
-      await prisma.trakingModels.updateMany({
+      const trackings = await prisma.trakingModels.findMany({
         where: {
           Audit: {
             IsDeleted: false,
@@ -568,11 +569,47 @@ const OrderController = {
           },
           MainStatus: "AWAITING",
         },
-        data: {
-          MainStatus: "TODO",
-          StartTime: new Date(),
-        },
       });
+
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            MainStatus: "TODO",
+            StartTime: new Date(),
+            Audit: {
+              update: {
+                data: {
+                  UpdatedById: userId,
+                },
+              },
+            },
+          },
+        });
+
+        await prisma.trackingModelStageDurations.create({
+          data: {
+            Stage: {
+              connect: {
+                Id: trackings[i].CurrentStageId,
+              },
+            },
+            Tracking: {
+              connect: {
+                Id: trackings[i].Id,
+              },
+            },
+            Audit: {
+              create: {
+                CreatedById: userId,
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,

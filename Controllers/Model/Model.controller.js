@@ -176,6 +176,7 @@ const ModelController = {
       const revertVarients = JSON.parse(Varients);
 
       for (let i = 0; i < revertVarients.length; i++) {
+        const nextStage = mStages[1] ? { connect: { Id: mStages[1].Id } } : {};
         await prisma.modelVarients.create({
           data: {
             Model: {
@@ -198,9 +199,9 @@ const ModelController = {
             },
             TrakingModels: {
               create: {
-                CurrentDepartment: {
+                CurrentStage: {
                   connect: {
-                    Id: mStages[0].DepartmentId,
+                    Id: mStages[0].Id,
                   },
                 },
                 Audit: {
@@ -209,6 +210,7 @@ const ModelController = {
                     UpdatedById: userId,
                   },
                 },
+                nextStage,
               },
             },
           },
