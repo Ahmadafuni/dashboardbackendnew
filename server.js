@@ -13,7 +13,7 @@ import { ProductCatalogRoute } from "./Routes/ProductCatalog/ProductCatalog.rout
 import { SupplierRoute } from "./Routes/Supplier/Supplier.route.js";
 import { MaterialCategoryRoute } from "./Routes/MaterialCategory/MaterialCategory.route.js";
 import { MaterialRoute } from "./Routes/Material/Material.route.js";
-import { InternalOrderRoute } from "./Routes/InternalOrder/InternalOrder.route.js";
+// import { InternalOrderRoute } from "./Routes/InternalOrder/InternalOrder.route.js";
 import { ProductCatalogCategorryOneRoute } from "./Routes/ProductCatalogCategoryOne/ProductCatalogCategoryOne.route.js";
 import { ProductCatalogCategorryTwoRoute } from "./Routes/productCatalogCategoryTwo/productCatalogCategoryTwo.route.js";
 import { SeasonRoute } from "./Routes/Seasone/Seasone.route.js";
@@ -94,7 +94,7 @@ app.use("/supplier", SupplierRoute);
 app.use("/materialcategory", MaterialCategoryRoute);
 app.use("/materialmovement", MaterialMovementRoute);
 app.use("/material", MaterialRoute);
-app.use("/internalorder", InternalOrderRoute);
+// app.use("/internalorder", InternalOrderRoute);
 app.use("/productcatalogcategoryone", ProductCatalogCategorryOneRoute);
 app.use("/productcatalogcategorytwo", ProductCatalogCategorryTwoRoute);
 app.use("/season", SeasonRoute);

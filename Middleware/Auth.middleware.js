@@ -5,7 +5,6 @@ export const verifyUser = (roles) => {
   return async (req, res, next) => {
     // Tokens
     const Token = req.headers["authorization"];
-
     try {
       if (!Token) {
         return res.status(403).send({

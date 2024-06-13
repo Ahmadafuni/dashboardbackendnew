@@ -75,6 +75,7 @@ const AuthenticationController = {
             userRole: user.Department.Category,
             userDepartment: user.Department.Name,
             userDepartmentId: user.Department.Id,
+            category: user.Department.Category,
           },
         },
       });
@@ -118,6 +119,7 @@ const AuthenticationController = {
           userRole: user.Department.Category,
           userDepartment: user.Department.Name,
           userDepartmentId: user.Department.Id,
+          category: user.Department.Category,
         },
         status: 200,
         message: "الجلسة صالحة!",

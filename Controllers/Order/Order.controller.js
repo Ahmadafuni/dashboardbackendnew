@@ -588,27 +588,6 @@ const OrderController = {
             },
           },
         });
-
-        await prisma.trackingModelStageDurations.create({
-          data: {
-            Stage: {
-              connect: {
-                Id: trackings[i].CurrentStageId,
-              },
-            },
-            Tracking: {
-              connect: {
-                Id: trackings[i].Id,
-              },
-            },
-            Audit: {
-              create: {
-                CreatedById: userId,
-                UpdatedById: userId,
-              },
-            },
-          },
-        });
       }
 
       return res.status(200).send({
@@ -652,7 +631,7 @@ const OrderController = {
           Id: +id,
         },
         data: {
-          Status: "PENDING",
+          Status: "ONHOLD",
           Audit: {
             update: {
               data: {
@@ -666,6 +645,58 @@ const OrderController = {
       return res.status(200).send({
         status: 200,
         message: "Order on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  restartOrder: async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          Status: "ONHOLD",
+        },
+      });
+
+      if (!order) {
+        return res.status(405).send({
+          status: 405,
+          message: "Order not found or the order already completed!",
+          data: {},
+        });
+      }
+
+      await prisma.orders.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Status: "ONGOING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Order restarted successfully!",
         data: {},
       });
     } catch (error) {

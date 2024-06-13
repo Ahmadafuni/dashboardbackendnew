@@ -56,4 +56,9 @@ router.get(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   OrderController.holdOrder
 );
+router.get(
+  "/restart/:id",
+  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  OrderController.restartOrder
+);
 export { router as OrderRoute };

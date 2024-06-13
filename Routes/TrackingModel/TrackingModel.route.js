@@ -5,19 +5,6 @@ import TrackingModelController from "../../Controllers/TrackingModel/TrackingMod
 const router = express.Router();
 
 router.get(
-  "/all",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-  ]),
-  TrackingModelController.getAllTrackingModels
-);
-
-router.get(
   "/current/dep",
   verifyUser([
     "FACTORYMANAGER",
@@ -26,12 +13,13 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "DRAWING",
   ]),
   TrackingModelController.getAllTrackingBydepartment
 );
 
-router.put(
-  "/:id",
+router.get(
+  "/start/variant/:id",
   verifyUser([
     "FACTORYMANAGER",
     "ENGINEERING",
@@ -39,12 +27,66 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "DRAWING",
   ]),
-  TrackingModelController.updateTrackingModelById
+  TrackingModelController.startVariant
+);
+
+router.post(
+  "/sent/cutting/checking/variant/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "DRAWING",
+  ]),
+  TrackingModelController.sendForCheckingCutting
+);
+router.post(
+  "/sent/others/checking/variant/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "DRAWING",
+  ]),
+  TrackingModelController.sendForCheckingOthers
+);
+router.get(
+  "/confirm/variant/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "DRAWING",
+  ]),
+  TrackingModelController.confirmVariant
+);
+router.get(
+  "/reject/variant/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "DRAWING",
+  ]),
+  TrackingModelController.rejectVariant
 );
 
 router.get(
-  "/prog/:id",
+  "/complete/variant/:id",
   verifyUser([
     "FACTORYMANAGER",
     "ENGINEERING",
@@ -52,12 +94,13 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "DRAWING",
   ]),
-  TrackingModelController.updateTrackingModelByIdProg
+  TrackingModelController.completeVariant
 );
 
-router.get(
-  "/:id",
+router.post(
+  "/pauseunpause/variant/:id",
   verifyUser([
     "FACTORYMANAGER",
     "ENGINEERING",
@@ -65,20 +108,9 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "DRAWING",
   ]),
-  TrackingModelController.getTrackingModelById
-);
-router.get(
-  "/search/:searchTerm",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-  ]),
-  TrackingModelController.searchTrackingModel
+  TrackingModelController.pauseUnpause
 );
 
 const TrackingModelRoute = router;
