@@ -2,7 +2,7 @@ import prisma from "../../client.js";
 
 const SupplierController = {
   createSupplier: async (req, res, next) => {
-    const { name, address, phone, email } = req.body;
+    const { name, address, phone, description } = req.body;
     const userId = req.userId;
     try {
       await prisma.suppliers.create({
@@ -10,7 +10,7 @@ const SupplierController = {
           Name: name,
           PhoneNumber: phone,
           Address: address,
-          email: email,
+          Description: description,
           Audit: {
             create: {
               CreatedById: userId,
@@ -26,7 +26,6 @@ const SupplierController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -35,42 +34,19 @@ const SupplierController = {
     }
   },
   getAllSuppliers: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
-
       const suppliers = await prisma.suppliers.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
       });
-
-      const totalTemplates = await prisma.suppliers.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب الموردين بنجاح!",
-        data: {
-          suppliers,
-          count: totalTemplates,
-        },
+        data: suppliers,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -91,32 +67,7 @@ const SupplierController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
-
       if (!supplier) {
         // Return response
         return res.status(404).send({
@@ -129,7 +80,12 @@ const SupplierController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب الموردين بنجاح!",
-        data: supplier,
+        data: {
+          name: supplier.Name,
+          address: supplier.Address,
+          phone: supplier.PhoneNumber,
+          description: supplier.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -175,7 +131,7 @@ const SupplierController = {
   updateSupplier: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
-    const { name, address, phone, email } = req.body;
+    const { name, address, phone, description } = req.body;
     try {
       await prisma.suppliers.update({
         where: {
@@ -185,7 +141,7 @@ const SupplierController = {
           Name: name,
           PhoneNumber: phone,
           Address: address,
-          email: email,
+          Description: description,
           Audit: {
             update: {
               data: {
@@ -226,8 +182,8 @@ const SupplierController = {
         })
         .then((suppliers) =>
           suppliers.map((supplier) => ({
-            id: supplier.Id,
-            name: supplier.Name,
+            value: supplier.Id.toString(),
+            label: supplier.Name,
           }))
         );
 

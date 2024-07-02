@@ -5,38 +5,68 @@ import MaterialController from "../../Controllers/Material/Material.controller.j
 const router = express.Router();
 
 router.post(
-  "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialController.createMaterial
+  "/parent",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.createMaterialParent
+);
+router.post(
+  "/child/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.createMaterialChild
 );
 router.get(
-  "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialController.getAllMaterials
+  "/parent/all",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.getAllParentMaterials
 );
 router.get(
-  "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  "/child/all/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.getAllChildMaterials
+);
+router.get(
+  "/parent",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialController.getMaterialNames
 );
 router.get(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialController.getMaterialById
-);
-router.delete(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialController.deleteMaterial
-);
-router.put(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialController.updateMaterial
+  "/child/names/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.getChildMaterialNames
 );
 router.get(
-  "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  "/parent/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.getParentMaterialById
+);
+router.get(
+  "/child/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.getChildMaterialById
+);
+router.delete(
+  "/parent/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.deleteParentMaterial
+);
+router.delete(
+  "/child/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.deleteChildMaterial
+);
+router.put(
+  "/parent/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.updateParentMaterial
+);
+router.put(
+  "/child/:id",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialController.updateChildMaterial
+);
+router.get(
+  "/parent/search/:searchTerm",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialController.searchMaterial
 );
 const MaterialRoute = router;

@@ -6,38 +6,38 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.createMaterialCategory
 );
 router.get(
   "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.getAllMaterialCategories
 );
 router.get(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.getMaterialCategoryNames
 );
 
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.getMaterialCategoryById
 );
 router.delete(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.deleteMaterialCategory
 );
 router.put(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.updateMaterialCategory
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialCategoryController.searchMaterialCategory
 );
 

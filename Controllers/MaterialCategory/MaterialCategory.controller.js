@@ -33,43 +33,22 @@ const MaterialCategoryController = {
     }
   },
   getAllMaterialCategories: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const materialCategories = await prisma.materialCategories.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: {
             IsDeleted: false,
           },
         },
       });
-      const totalTemplates = await prisma.materialCategories.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
-        },
-      });
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب فئات المواد بنجاح!",
-        data: {
-          materialCategories,
-          count: totalTemplates,
-        },
+        data: materialCategories,
       });
     } catch (error) {
       // Server error or unsolved error
-      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -87,30 +66,6 @@ const MaterialCategoryController = {
             IsDeleted: false,
           },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-        },
       });
 
       if (!materialCategory) {
@@ -125,7 +80,10 @@ const MaterialCategoryController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب فئات المواد بنجاح!",
-        data: materialCategory,
+        data: {
+          name: materialCategory.CategoryName,
+          description: materialCategory.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -216,8 +174,8 @@ const MaterialCategoryController = {
         })
         .then((categories) =>
           categories.map((category) => ({
-            id: category.Id,
-            name: category.CategoryName,
+            value: category.Id.toString(),
+            label: category.CategoryName,
           }))
         );
 

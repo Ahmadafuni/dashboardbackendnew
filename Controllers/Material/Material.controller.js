@@ -1,29 +1,31 @@
 import prisma from "../../client.js";
 
 const MaterialController = {
-  createMaterial: async (req, res, next) => {
+  createMaterialParent: async (req, res, next) => {
     const {
       name,
-      type,
-      color,
-      quantity,
       unitOfMeasure,
       category,
-      supplier,
       description,
+      usageLocation,
+      alternativeMaterials,
+      minimumLimit,
+      isRelevantToProduction,
+      hasChildren,
     } = req.body;
     const userId = req.userId;
     try {
-      await prisma.materials.create({
+      await prisma.parentMaterials.create({
         data: {
           Name: name,
-          Category: { connect: { Id: category.id } },
-          Supplier: { connect: { Id: supplier.id } },
-          Color: color,
+          Category: { connect: { Id: +category } },
           Description: description,
-          Type: type,
           UnitOfMeasure: unitOfMeasure,
-          Quantity: parseInt(quantity),
+          UsageLocation: usageLocation,
+          AlternativeMaterials: alternativeMaterials,
+          MinimumLimit: parseFloat(minimumLimit),
+          IsRelevantToProduction: isRelevantToProduction,
+          HasChildren: hasChildren,
           Audit: {
             create: {
               CreatedById: userId,
@@ -39,7 +41,6 @@ const MaterialController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -48,15 +49,59 @@ const MaterialController = {
       });
     }
   },
-  getAllMaterials: async (req, res, next) => {
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
+  createMaterialChild: async (req, res, next) => {
+    const {
+      Name,
+      DyeNumber,
+      Kashan,
+      Halil,
+      Phthalate,
+      GramWeight,
+      Description,
+    } = req.body;
+    const userId = req.userId;
+    const ParentMaterialId = req.params.id;
     try {
-      const skip = (page - 1) * itemsPerPage;
-      const materials = await prisma.materials.findMany({
-        skip: skip,
-        take: itemsPerPage,
+      await prisma.childMaterials.create({
+        data: {
+          Name: Name,
+          Description: Description,
+          DyeNumber: DyeNumber,
+          Kashan: Kashan,
+          Halil: Halil,
+          Phthalate: Phthalate,
+          GramWeight: parseFloat(GramWeight),
+          ParentMaterial: {
+            connect: {
+              Id: +ParentMaterialId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+      // Return response
+      return res.status(201).send({
+        status: 201,
+        message: "تم إنشاء المادة بنجاح!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getAllParentMaterials: async (req, res, next) => {
+    try {
+      const materials = await prisma.parentMaterials.findMany({
         where: {
           Audit: {
             IsDeleted: false,
@@ -69,36 +114,15 @@ const MaterialController = {
               CategoryName: true,
             },
           },
-          Supplier: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-        },
-      });
-      const totalTemplates = await prisma.materials.count({
-        where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
         },
       });
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب المواد بنجاح!",
-        data: {
-          materials,
-          count: totalTemplates,
-        },
+        data: materials,
       });
     } catch (error) {
-      console.log("THE ERROR", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -107,40 +131,46 @@ const MaterialController = {
       });
     }
   },
-  getMaterialById: async (req, res, next) => {
-    const id = parseInt(req.params.id);
+  getAllChildMaterials: async (req, res, next) => {
     try {
-      const material = await prisma.materials.findUnique({
+      const materials = await prisma.childMaterials.findMany({
         where: {
-          Id: +id,
           Audit: {
             IsDeleted: false,
           },
         },
         include: {
-          Category: true,
-          Supplier: true,
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
+          ParentMaterial: {
+            select: {
+              Id: true,
+              Name: true,
             },
+          },
+        },
+      });
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب المواد بنجاح!",
+        data: materials,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getParentMaterialById: async (req, res, next) => {
+    const id = parseInt(req.params.id);
+    try {
+      const material = await prisma.parentMaterials.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
           },
         },
       });
@@ -156,7 +186,18 @@ const MaterialController = {
       return res.status(200).send({
         status: 200,
         message: "تم إنشاء المادة بنجاح!",
-        data: material,
+        data: {
+          id: material.Id,
+          name: material.Name,
+          unitOfMeasure: material.UnitOfMeasure,
+          category: material.CategoryId.toString(),
+          description: material.Description,
+          usageLocation: material.UsageLocation,
+          alternativeMaterials: material.AlternativeMaterials,
+          minimumLimit: material.MinimumLimit.toString(),
+          isRelevantToProduction: material.IsRelevantToProduction,
+          hasChildren: material.HasChildren,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -167,7 +208,49 @@ const MaterialController = {
       });
     }
   },
-  deleteMaterial: async (req, res, next) => {
+  getChildMaterialById: async (req, res, next) => {
+    const id = parseInt(req.params.id);
+    try {
+      const material = await prisma.childMaterials.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!material) {
+        // Return response
+        return res.status(404).send({
+          status: 404,
+          message: "المادة غير موجودة!",
+          data: {},
+        });
+      }
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم إنشاء المادة بنجاح!",
+        data: {
+          Name: material.Name,
+          DyeNumber: material.DyeNumber,
+          Kashan: material.Kashan,
+          Halil: material.Halil,
+          Phthalate: material.Phthalate,
+          GramWeight: material.GramWeight.toString(),
+          Description: material.Description,
+        },
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  deleteParentMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
     try {
@@ -199,33 +282,67 @@ const MaterialController = {
       });
     }
   },
-  updateMaterial: async (req, res, next) => {
+  deleteChildMaterial: async (req, res, next) => {
+    const id = parseInt(req.params.id);
+    const userId = req.userId;
+    try {
+      await prisma.childMaterials.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Audit: {
+            update: {
+              IsDeleted: true,
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم حذف المادة بنجاح!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  updateParentMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const {
       name,
-      type,
-      color,
-      quantity,
-      UnitOfMeasure,
+      unitOfMeasure,
       category,
-      supplier,
       description,
+      usageLocation,
+      alternativeMaterials,
+      minimumLimit,
+      isRelevantToProduction,
+      hasChildren,
     } = req.body;
     const userId = req.userId;
     try {
-      await prisma.materials.update({
+      await prisma.parentMaterials.update({
         where: {
           Id: +id,
         },
         data: {
           Name: name,
-          Category: { connect: { Id: category.id } },
-          Supplier: { connect: { Id: supplier.id } },
-          Color: color,
+          Category: { connect: { Id: +category } },
           Description: description,
-          Type: type,
-          UnitOfMeasure: UnitOfMeasure,
-          Quantity: quantity,
+          UnitOfMeasure: unitOfMeasure,
+          UsageLocation: usageLocation,
+          AlternativeMaterials: alternativeMaterials,
+          MinimumLimit: parseFloat(minimumLimit),
+          IsRelevantToProduction: isRelevantToProduction,
+          HasChildren: hasChildren,
           Audit: {
             create: {
               CreatedById: userId,
@@ -241,7 +358,54 @@ const MaterialController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  updateChildMaterial: async (req, res, next) => {
+    const id = parseInt(req.params.id);
+    const {
+      Name,
+      DyeNumber,
+      Kashan,
+      Halil,
+      Phthalate,
+      GramWeight,
+      Description,
+    } = req.body;
+    const userId = req.userId;
+    try {
+      await prisma.childMaterials.update({
+        where: {
+          Id: +id,
+        },
+        data: {
+          Name: Name,
+          Description: Description,
+          DyeNumber: DyeNumber,
+          Kashan: Kashan,
+          Halil: Halil,
+          Phthalate: Phthalate,
+          GramWeight: parseFloat(GramWeight),
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم تحديث المادة بنجاح!",
+        data: {},
+      });
+    } catch (error) {
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -268,6 +432,44 @@ const MaterialController = {
           materials.map((material) => ({
             id: material.Id,
             name: material.Name,
+          }))
+        );
+
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب أسماء المواد بنجاح!",
+        data: materialNames,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getChildMaterialNames: async (req, res, next) => {
+    const materialId = req.params.id;
+    try {
+      const materialNames = await prisma.childMaterials
+        .findMany({
+          where: {
+            ParentMaterialId: parseInt(materialId),
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          select: {
+            Id: true,
+            Name: true,
+          },
+        })
+        .then((materials) =>
+          materials.map((material) => ({
+            value: material.Id.toString(),
+            label: material.Name,
           }))
         );
 

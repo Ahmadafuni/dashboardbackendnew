@@ -2,15 +2,16 @@ import prisma from "../../client.js";
 
 const WarehouseController = {
   createWarehouse: async (req, res, next) => {
-    const { name, location, capacity, category } = req.body;
+    const { name, location, capacity, category, description } = req.body;
     const userId = req.userId;
     try {
       await prisma.warehouses.create({
         data: {
           WarehouseName: name,
           Location: location,
-          Capacity: parseFloat(capacity),
+          Capacity: capacity,
           CategoryName: category,
+          Description: description,
           Audit: {
             create: {
               CreatedById: userId,
@@ -36,42 +37,10 @@ const WarehouseController = {
     }
   },
   getAllWarehouses: async (req, res, next) => {
-    const userId = req.userId;
-
-    const page = parseInt(req.headers["page"]) || 1;
-    const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
-
-    const skip = (page - 1) * itemsPerPage;
-
     try {
       const warehouses = await prisma.warehouses.findMany({
-        skip: skip,
-        take: itemsPerPage,
         where: {
           Audit: { IsDeleted: false },
-        },
-        include: {
-          Manager: {
-            select: {
-              Firstname: true,
-              Lastname: true,
-            },
-          },
-        },
-      });
-
-      const totalDeparts = await prisma.warehouses.count({
-        where: {
-          AND: [
-            {
-              Id: {
-                not: userId,
-              },
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
         },
       });
 
@@ -79,13 +48,9 @@ const WarehouseController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب جميع المستودعات بنجاح!",
-        data: {
-          warehouses,
-          count: totalDeparts,
-        },
+        data: warehouses,
       });
     } catch (error) {
-      console.log("THE ERROR", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -102,52 +67,25 @@ const WarehouseController = {
           Id: +id,
           Audit: { IsDeleted: false },
         },
-        include: {
-          Audit: {
-            include: {
-              CreatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-              UpdatedBy: {
-                select: {
-                  Firstname: true,
-                  Lastname: true,
-                  Username: true,
-                  Email: true,
-                  PhoneNumber: true,
-                },
-              },
-            },
-          },
-          Manager: {
-            select: {
-              Firstname: true,
-              Lastname: true,
-              Username: true,
-              Email: true,
-              PhoneNumber: true,
-            },
-          },
-        },
       });
       // Return response
       if (!warehouse) {
         return res.status(404).send({
           status: 404,
           message: "المستودع غير موجود!",
-          data: warehouse,
+          data: {},
         });
       }
       return res.status(200).send({
         status: 200,
         message: "تم جلب جميع المستودعات بنجاح!",
-        data: warehouse,
+        data: {
+          name: warehouse.WarehouseName,
+          location: warehouse.Location,
+          capacity: warehouse.Capacity,
+          category: warehouse.CategoryName,
+          description: warehouse.Description,
+        },
       });
     } catch (error) {
       // Server error or unsolved error
@@ -192,7 +130,7 @@ const WarehouseController = {
   },
   updateWarehouse: async (req, res, next) => {
     const id = parseInt(req.params.id);
-    const { name, location, capacity, manager } = req.body;
+    const { name, location, capacity, category, description } = req.body;
     const userId = req.userId;
     try {
       await prisma.warehouses.update({
@@ -202,8 +140,9 @@ const WarehouseController = {
         data: {
           WarehouseName: name,
           Location: location,
-          Capacity: parseFloat(capacity),
-          Manager: { connect: { Id: manager.id } },
+          Capacity: capacity,
+          CategoryName: category,
+          Description: description,
           Audit: {
             update: {
               data: {
@@ -244,8 +183,8 @@ const WarehouseController = {
         })
         .then((warehouses) =>
           warehouses.map((warehouse) => ({
-            id: warehouse.Id,
-            name: warehouse.WarehouseName,
+            value: warehouse.Id.toString(),
+            label: warehouse.WarehouseName,
           }))
         );
 

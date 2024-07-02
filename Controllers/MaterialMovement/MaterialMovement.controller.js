@@ -1,58 +1,46 @@
 import prisma from "../../client.js";
 
 const MaterialMovementController = {
-  createMaterialMovement: async (req, res, next) => {
+  createInternalMaterialMovement: async (req, res, next) => {
     const {
-      materialName,
-      internalOrder,
-      from,
-      to,
-      movementType,
-      quantity,
-      unitOfMeasure,
-      status,
-      notes,
+      ChildMaterial,
+      DepartmentFrom,
+      DepartmentTo,
+      Quantity,
+      MovementDate,
+      MovementType,
+      ParentMaterial,
+      UnitOfQuantity,
+      WarehouseFrom,
+      WarehouseTo,
     } = req.body;
     const userId = req.userId;
-
-    // Initialize the data object with fields that are always set
-    let movementData = {
-      MovementType: movementType,
-      Quantity: quantity,
-      UnitOfMeasure: unitOfMeasure,
-      InternalOrder: { connect: { Id: internalOrder.id } },
-      Material: { connect: { Id: materialName.id } },
-      Notes: notes,
-      Status: status,
-      Audit: {
-        create: {
-          CreatedById: userId,
-          UpdatedById: userId,
-        },
-      },
-    };
-
-    // Dynamically update the 'from' field
-    if (from.frTo === "Department") {
-      movementData.FromDepartment = { connect: { Id: from.id } };
-    } else if (from.frTo === "Supplier") {
-      movementData.FromSupplier = { connect: { Id: from.id } };
-    } else if (from.frTo === "Warehouse") {
-      movementData.FromWarehouse = { connect: { Id: from.id } };
-    }
-
-    // Dynamically update the 'to' field
-    if (to.frTo === "Department") {
-      movementData.ToDepartment = { connect: { Id: to.id } };
-    } else if (to.frTo === "Warehouse") {
-      movementData.ToWarehouse = { connect: { Id: to.id } };
-    } else if (to.frTo === "Supplier" && from.frTo !== "Supplier") {
-      movementData.ToSupplier = { connect: { Id: to.id } };
-    }
-
     try {
-      await prisma.materialMovements.create({
-        data: movementData,
+      const child = ChildMaterial ? { connect: { Id: +ChildMaterial } } : {};
+      const dFrom = DepartmentFrom ? { connect: { Id: +DepartmentFrom } } : {};
+      const dTo = DepartmentTo ? { connect: { Id: +DepartmentTo } } : {};
+      const wTo = WarehouseTo ? { connect: { Id: +WarehouseTo } } : {};
+      const wFrom = WarehouseFrom ? { connect: { Id: +WarehouseFrom } } : {};
+
+      await prisma.internalMaterialMovement.create({
+        data: {
+          MovementDate: new Date(MovementDate),
+          MovementType: MovementType,
+          Quantity: parseFloat(Quantity),
+          UnitOfQuantity: UnitOfQuantity,
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
+          ChildMaterial: child,
+          DepartmentFrom: dFrom,
+          DepartmentTo: dTo,
+          WarehouseFrom: wFrom,
+          WarehouseTo: wTo,
+          ParentMaterial: { connect: { Id: +ParentMaterial } },
+        },
       });
       // Return success response
       return res.status(201).send({
@@ -61,7 +49,58 @@ const MaterialMovementController = {
         data: {},
       });
     } catch (error) {
-      console.log(error);
+      // Handle error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  createExternalMaterialMovement: async (req, res, next) => {
+    const {
+      ChildMaterial,
+      Quantity,
+      MovementDate,
+      MovementType,
+      ParentMaterial,
+      UnitOfQuantity,
+      Warehouse,
+      Supplier,
+    } = req.body;
+    const userId = req.userId;
+    try {
+      const child = ChildMaterial ? { connect: { Id: +ChildMaterial } } : {};
+
+      await prisma.externalMaterialMovement.create({
+        data: {
+          MovementDate: new Date(MovementDate),
+          MovementType: MovementType,
+          Quantity: parseFloat(Quantity),
+          UnitOfQuantity: UnitOfQuantity,
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
+          ChildMaterial: child,
+          ParentMaterial: { connect: { Id: +ParentMaterial } },
+          Warehouse: { connect: { Id: +Warehouse } },
+          Supplier: {
+            connect: {
+              Id: +Supplier,
+            },
+          },
+        },
+      });
+      // Return success response
+      return res.status(201).send({
+        status: 201,
+        message: "تم إنشاء حركة المواد الجديدة بنجاح!",
+        data: {},
+      });
+    } catch (error) {
       // Handle error
       return res.status(500).send({
         status: 500,

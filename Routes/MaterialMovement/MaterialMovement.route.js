@@ -5,38 +5,43 @@ import MaterialMovementController from "../../Controllers/MaterialMovement/Mater
 const router = express.Router();
 
 router.post(
-  "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
-  MaterialMovementController.createMaterialMovement
+  "/internal",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialMovementController.createInternalMaterialMovement
+);
+router.post(
+  "/external",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  MaterialMovementController.createExternalMaterialMovement
 );
 router.get(
   "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.getAllMaterialMovements
 );
 router.get(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.getMaterialMovementNames
 );
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.getcreateMaterialMovementById
 );
 router.delete(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.deleteMaterialMovement
 );
 router.put(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.updateMaterialMovement
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialMovementController.searchMaterialMovements
 );
 
