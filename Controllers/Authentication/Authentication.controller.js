@@ -179,10 +179,35 @@ const AuthenticationController = {
       password,
       department,
     } = req.body;
+
+    console.log("Starting createAdmin function");
+
     try {
-      // Check user cred already exist
+      // Check if file is provided
+      if (!file) {
+        console.log("File is not provided");
+        return res.status(400).send({
+          status: 400,
+          message: "File is required",
+          data: {},
+        });
+      }
+
+      // Check if department ID is valid
+      if (!department) {
+        console.log("Department ID is not provided");
+        return res.status(400).send({
+          status: 400,
+          message: "Department ID is required",
+          data: {},
+        });
+      }
+
+      console.log("Checking if user credentials already exist");
+      // Check user credentials already exist
       const doesExistUser = await doesExist({ username, email, phoneNumber });
       if (doesExistUser != null) {
+        console.log("User credentials already exist", doesExistUser);
         return res.status(409).send({
           status: 409,
           message: doesExistUser,
@@ -190,10 +215,13 @@ const AuthenticationController = {
         });
       }
 
+      console.log("Hashing password");
       // Hash password for safe keeping
       const hashedPass = await bcrypt.hash(password, SALT_ROUNDS);
+
+      console.log("Creating new user in the database");
       // Create new user
-      await prisma.users.create({
+      const newUser = await prisma.users.create({
         data: {
           Email: email,
           Firstname: firstname,
@@ -216,6 +244,8 @@ const AuthenticationController = {
         },
       });
 
+      console.log("New user created successfully", newUser);
+
       // If success return success response
       return res.status(201).send({
         status: 201,
@@ -223,12 +253,15 @@ const AuthenticationController = {
         data: {},
       });
     } catch (error) {
-      console.log("the error", error);
+      console.error("Error occurred in createAdmin function", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
+        data: {
+          error: error.message, // Include the error message in the response
+          stack: error.stack    // Optionally include the stack trace
+        },
       });
     }
   },
