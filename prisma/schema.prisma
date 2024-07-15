@@ -116,8 +116,7 @@ model AuditRecords {
   Notes                     Notes?
   TrakingModels             TrakingModels?
   ChildMaterials            ChildMaterials[]
-  InternalMaterialMovement  InternalMaterialMovement[]
-  ExternalMaterialMovement  ExternalMaterialMovement[]
+  MaterialMovement          MaterialMovement[]
 }
 
 model Collections {
@@ -141,23 +140,23 @@ model Colors {
 }
 
 model Departments {
-  Id                           Int                        @id @default(autoincrement())
-  Name                         String                     @unique @db.VarChar(255)
-  NameShort                    String                     @unique @db.VarChar(255)
-  Location                     String?                    @db.VarChar(255)
-  Description                  String?
-  Category                     DepartmentCategory
-  Audit                        AuditRecords               @relation(fields: [AuditId], references: [Id])
-  AuditId                      Int                        @unique
-  AssignedTasks                Tasks[]                    @relation(name: "AssignedTo")
-  CreatedTasks                 Tasks[]                    @relation(name: "CreatedBy")
-  ManufacturingStages          ManufacturingStages[]
-  Users                        Users[]
-  AssignedDepartment           Notes[]                    @relation("AssignedDepartment")
-  CreatedDepartment            Notes[]                    @relation("CreatedDepartment")
-  Notifications                Notifications[]
-  InternalMaterialMovementFrom InternalMaterialMovement[] @relation(name: "DepartmentFrom")
-  InternalMaterialMovementTo   InternalMaterialMovement[] @relation(name: "DepartmentTo")
+  Id                   Int                   @id @default(autoincrement())
+  Name                 String                @unique @db.VarChar(255)
+  NameShort            String                @unique @db.VarChar(255)
+  Location             String?               @db.VarChar(255)
+  Description          String?
+  Category             DepartmentCategory
+  Audit                AuditRecords          @relation(fields: [AuditId], references: [Id])
+  AuditId              Int                   @unique
+  AssignedTasks        Tasks[]               @relation(name: "AssignedTo")
+  CreatedTasks         Tasks[]               @relation(name: "CreatedBy")
+  ManufacturingStages  ManufacturingStages[]
+  Users                Users[]
+  AssignedDepartment   Notes[]               @relation("AssignedDepartment")
+  CreatedDepartment    Notes[]               @relation("CreatedDepartment")
+  Notifications        Notifications[]
+  MaterialMovementFrom MaterialMovement[]    @relation(name: "DepartmentFrom")
+  MaterialMovementTo   MaterialMovement[]    @relation(name: "DepartmentTo")
 }
 
 model ManufacturingStages {
@@ -187,42 +186,40 @@ model MaterialCategories {
 }
 
 model ParentMaterials {
-  Id                       Int                        @id @default(autoincrement())
-  Name                     String                     @db.VarChar(255)
-  Category                 MaterialCategories         @relation(fields: [CategoryId], references: [Id])
-  CategoryId               Int
-  Description              String?
-  UnitOfMeasure            String?                    @db.VarChar(10)
-  UsageLocation            String?
-  AlternativeMaterials     String?
-  MinimumLimit             Decimal?                   @default(0.0)
-  IsRelevantToProduction   Boolean                    @default(false)
-  HasChildren              Boolean                    @default(false)
-  Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
-  AuditId                  Int                        @unique
-  ChildMaterials           ChildMaterials[]
-  InternalMaterialMovement InternalMaterialMovement[]
-  ExternalMaterialMovement ExternalMaterialMovement[]
+  Id                     Int                @id @default(autoincrement())
+  Name                   String             @db.VarChar(255)
+  Category               MaterialCategories @relation(fields: [CategoryId], references: [Id])
+  CategoryId             Int
+  Description            String?
+  UnitOfMeasure          String?            @db.VarChar(10)
+  UsageLocation          String?
+  AlternativeMaterials   String?
+  MinimumLimit           Decimal?           @default(0.0)
+  IsRelevantToProduction Boolean            @default(false)
+  HasChildren            Boolean            @default(false)
+  Audit                  AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId                Int                @unique
+  ChildMaterials         ChildMaterials[]
+  MaterialMovement       MaterialMovement[]
 }
 
 model ChildMaterials {
-  Id                       Int                        @id @default(autoincrement())
-  Name                     String                     @db.VarChar(255)
-  ParentMaterial           ParentMaterials            @relation(fields: [ParentMaterialId], references: [Id])
-  ParentMaterialId         Int
-  DyeNumber                String?
-  Kashan                   String?
-  Halil                    String?
-  Phthalate                String?
-  GramWeight               Decimal?                   @default(0.0)
-  Description              String?
-  Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
-  AuditId                  Int
-  InternalMaterialMovement InternalMaterialMovement[]
-  ExternalMaterialMovement ExternalMaterialMovement[]
+  Id               Int                @id @default(autoincrement())
+  Name             String             @db.VarChar(255)
+  ParentMaterial   ParentMaterials    @relation(fields: [ParentMaterialId], references: [Id])
+  ParentMaterialId Int
+  DyeNumber        String?
+  Kashan           String?
+  Halil            String?
+  Phthalate        String?
+  GramWeight       Decimal?           @default(0.0)
+  Description      String?
+  Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId          Int
+  MaterialMovement MaterialMovement[]
 }
 
-model InternalMaterialMovement {
+model MaterialMovement {
   Id               Int             @id @default(autoincrement())
   MovementType     MovementType
   ParentMaterial   ParentMaterials @relation(fields: [ParentMaterialId], references: [Id])
@@ -231,33 +228,20 @@ model InternalMaterialMovement {
   ChildMaterialId  Int?
   Quantity         Decimal         @default(0.0)
   UnitOfQuantity   String
+  Description      String?
   MovementDate     DateTime
   WarehouseFrom    Warehouses?     @relation(fields: [WarehouseFromId], references: [Id], name: "WarehouseFrom")
   WarehouseFromId  Int?
   WarehouseTo      Warehouses?     @relation(fields: [WarehouseToId], references: [Id], name: "WarehouseTo")
   WarehouseToId    Int?
+  Supplier         Suppliers?      @relation(fields: [SupplierId], references: [Id])
+  SupplierId       Int?
   DepartmentFrom   Departments?    @relation(fields: [DepartmentFromId], references: [Id], name: "DepartmentFrom")
   DepartmentFromId Int?
   DepartmentTo     Departments?    @relation(fields: [DepartmentToId], references: [Id], name: "DepartmentTo")
   DepartmentToId   Int?
-  Audit            AuditRecords    @relation(fields: [AuditId], references: [Id])
-  AuditId          Int             @unique
-}
-
-model ExternalMaterialMovement {
-  Id               Int             @id @default(autoincrement())
-  MovementType     MovementType
-  ParentMaterial   ParentMaterials @relation(fields: [ParentMaterialId], references: [Id])
-  ParentMaterialId Int
-  ChildMaterial    ChildMaterials? @relation(fields: [ChildMaterialId], references: [Id])
-  ChildMaterialId  Int?
-  Quantity         Decimal         @default(0.0)
-  UnitOfQuantity   String
-  MovementDate     DateTime
-  Warehouse        Warehouses      @relation(fields: [WarehouseId], references: [Id])
-  WarehouseId      Int
-  Supplier         Suppliers       @relation(fields: [SupplierId], references: [Id])
-  SupplierId       Int
+  Model            Models?         @relation(fields: [ModelId], references: [Id])
+  ModelId          Int?
   Audit            AuditRecords    @relation(fields: [AuditId], references: [Id])
   AuditId          Int             @unique
 }
@@ -304,6 +288,7 @@ model Models {
   Audit            AuditRecords              @relation(fields: [AuditId], references: [Id])
   AuditId          Int                       @unique
   ModelVarients    ModelVarients[]
+  MaterialMovement MaterialMovement[]
 }
 
 model ModelVarients {
@@ -477,14 +462,14 @@ model Sizes {
 }
 
 model Suppliers {
-  Id                       Int                        @id @default(autoincrement())
-  Name                     String                     @db.VarChar(255)
-  Address                  String?
-  PhoneNumber              String
-  Description              String?
-  Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
-  AuditId                  Int                        @unique
-  ExternalMaterialMovement ExternalMaterialMovement[]
+  Id               Int                @id @default(autoincrement())
+  Name             String             @db.VarChar(255)
+  Address          String?
+  PhoneNumber      String
+  Description      String?
+  Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId          Int                @unique
+  MaterialMovement MaterialMovement[]
 }
 
 model Tasks {
@@ -610,15 +595,14 @@ model Users {
 }
 
 model Warehouses {
-  Id                           Int                        @id @default(autoincrement())
-  WarehouseName                String                     @db.VarChar(255)
-  CategoryName                 CategoryName
-  Location                     String                     @db.VarChar(255)
-  Capacity                     String
-  Description                  String
-  Audit                        AuditRecords               @relation(fields: [AuditId], references: [Id])
-  AuditId                      Int                        @unique
-  InternalMaterialMovementFrom InternalMaterialMovement[] @relation(name: "WarehouseFrom")
-  InternalMaterialMovementTo   InternalMaterialMovement[] @relation(name: "WarehouseTo")
-  ExternalMaterialMovement     ExternalMaterialMovement[]
+  Id                   Int                @id @default(autoincrement())
+  WarehouseName        String             @db.VarChar(255)
+  CategoryName         CategoryName
+  Location             String             @db.VarChar(255)
+  Capacity             String
+  Description          String
+  Audit                AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId              Int                @unique
+  MaterialMovementFrom MaterialMovement[] @relation(name: "WarehouseFrom")
+  MaterialMovementTo   MaterialMovement[] @relation(name: "WarehouseTo")
 }

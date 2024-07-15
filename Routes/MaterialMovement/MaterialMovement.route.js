@@ -5,44 +5,39 @@ import MaterialMovementController from "../../Controllers/MaterialMovement/Mater
 const router = express.Router();
 
 router.post(
-  "/internal",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.createInternalMaterialMovement
-);
-router.post(
-  "/external",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.createExternalMaterialMovement
+    "/",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.createMaterialMovement
 );
 router.get(
-  "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.getAllMaterialMovements
+    "/all",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getAllMaterialMovements
 );
 router.get(
-  "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.getMaterialMovementNames
+    "/movementname",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getMaterialMovementNames
 );
 router.get(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.getcreateMaterialMovementById
+    "/:id",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getMaterialMovementById
 );
 router.delete(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.deleteMaterialMovement
+    "/:id",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.deleteMaterialMovement
 );
 router.put(
-  "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.updateMaterialMovement
+    "/:id",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.updateMaterialMovement
 );
 router.get(
-  "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  MaterialMovementController.searchMaterialMovements
+    "/search/:searchTerm",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.searchMaterialMovements
 );
 
 const MaterialMovementRoute = router;

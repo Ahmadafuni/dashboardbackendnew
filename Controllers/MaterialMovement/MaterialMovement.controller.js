@@ -1,95 +1,52 @@
 import prisma from "../../client.js";
 
 const MaterialMovementController = {
-  createInternalMaterialMovement: async (req, res, next) => {
+  createMaterialMovement: async (req, res, next) => {
     const {
-      ChildMaterial,
-      DepartmentFrom,
-      DepartmentTo,
-      Quantity,
-      MovementDate,
       MovementType,
-      ParentMaterial,
+      ParentMaterialId,
+      ChildMaterialId,
+      Quantity,
       UnitOfQuantity,
-      WarehouseFrom,
-      WarehouseTo,
+      Description,
+      MovementDate,
+      WarehouseFromId,
+      WarehouseToId,
+      SupplierId,
+      DepartmentFromId,
+      DepartmentToId,
+      ModelId,
     } = req.body;
     const userId = req.userId;
-    try {
-      const child = ChildMaterial ? { connect: { Id: +ChildMaterial } } : {};
-      const dFrom = DepartmentFrom ? { connect: { Id: +DepartmentFrom } } : {};
-      const dTo = DepartmentTo ? { connect: { Id: +DepartmentTo } } : {};
-      const wTo = WarehouseTo ? { connect: { Id: +WarehouseTo } } : {};
-      const wFrom = WarehouseFrom ? { connect: { Id: +WarehouseFrom } } : {};
 
-      await prisma.internalMaterialMovement.create({
+    try {
+      const childMaterial = ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : {};
+      const warehouseFrom = WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : {};
+      const warehouseTo = WarehouseToId ? { connect: { Id: +WarehouseToId } } : {};
+      const supplier = SupplierId ? { connect: { Id: +SupplierId } } : {};
+      const departmentFrom = DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : {};
+      const departmentTo = DepartmentToId ? { connect: { Id: +DepartmentToId } } : {};
+      const model = ModelId ? { connect: { Id: +ModelId } } : {};
+
+      await prisma.materialMovement.create({
         data: {
-          MovementDate: new Date(MovementDate),
-          MovementType: MovementType,
+          MovementType,
+          ParentMaterial: { connect: { Id: +ParentMaterialId } },
+          ChildMaterial: childMaterial,
           Quantity: parseFloat(Quantity),
-          UnitOfQuantity: UnitOfQuantity,
+          UnitOfQuantity,
+          Description,
+          MovementDate: new Date(MovementDate),
+          WarehouseFrom: warehouseFrom,
+          WarehouseTo: warehouseTo,
+          Supplier: supplier,
+          DepartmentFrom: departmentFrom,
+          DepartmentTo: departmentTo,
+          Model: model,
           Audit: {
             create: {
               CreatedById: userId,
               UpdatedById: userId,
-            },
-          },
-          ChildMaterial: child,
-          DepartmentFrom: dFrom,
-          DepartmentTo: dTo,
-          WarehouseFrom: wFrom,
-          WarehouseTo: wTo,
-          ParentMaterial: { connect: { Id: +ParentMaterial } },
-        },
-      });
-      // Return success response
-      return res.status(201).send({
-        status: 201,
-        message: "تم إنشاء حركة المواد الجديدة بنجاح!",
-        data: {},
-      });
-    } catch (error) {
-      // Handle error
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
-  createExternalMaterialMovement: async (req, res, next) => {
-    const {
-      ChildMaterial,
-      Quantity,
-      MovementDate,
-      MovementType,
-      ParentMaterial,
-      UnitOfQuantity,
-      Warehouse,
-      Supplier,
-    } = req.body;
-    const userId = req.userId;
-    try {
-      const child = ChildMaterial ? { connect: { Id: +ChildMaterial } } : {};
-
-      await prisma.externalMaterialMovement.create({
-        data: {
-          MovementDate: new Date(MovementDate),
-          MovementType: MovementType,
-          Quantity: parseFloat(Quantity),
-          UnitOfQuantity: UnitOfQuantity,
-          Audit: {
-            create: {
-              CreatedById: userId,
-              UpdatedById: userId,
-            },
-          },
-          ChildMaterial: child,
-          ParentMaterial: { connect: { Id: +ParentMaterial } },
-          Warehouse: { connect: { Id: +Warehouse } },
-          Supplier: {
-            connect: {
-              Id: +Supplier,
             },
           },
         },
@@ -101,6 +58,7 @@ const MaterialMovementController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error creating material movement:", error);
       // Handle error
       return res.status(500).send({
         status: 500,
@@ -115,7 +73,7 @@ const MaterialMovementController = {
 
     try {
       const skip = (page - 1) * itemsPerPage;
-      const materialMovements = await prisma.materialMovements.findMany({
+      const materialMovements = await prisma.materialMovement.findMany({
         skip: skip,
         take: itemsPerPage,
         where: {
@@ -124,140 +82,22 @@ const MaterialMovementController = {
           },
         },
         include: {
-          FromDepartment: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          FromSupplier: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          FromWarehouse: {
-            select: {
-              Id: true,
-              WarehouseName: true,
-            },
-          },
-          InternalOrder: {
-            select: {
-              Id: true,
-              Material: {
-                select: {
-                  Id: true,
-                  Name: true,
-                },
-              },
-              ApprovedBy: {
-                select: {
-                  Id: true,
-                  Firstname: true,
-                  Lastname: true,
-                },
-              },
-              Department: {
-                select: {
-                  Id: true,
-                  Name: true,
-                },
-              },
-            },
-          },
-          Material: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          ToDepartment: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          ToWarehouse: {
-            select: {
-              Id: true,
-              WarehouseName: true,
-            },
-          },
-          ToSupplier: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
+          ParentMaterial: true,
+          ChildMaterial: true,
+          WarehouseFrom: true,
+          WarehouseTo: true,
+          Supplier: true,
+          DepartmentFrom: true,
+          DepartmentTo: true,
+          Model: true,
         },
       });
 
-      const updatedMaterialMovements = materialMovements.map((movement) => {
-        let fromLocation = movement.FromSupplier
-          ? {
-              id: movement.FromSupplier.Id,
-              name: movement.FromSupplier.Name,
-              from: "Supplier",
-            }
-          : movement.FromDepartment
-          ? {
-              id: movement.FromDepartment.Id,
-              name: movement.FromDepartment.Name,
-              from: "Department",
-            }
-          : {
-              id: movement.FromWarehouse.Id,
-              name: movement.FromWarehouse.WarehouseName,
-              from: "Warehouse",
-            };
-        let toLocation = movement.ToDepartment
-          ? {
-              id: movement.ToDepartment.Id,
-              name: movement.ToDepartment.Name,
-              to: "Department",
-            }
-          : movement.ToWarehouse
-          ? {
-              id: movement.ToWarehouse.Id,
-              name: movement.ToWarehouse.WarehouseName,
-              to: "Warehouse",
-            }
-          : {
-              id: movement.ToSupplier.Id,
-              name: movement.ToSupplier.Name,
-              from: "Supplier",
-            };
-
-        return {
-          id: movement.Id,
-          materialName: {
-            id: movement.Material.Id,
-            name: movement.Material.Name,
-          },
-          internalOrder: {
-            id: movement.InternalOrder.Id,
-            name: `${movement.InternalOrder.Material.Name} in ${movement.InternalOrder.Department.Name} approved by ${movement.InternalOrder.ApprovedBy.Firstname} ${movement.InternalOrder.ApprovedBy.Lastname}`,
-          },
-          from: fromLocation,
-          to: toLocation,
-          movementType: movement.MovementType,
-          quantity: movement.Quantity,
-          unitOfMeasure: movement.UnitOfMeasure,
-          status: movement.Status,
-          notes: movement.Notes,
-        };
-      });
-
-      const totalTemplates = await prisma.materialMovements.count({
+      const totalTemplates = await prisma.materialMovement.count({
         where: {
-          AND: [
-            {
-              Audit: {
-                IsDeleted: false,
-              },
-            },
-          ],
+          Audit: {
+            IsDeleted: false,
+          },
         },
       });
 
@@ -266,12 +106,12 @@ const MaterialMovementController = {
         status: 200,
         message: "تم جلب حركات المواد بنجاح!",
         data: {
-          updatedMaterialMovements,
+          materialMovements,
           count: totalTemplates,
         },
       });
     } catch (error) {
-      console.log("THE ERROR", error);
+      console.error("Error fetching material movements:", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -280,17 +120,22 @@ const MaterialMovementController = {
       });
     }
   },
-  getcreateMaterialMovementById: async (req, res, next) => {
+  getMaterialMovementById: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
-      const materialMovements = await prisma.materialMovements.findUnique({
+      const materialMovement = await prisma.materialMovement.findUnique({
         where: {
-          Id: +id,
-          Audit: {
-            IsDeleted: false,
-          },
+          Id: id,
         },
         include: {
+          ParentMaterial: true,
+          ChildMaterial: true,
+          WarehouseFrom: true,
+          WarehouseTo: true,
+          Supplier: true,
+          DepartmentFrom: true,
+          DepartmentTo: true,
+          Model: true,
           Audit: {
             include: {
               CreatedBy: {
@@ -315,7 +160,7 @@ const MaterialMovementController = {
           },
         },
       });
-      if (!materialMovements) {
+      if (!materialMovement) {
         // Return response
         return res.status(404).send({
           status: 404,
@@ -327,9 +172,10 @@ const MaterialMovementController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب حركات المواد بنجاح!",
-        data: materialMovements,
+        data: materialMovement,
       });
     } catch (error) {
+      console.error("Error fetching material movement by ID:", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -342,9 +188,9 @@ const MaterialMovementController = {
     const userId = req.userId;
     const id = parseInt(req.params.id);
     try {
-      await prisma.materialMovements.update({
+      await prisma.materialMovement.update({
         where: {
-          Id: +id,
+          Id: id,
         },
         data: {
           Audit: {
@@ -362,6 +208,7 @@ const MaterialMovementController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error deleting material movement:", error);
       // Return response
       return res.status(404).send({
         status: 404,
@@ -372,28 +219,38 @@ const MaterialMovementController = {
   },
   updateMaterialMovement: async (req, res, next) => {
     const {
-      materialName,
-      internalOrder,
-      from,
-      to,
-      movementType,
-      quantity,
-      unitOfMeasure,
-      status,
-      notes,
+      MovementType,
+      ParentMaterialId,
+      ChildMaterialId,
+      Quantity,
+      UnitOfQuantity,
+      Description,
+      MovementDate,
+      WarehouseFromId,
+      WarehouseToId,
+      SupplierId,
+      DepartmentFromId,
+      DepartmentToId,
+      ModelId,
     } = req.body;
     const userId = req.userId;
     const id = parseInt(req.params.id);
 
     // Initialize the data object with fields that are always set
     let updateData = {
-      MovementType: movementType,
-      Quantity: quantity,
-      UnitOfMeasure: unitOfMeasure,
-      InternalOrder: { connect: { Id: internalOrder.id } },
-      Material: { connect: { Id: materialName.id } },
-      Notes: notes,
-      Status: status,
+      MovementType,
+      ParentMaterial: { connect: { Id: +ParentMaterialId } },
+      ChildMaterial: ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : {},
+      Quantity: parseFloat(Quantity),
+      UnitOfQuantity,
+      Description,
+      MovementDate: new Date(MovementDate),
+      WarehouseFrom: WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : {},
+      WarehouseTo: WarehouseToId ? { connect: { Id: +WarehouseToId } } : {},
+      Supplier: SupplierId ? { connect: { Id: +SupplierId } } : {},
+      DepartmentFrom: DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : {},
+      DepartmentTo: DepartmentToId ? { connect: { Id: +DepartmentToId } } : {},
+      Model: ModelId ? { connect: { Id: +ModelId } } : {},
       Audit: {
         update: {
           UpdatedById: userId,
@@ -401,28 +258,8 @@ const MaterialMovementController = {
       },
     };
 
-    if (status === "COMPLETED") {
-      updateData.CompletedAt = new Date();
-    }
-
-    // Dynamically update the 'from' field
-    if (from.frTo === "Department") {
-      updateData.FromDepartment = { connect: { Id: from.id } };
-    } else if (from.frTo === "Supplier") {
-      updateData.FromSupplier = { connect: { Id: from.id } };
-    } else if (from.frTo === "Warehouse") {
-      updateData.FromWarehouse = { connect: { Id: from.id } };
-    }
-
-    // Dynamically update the 'to' field
-    if (to.frTo === "Department") {
-      updateData.ToDepartment = { connect: { Id: to.id } };
-    } else if (to.frTo === "Warehouse") {
-      updateData.ToWarehouse = { connect: { Id: to.id } };
-    }
-
     try {
-      await prisma.materialMovements.update({
+      await prisma.materialMovement.update({
         where: {
           Id: id,
         },
@@ -435,6 +272,7 @@ const MaterialMovementController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error updating material movement:", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -445,7 +283,7 @@ const MaterialMovementController = {
   },
   getMaterialMovementNames: async (req, res, next) => {
     try {
-      const materialMovements = await prisma.materialMovements.findMany({
+      const materialMovements = await prisma.materialMovement.findMany({
         where: {
           Audit: {
             IsDeleted: false,
@@ -463,11 +301,11 @@ const MaterialMovementController = {
 
       const materialMovementNames = materialMovements.map((movement) => {
         let fromLocation =
-          movement.FromSupplier?.Name ||
-          movement.FromDepartment?.Name ||
-          movement.FromWarehouse?.WarehouseName;
+            movement.FromSupplier?.Name ||
+            movement.FromDepartment?.Name ||
+            movement.FromWarehouse?.WarehouseName;
         let toLocation =
-          movement.ToDepartment?.Name || movement.ToWarehouse?.WarehouseName;
+            movement.ToDepartment?.Name || movement.ToWarehouse?.WarehouseName;
 
         return {
           id: movement.Id,
@@ -482,6 +320,7 @@ const MaterialMovementController = {
         data: materialMovementNames,
       });
     } catch (error) {
+      console.error("Error fetching material movement names:", error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -501,11 +340,11 @@ const MaterialMovementController = {
         });
       }
 
-      const datas = await prisma.materialMovements.findMany({
+      const datas = await prisma.materialMovement.findMany({
         where: {
           OR: [
             {
-              FromDepartment: {
+              DepartmentFrom: {
                 Name: {
                   contains: searchTerm,
                   mode: "insensitive",
@@ -513,7 +352,7 @@ const MaterialMovementController = {
               },
             },
             {
-              ToDepartment: {
+              DepartmentTo: {
                 Name: {
                   contains: searchTerm,
                   mode: "insensitive",
@@ -521,7 +360,7 @@ const MaterialMovementController = {
               },
             },
             {
-              ToWarehouse: {
+              WarehouseTo: {
                 WarehouseName: {
                   contains: searchTerm,
                   mode: "insensitive",
@@ -529,7 +368,7 @@ const MaterialMovementController = {
               },
             },
             {
-              FromWarehouse: {
+              WarehouseFrom: {
                 WarehouseName: {
                   contains: searchTerm,
                   mode: "insensitive",
@@ -545,21 +384,13 @@ const MaterialMovementController = {
               },
             },
             {
-              UnitOfMeasure: {
+              UnitOfQuantity: {
                 contains: searchTerm,
                 mode: "insensitive",
               },
             },
             {
-              FromSupplier: {
-                Name: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              ToSupplier: {
+              Supplier: {
                 Name: {
                   contains: searchTerm,
                   mode: "insensitive",
@@ -572,46 +403,22 @@ const MaterialMovementController = {
           },
         },
         include: {
-          FromDepartment: {
+          DepartmentFrom: {
             select: {
               Id: true,
               Name: true,
             },
           },
-          FromSupplier: {
+          Supplier: {
             select: {
               Id: true,
               Name: true,
             },
           },
-          FromWarehouse: {
+          WarehouseFrom: {
             select: {
               Id: true,
               WarehouseName: true,
-            },
-          },
-          InternalOrder: {
-            select: {
-              Id: true,
-              Material: {
-                select: {
-                  Id: true,
-                  Name: true,
-                },
-              },
-              ApprovedBy: {
-                select: {
-                  Id: true,
-                  Firstname: true,
-                  Lastname: true,
-                },
-              },
-              Department: {
-                select: {
-                  Id: true,
-                  Name: true,
-                },
-              },
             },
           },
           Material: {
@@ -620,62 +427,56 @@ const MaterialMovementController = {
               Name: true,
             },
           },
-          ToDepartment: {
+          DepartmentTo: {
             select: {
               Id: true,
               Name: true,
             },
           },
-          ToWarehouse: {
+          WarehouseTo: {
             select: {
               Id: true,
               WarehouseName: true,
-            },
-          },
-          ToSupplier: {
-            select: {
-              Id: true,
-              Name: true,
             },
           },
         },
       });
 
       const updatedMaterialMovements = datas.map((movement) => {
-        let fromLocation = movement.FromSupplier
-          ? {
-              id: movement.FromSupplier.Id,
-              name: movement.FromSupplier.Name,
+        let fromLocation = movement.Supplier
+            ? {
+              id: movement.Supplier.Id,
+              name: movement.Supplier.Name,
               from: "Supplier",
             }
-          : movement.FromDepartment
-          ? {
-              id: movement.FromDepartment.Id,
-              name: movement.FromDepartment.Name,
-              from: "Department",
-            }
-          : {
-              id: movement.FromWarehouse.Id,
-              name: movement.FromWarehouse.WarehouseName,
-              from: "Warehouse",
-            };
-        let toLocation = movement.ToDepartment
-          ? {
-              id: movement.ToDepartment.Id,
-              name: movement.ToDepartment.Name,
+            : movement.DepartmentFrom
+                ? {
+                  id: movement.DepartmentFrom.Id,
+                  name: movement.DepartmentFrom.Name,
+                  from: "Department",
+                }
+                : {
+                  id: movement.WarehouseFrom.Id,
+                  name: movement.WarehouseFrom.WarehouseName,
+                  from: "Warehouse",
+                };
+        let toLocation = movement.DepartmentTo
+            ? {
+              id: movement.DepartmentTo.Id,
+              name: movement.DepartmentTo.Name,
               to: "Department",
             }
-          : movement.ToWarehouse
-          ? {
-              id: movement.ToWarehouse.Id,
-              name: movement.ToWarehouse.WarehouseName,
-              to: "Warehouse",
-            }
-          : {
-              id: movement.ToSupplier.Id,
-              name: movement.ToSupplier.Name,
-              from: "Supplier",
-            };
+            : movement.WarehouseTo
+                ? {
+                  id: movement.WarehouseTo.Id,
+                  name: movement.WarehouseTo.WarehouseName,
+                  to: "Warehouse",
+                }
+                : {
+                  id: movement.Supplier.Id,
+                  name: movement.Supplier.Name,
+                  to: "Supplier",
+                };
 
         return {
           id: movement.Id,
@@ -683,17 +484,12 @@ const MaterialMovementController = {
             id: movement.Material.Id,
             name: movement.Material.Name,
           },
-          internalOrder: {
-            id: movement.InternalOrder.Id,
-            name: `${movement.InternalOrder.Material.Name} in ${movement.InternalOrder.Department.Name} approved by ${movement.InternalOrder.ApprovedBy.Firstname} ${movement.InternalOrder.ApprovedBy.Lastname}`,
-          },
           from: fromLocation,
           to: toLocation,
           movementType: movement.MovementType,
           quantity: movement.Quantity,
-          unitOfMeasure: movement.UnitOfMeasure,
-          status: movement.Status,
-          notes: movement.Notes,
+          unitOfQuantity: movement.UnitOfQuantity,
+          movementDate: movement.MovementDate,
         };
       });
       return res.status(200).send({
@@ -702,6 +498,7 @@ const MaterialMovementController = {
         data: updatedMaterialMovements,
       });
     } catch (error) {
+      console.error("Error searching material movements:", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
