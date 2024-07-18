@@ -253,41 +253,47 @@ const MaterialController = {
   getChildMaterialByParentId: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
-      const material = await prisma.childMaterials.findMany({
+      const materials = await prisma.childMaterials.findMany({
         where: {
-          ParentMaterialId: +id,
+          ParentMaterialId: id,
           Audit: {
             IsDeleted: false,
           },
         },
       });
-      if (!material) {
-        // Return response
+
+      if (!materials || materials.length === 0) {
+        // Return response if no materials are found
         return res.status(404).send({
           status: 404,
-          message: "المادة غير موجودة!",
-          data: {},
+          message: "No materials found!",
+          data: [],
         });
       }
+
+      // Format the data to match the expected structure
+      const formattedMaterials = materials.map(material => ({
+        Name: material.Name,
+        DyeNumber: material.DyeNumber,
+        Kashan: material.Kashan,
+        Halil: material.Halil,
+        Phthalate: material.Phthalate,
+        GramWeight: material.GramWeight ? material.GramWeight.toString() : "",
+        Description: material.Description,
+      }));
+
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم إنشاء المادة بنجاح!",
-        data: {
-          Name: material.Name,
-          DyeNumber: material.DyeNumber,
-          Kashan: material.Kashan,
-          Halil: material.Halil,
-          Phthalate: material.Phthalate,
-          GramWeight: material.GramWeight.toString(),
-          Description: material.Description,
-        },
+        message: "Materials retrieved successfully!",
+        data: formattedMaterials,
       });
     } catch (error) {
       // Server error or unsolved error
+      console.error("Error retrieving child materials:", error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
