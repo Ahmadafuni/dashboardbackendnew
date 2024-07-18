@@ -211,7 +211,7 @@ const MaterialController = {
   getChildMaterialById: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
-      const material = await prisma.childMaterials.findMany({
+      const material = await prisma.childMaterials.findUnique({
         where: {
           Id: +id,
           Audit: {
@@ -253,7 +253,7 @@ const MaterialController = {
   getChildMaterialByParentId: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
-      const material = await prisma.childMaterials.findUnique({
+      const material = await prisma.childMaterials.findMany({
         where: {
           ParentMaterialId: +id,
           Audit: {
