@@ -20,6 +20,11 @@ router.get(
   MaterialController.getAllParentMaterials
 );
 router.get(
+    "/childbyparent/:id",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialController.getChildMaterialByParentId
+);
+router.get(
   "/child/all/:id",
   verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialController.getAllChildMaterials

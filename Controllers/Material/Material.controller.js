@@ -250,6 +250,48 @@ const MaterialController = {
       });
     }
   },
+  getChildMaterialByParentId: async (req, res, next) => {
+    const id = parseInt(req.params.id);
+    try {
+      const material = await prisma.childMaterials.findUnique({
+        where: {
+          ParentMaterialId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      if (!material) {
+        // Return response
+        return res.status(404).send({
+          status: 404,
+          message: "المادة غير موجودة!",
+          data: {},
+        });
+      }
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم إنشاء المادة بنجاح!",
+        data: {
+          Name: material.Name,
+          DyeNumber: material.DyeNumber,
+          Kashan: material.Kashan,
+          Halil: material.Halil,
+          Phthalate: material.Phthalate,
+          GramWeight: material.GramWeight.toString(),
+          Description: material.Description,
+        },
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
   deleteParentMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;

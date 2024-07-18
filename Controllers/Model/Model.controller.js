@@ -231,12 +231,43 @@ const ModelController = {
       });
     }
   },
-  getModels: async (req, res, next) => {
+  getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
     try {
       const models = await prisma.models.findMany({
         where: {
           OrderId: +orderId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          CategoryOne: true,
+          categoryTwo: true,
+          ProductCatalog: true,
+          Template: true,
+          Textile: true,
+        },
+      });
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب النماذج بنجاح!",
+        data: models,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getAllModels: async (req, res, next) => {
+    try {
+      const models = await prisma.models.findMany({
+        where: {
           Audit: {
             IsDeleted: false,
           },

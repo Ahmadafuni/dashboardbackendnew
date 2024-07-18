@@ -44,7 +44,13 @@ router.get(
 router.get(
   "/all/:id",
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  ModelController.getModels
+  ModelController.getModelsByOrderId
+);
+
+router.get(
+    "/allmodels",
+    verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    ModelController.getAllModels
 );
 
 router.get(
