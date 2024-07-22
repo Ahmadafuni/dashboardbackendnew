@@ -273,6 +273,7 @@ const MaterialController = {
 
       // Format the data to match the expected structure
       const formattedMaterials = materials.map(material => ({
+        Id: material.Id,
         Name: material.Name,
         DyeNumber: material.DyeNumber,
         Kashan: material.Kashan,
