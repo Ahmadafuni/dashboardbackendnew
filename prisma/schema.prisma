@@ -221,6 +221,7 @@ model ChildMaterials {
 
 model MaterialMovement {
   Id               Int             @id @default(autoincrement())
+  InvoiceNumber    String?
   MovementType     MovementType
   ParentMaterial   ParentMaterials @relation(fields: [ParentMaterialId], references: [Id])
   ParentMaterialId Int
