@@ -16,6 +16,7 @@ const MaterialMovementController = {
       DepartmentFromId,
       DepartmentToId,
       ModelId,
+      InvoiceNumber, // Added InvoiceNumber
     } = req.body;
     const userId = req.userId;
 
@@ -31,6 +32,7 @@ const MaterialMovementController = {
       await prisma.materialMovement.create({
         data: {
           MovementType,
+          InvoiceNumber, // Added InvoiceNumber
           ParentMaterial: { connect: { Id: +ParentMaterialId } },
           ChildMaterial: childMaterial,
           Quantity: parseFloat(Quantity),
@@ -232,6 +234,7 @@ const MaterialMovementController = {
       DepartmentFromId,
       DepartmentToId,
       ModelId,
+      InvoiceNumber, // Added InvoiceNumber
     } = req.body;
     const userId = req.userId;
     const id = parseInt(req.params.id);
@@ -239,6 +242,7 @@ const MaterialMovementController = {
     // Initialize the data object with fields that are always set
     let updateData = {
       MovementType,
+      InvoiceNumber, // Added InvoiceNumber
       ParentMaterial: { connect: { Id: +ParentMaterialId } },
       ChildMaterial: ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : {},
       Quantity: parseFloat(Quantity),
@@ -290,26 +294,28 @@ const MaterialMovementController = {
           },
         },
         include: {
-          Material: true,
-          FromSupplier: true,
-          FromDepartment: true,
-          FromWarehouse: true,
-          ToDepartment: true,
-          ToWarehouse: true,
+          ParentMaterial: true,
+          ChildMaterial: true,
+          WarehouseFrom: true,
+          WarehouseTo: true,
+          Supplier: true,
+          DepartmentFrom: true,
+          DepartmentTo: true,
+          Model: true,
         },
       });
 
       const materialMovementNames = materialMovements.map((movement) => {
         let fromLocation =
-            movement.FromSupplier?.Name ||
-            movement.FromDepartment?.Name ||
-            movement.FromWarehouse?.WarehouseName;
+            movement.Supplier?.Name ||
+            movement.DepartmentFrom?.Name ||
+            movement.WarehouseFrom?.WarehouseName;
         let toLocation =
-            movement.ToDepartment?.Name || movement.ToWarehouse?.WarehouseName;
+            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName;
 
         return {
           id: movement.Id,
-          name: `${movement.Material.Name} moved from ${fromLocation} to ${toLocation}`,
+          name: `${movement.ParentMaterial.Name} moved from ${fromLocation} to ${toLocation}`,
         };
       });
 
