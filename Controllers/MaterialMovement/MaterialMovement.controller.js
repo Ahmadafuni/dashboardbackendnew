@@ -292,12 +292,12 @@ const MaterialMovementController = {
     }
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
-    const movementType = req.params.movementType;
+    const movementType = req.params.movementType.toUpperCase();
     console.log("Requested movement type:", movementType);
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
-          movementType: movementType,
+          MovementType: movementType,
           Audit: {
             IsDeleted: false,
           },
