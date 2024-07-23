@@ -326,8 +326,8 @@ const MaterialMovementController = {
           movedTo: toLocation,
           movementType: movement.MovementType,
           invoiceNumber: movement.InvoiceNumber,
-          parentMaterial: movement.ParentMaterial,
-          childMaterial: movement.ChildMaterial,
+          parentMaterial: movement.ParentMaterial.Name,
+          childMaterial: movement.ChildMaterial.Name,
           quantity: movement.Quantity,
           unitOfQuantity: movement.UnitOfQuantity,
           description: movement.Description,
@@ -337,8 +337,7 @@ const MaterialMovementController = {
           supplier: movement.Supplier,
           departmentFrom: movement.DepartmentFrom,
           departmentTo: movement.DepartmentTo,
-          model: movement.Model,
-          audit: movement.Audit,
+          model: movement.Model.Name,
         };
       });
 
