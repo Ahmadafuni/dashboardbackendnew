@@ -21,7 +21,7 @@ router.get(
 );
 
 router.get(
-    "/movementtype/:movementtype",
+    "/movementtype/:type",
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
     MaterialMovementController.getMaterialMovementsByMovementType
 );

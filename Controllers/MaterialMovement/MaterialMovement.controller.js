@@ -292,8 +292,8 @@ const MaterialMovementController = {
     }
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
-    const movementType = req.params.movementType;
-    console.log("Requested movement type:", movementType);
+    const movementType = req.params.type;
+    console.log("Requested movement type:",  req.params);
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
