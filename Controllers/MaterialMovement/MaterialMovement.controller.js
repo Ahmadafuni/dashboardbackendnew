@@ -293,6 +293,7 @@ const MaterialMovementController = {
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
     const movementType = req.params.movementType;
+    console.log("movementType",movementType);
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
@@ -313,13 +314,13 @@ const MaterialMovementController = {
         },
       });
 
-      const incomingMaterialMovements = materialMovements.map((movement) => {
+      const materialMovementRecord = materialMovements.map((movement) => {
         let fromLocation =
             movement.Supplier?.Name ||
             movement.DepartmentFrom?.Name ||
             movement.WarehouseFrom?.WarehouseName || "";
-        let toLocation = movement.WarehouseTo?.WarehouseName || "";
-
+        let toLocation = movement.WarehouseTo?.WarehouseName ||
+            movement.Supplier?.Name || "";
         return {
           id: movement.Id,
           movedFrom: fromLocation,
@@ -346,11 +347,11 @@ const MaterialMovementController = {
 
       return res.status(200).send({
         status: 200,
-        message: "تم جلب حركات المواد الواردة بنجاح!",
-        data: incomingMaterialMovements
+        message: "تم جلب حركات المواد بنجاح!",
+        data: materialMovementRecord
       });
     } catch (error) {
-      console.error("Error fetching incoming material movements:", error);
+      console.error("Error fetching material movements:", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
