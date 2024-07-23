@@ -291,11 +291,13 @@ const MaterialMovementController = {
       });
     }
   },
-  getIncomingMaterialMovements: async (req, res, next) => {
+  getMaterialMovementsByMovementType: async (req, res, next) => {
+    const movementType =req.params.movementType;
+
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
-          MovementType: 'INCOMING',
+          MovementType: movementType,
           Audit: {
             IsDeleted: false,
           },
@@ -326,13 +328,21 @@ const MaterialMovementController = {
           movedTo: toLocation,
           movementType: movement.MovementType,
           invoiceNumber: movement.InvoiceNumber,
-          parentMaterial: movement.ParentMaterial.Name,
-          childMaterial: movement.ChildMaterial.Name,
+          parentMaterialName: movement.ParentMaterial.Name,
+          childMaterialName: movement.ChildMaterial.Name,
+          parentMaterial: movement.ParentMaterial,
+          childMaterial: movement.ChildMaterial,
           quantity: movement.Quantity,
           unitOfQuantity: movement.UnitOfQuantity,
           description: movement.Description,
           movementDate: movement.MovementDate,
-          model: `${movement.Model?.DemoModelNumber ?? ''} ${movement.Model?.ModelName ?? ''}`,
+          warehouseFrom: movement.WarehouseFrom,
+          warehouseTo: movement.WarehouseTo,
+          supplier: movement.Supplier,
+          departmentFrom: movement.DepartmentFrom,
+          departmentTo: movement.DepartmentTo,
+          modelName: `${movement.Model?.DemoModelNumber ?? ''} ${movement.Model?.ModelName ?? ''}`,
+          model: movement.Model
         };
       });
 

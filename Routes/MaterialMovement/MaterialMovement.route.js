@@ -21,9 +21,9 @@ router.get(
 );
 
 router.get(
-    "/incoming",
+    "/movementtype",
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-    MaterialMovementController.getIncomingMaterialMovements
+    MaterialMovementController.getMaterialMovementsByMovementType
 );
 router.get(
     "/:id",
