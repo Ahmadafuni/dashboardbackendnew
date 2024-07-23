@@ -317,10 +317,8 @@ const MaterialMovementController = {
         let fromLocation =
             movement.Supplier?.Name ||
             movement.DepartmentFrom?.Name ||
-            movement.WarehouseFrom?.WarehouseName ||
-            "Unknown";
-        let toLocation =
-            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName || "Unknown";
+            movement.WarehouseFrom?.WarehouseName || "";
+        let toLocation = movement.WarehouseTo?.WarehouseName || "";
 
         return {
           id: movement.Id,
@@ -328,10 +326,10 @@ const MaterialMovementController = {
           movedTo: toLocation,
           movementType: movement.MovementType,
           invoiceNumber: movement.InvoiceNumber,
-          parentMaterialName: movement.ParentMaterial?.Name || "Unknown",
-          childMaterialName: movement.ChildMaterial?.Name || "Unknown",
+          parentMaterialName: movement.ParentMaterial?.Name || "",
+          childMaterialName: movement.ChildMaterial?.Name || "",
           parentMaterial: movement.ParentMaterial,
-          childMaterial: movement.ChildMaterial,
+          childMaterial: movement.ChildMaterial ? movement.ChildMaterial : null ,
           quantity: movement.Quantity,
           unitOfQuantity: movement.UnitOfQuantity,
           description: movement.Description,
