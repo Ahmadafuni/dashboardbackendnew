@@ -3,67 +3,67 @@ import prisma from "../../client.js";
 const MaterialMovementController = {
   createMaterialMovement: async (req, res, next) => {
     const {
-      MovementType,
-      ParentMaterialId,
-      ChildMaterialId,
-      Quantity,
-      UnitOfQuantity,
-      Description,
-      MovementDate,
-      WarehouseFromId,
-      WarehouseToId,
-      SupplierId,
-      DepartmentFromId,
-      DepartmentToId,
-      ModelId,
-      InvoiceNumber, // Added InvoiceNumber
+      movementType,
+      parentMaterialId,
+      childMaterialId,
+      quantity,
+      unitOfQuantity,
+      description,
+      movementDate,
+      warehouseFromId,
+      warehouseToId,
+      supplierId,
+      departmentFromId,
+      departmentToId,
+      modelId,
+      invoiceNumber,
     } = req.body;
     const userId = req.userId;
 
     console.log("Received request to create material movement with data:", req.body);
 
     try {
-      const childMaterial = ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : undefined;
-      const warehouseFrom = WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : undefined;
-      const warehouseTo = WarehouseToId ? { connect: { Id: +WarehouseToId } } : undefined;
-      const supplier = SupplierId ? { connect: { Id: +SupplierId } } : undefined;
-      const departmentFrom = DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : undefined;
-      const departmentTo = DepartmentToId ? { connect: { Id: +DepartmentToId } } : undefined;
-      const model = ModelId ? { connect: { Id: +ModelId } } : undefined;
+      const childMaterial = childMaterialId ? { connect: { Id: +childMaterialId } } : undefined;
+      const warehouseFrom = warehouseFromId ? { connect: { Id: +warehouseFromId } } : undefined;
+      const warehouseTo = warehouseToId ? { connect: { Id: +warehouseToId } } : undefined;
+      const supplier = supplierId ? { connect: { Id: +supplierId } } : undefined;
+      const departmentFrom = departmentFromId ? { connect: { Id: +departmentFromId } } : undefined;
+      const departmentTo = departmentToId ? { connect: { Id: +departmentToId } } : undefined;
+      const modelId = modelId ? { connect: { Id: +modelId } } : undefined;
 
       console.log("Processed data for creating material movement:", {
-        MovementType,
-        InvoiceNumber,
-        ParentMaterialId,
-        ChildMaterialId: childMaterial,
-        Quantity,
-        UnitOfQuantity,
-        Description,
-        MovementDate,
-        WarehouseFromId: warehouseFrom,
-        WarehouseToId: warehouseTo,
-        SupplierId: supplier,
-        DepartmentFromId: departmentFrom,
-        DepartmentToId: departmentTo,
-        ModelId: model,
+        movementType,
+        invoiceNumber,
+        parentMaterialId,
+        childMaterialId: childMaterial,
+        quantity,
+        unitOfQuantity,
+        description,
+        movementDate,
+        warehouseFromId: warehouseFrom,
+        warehouseToId: warehouseTo,
+        supplierId: supplier,
+        departmentFromId: departmentFrom,
+        departmentToId: departmentTo,
+        modelId: modelId,
       });
 
       const newMovement = await prisma.materialMovement.create({
         data: {
-          MovementType,
-          InvoiceNumber, // Added InvoiceNumber
-          ParentMaterial: { connect: { Id: +ParentMaterialId } },
-          ChildMaterial: childMaterial,
-          Quantity: parseFloat(Quantity),
-          UnitOfQuantity,
-          Description,
-          MovementDate: new Date(MovementDate),
-          WarehouseFrom: warehouseFrom,
-          WarehouseTo: warehouseTo,
-          Supplier: supplier,
-          DepartmentFrom: departmentFrom,
-          DepartmentTo: departmentTo,
-          Model: model,
+          movementType,
+          invoiceNumber, // Added InvoiceNumber
+          parentMaterial: { connect: { Id: +ParentMaterialId } },
+          childMaterial: childMaterial,
+          quantity: parseFloat(Quantity),
+          unitOfQuantity,
+          description,
+          movementDate: new Date(MovementDate),
+          warehouseFrom: warehouseFrom,
+          warehouseTo: warehouseTo,
+          supplier: supplier,
+          departmentFrom: departmentFrom,
+          departmentTo: departmentTo,
+          modelId: modelId,
           Audit: {
             create: {
               CreatedById: userId,
