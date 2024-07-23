@@ -292,8 +292,7 @@ const MaterialMovementController = {
     }
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
-    const movementType =req.params.movementType;
-
+    const movementType = req.params.movementType;
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
@@ -318,9 +317,10 @@ const MaterialMovementController = {
         let fromLocation =
             movement.Supplier?.Name ||
             movement.DepartmentFrom?.Name ||
-            movement.WarehouseFrom?.WarehouseName;
+            movement.WarehouseFrom?.WarehouseName ||
+            "Unknown";
         let toLocation =
-            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName;
+            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName || "Unknown";
 
         return {
           id: movement.Id,
@@ -328,8 +328,8 @@ const MaterialMovementController = {
           movedTo: toLocation,
           movementType: movement.MovementType,
           invoiceNumber: movement.InvoiceNumber,
-          parentMaterialName: movement.ParentMaterial.Name,
-          childMaterialName: movement.ChildMaterial.Name,
+          parentMaterialName: movement.ParentMaterial?.Name || "Unknown",
+          childMaterialName: movement.ChildMaterial?.Name || "Unknown",
           parentMaterial: movement.ParentMaterial,
           childMaterial: movement.ChildMaterial,
           quantity: movement.Quantity,
