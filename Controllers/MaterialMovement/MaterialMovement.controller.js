@@ -293,11 +293,11 @@ const MaterialMovementController = {
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
     const movementType = req.params.movementType;
-    console.log("movementType",movementType);
+    console.log("Requested movement type:", movementType);
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
-          MovementType: movementType,
+          movementType: movementType,
           Audit: {
             IsDeleted: false,
           },
@@ -313,6 +313,8 @@ const MaterialMovementController = {
           Model: true,
         },
       });
+
+      console.log(`Found ${materialMovements.length} movements of type ${movementType}`);
 
       const materialMovementRecord = materialMovements.map((movement) => {
         let fromLocation =
@@ -330,7 +332,7 @@ const MaterialMovementController = {
           parentMaterialName: movement.ParentMaterial?.Name || "",
           childMaterialName: movement.ChildMaterial?.Name || "",
           parentMaterial: movement.ParentMaterial,
-          childMaterial: movement.ChildMaterial ? movement.ChildMaterial : null ,
+          childMaterial: movement.ChildMaterial ? movement.ChildMaterial : null,
           quantity: movement.Quantity,
           unitOfQuantity: movement.UnitOfQuantity,
           description: movement.Description,
@@ -359,6 +361,7 @@ const MaterialMovementController = {
       });
     }
   },
+
   getMaterialMovementNames: async (req, res, next) => {
     try {
       const materialMovements = await prisma.materialMovement.findMany({
