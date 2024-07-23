@@ -292,11 +292,7 @@ const MaterialMovementController = {
     }
   },
   getIncomingMaterialMovements: async (req, res, next) => {
-    const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
-
     try {
-      const skip = (page - 1) * itemsPerPage;
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
           MovementType: 'INCOMING',
@@ -304,8 +300,6 @@ const MaterialMovementController = {
             IsDeleted: false,
           },
         },
-        skip: skip,
-        take: itemsPerPage,
         include: {
           ParentMaterial: true,
           ChildMaterial: true,
@@ -328,7 +322,8 @@ const MaterialMovementController = {
 
         return {
           id: movement.Id,
-          name: `${movement.ParentMaterial.Name} moved from ${fromLocation || 'unknown'} to ${toLocation}`,
+          movedFrom: fromLocation,
+          movedTo: toLocation,
           movementType: movement.MovementType,
           invoiceNumber: movement.InvoiceNumber,
           parentMaterial: movement.ParentMaterial,
@@ -347,22 +342,10 @@ const MaterialMovementController = {
         };
       });
 
-      const totalIncomingMovements = await prisma.materialMovement.count({
-        where: {
-          MovementType: 'INCOMING',
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
       return res.status(200).send({
         status: 200,
         message: "تم جلب حركات المواد الواردة بنجاح!",
-        data: {
-          incomingMaterialMovements,
-          count: totalIncomingMovements,
-        },
+        data: incomingMaterialMovements
       });
     } catch (error) {
       console.error("Error fetching incoming material movements:", error);
