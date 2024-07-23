@@ -23,47 +23,47 @@ const MaterialMovementController = {
     console.log("Received request to create material movement with data:", req.body);
 
     try {
-      const childMaterial = childMaterialId ? { connect: { Id: +childMaterialId } } : undefined;
-      const warehouseFrom = warehouseFromId ? { connect: { Id: +warehouseFromId } } : undefined;
-      const warehouseTo = warehouseToId ? { connect: { Id: +warehouseToId } } : undefined;
-      const supplier = supplierId ? { connect: { Id: +supplierId } } : undefined;
-      const departmentFrom = departmentFromId ? { connect: { Id: +departmentFromId } } : undefined;
-      const departmentTo = departmentToId ? { connect: { Id: +departmentToId } } : undefined;
-      const modelId = modelId ? { connect: { Id: +modelId } } : undefined;
+      /*const ChildMaterial = childMaterialId ? { connect: { Id: +childMaterialId } } : undefined;
+      const WarehouseFrom = warehouseFromId ? { connect: { Id: +warehouseFromId } } : undefined;
+      const WarehouseTo = warehouseToId ? { connect: { Id: +warehouseToId } } : undefined;
+      const Supplier = supplierId ? { connect: { Id: +supplierId } } : undefined;
+      const DepartmentFrom = departmentFromId ? { connect: { Id: +departmentFromId } } : undefined;
+      const DepartmentTo = departmentToId ? { connect: { Id: +departmentToId } } : undefined;
+      const ModelId = modelId ? { connect: { Id: +modelId } } : undefined;
 
       console.log("Processed data for creating material movement:", {
         movementType,
         invoiceNumber,
         parentMaterialId,
-        childMaterialId: childMaterial,
+        childMaterialId: ChildMaterial,
         quantity,
         unitOfQuantity,
         description,
         movementDate,
-        warehouseFromId: warehouseFrom,
-        warehouseToId: warehouseTo,
-        supplierId: supplier,
-        departmentFromId: departmentFrom,
-        departmentToId: departmentTo,
-        modelId: modelId,
-      });
+        warehouseFromId: WarehouseFrom,
+        warehouseToId: WarehouseTo,
+        supplierId: Supplier,
+        departmentFromId: DepartmentFrom,
+        departmentToId: DepartmentTo,
+        modelId: ModelId,
+      }); */
 
       const newMovement = await prisma.materialMovement.create({
         data: {
-          movementType,
-          invoiceNumber, // Added InvoiceNumber
-          parentMaterial: { connect: { Id: +ParentMaterialId } },
-          childMaterial: childMaterial,
-          quantity: parseFloat(Quantity),
-          unitOfQuantity,
-          description,
-          movementDate: new Date(MovementDate),
-          warehouseFrom: warehouseFrom,
-          warehouseTo: warehouseTo,
-          supplier: supplier,
-          departmentFrom: departmentFrom,
-          departmentTo: departmentTo,
-          modelId: modelId,
+          MovementType: movementType,
+          InvoiceNumber: invoiceNumber, // Added InvoiceNumber
+          ParentMaterial: { connect: { Id: +parentMaterialId } },
+          ChildMaterial: { connect: { Id: +childMaterialId } },
+          Quantity: parseFloat(quantity),
+          UnitOfQuantity: unitOfQuantity,
+          Description: description,
+          MovementDate: movementDate,
+          WarehouseFrom: { connect: { Id: +warehouseFromId } },
+          WarehouseTo: { connect: { Id: +warehouseToId } },
+          Supplier: { connect: { Id: +supplierId } },
+          DepartmentFrom: { connect: { Id: +departmentFromId } },
+          DepartmentTo: { connect: { Id: +departmentToId } },
+          Model: { connect: { Id: +modelId } },
           Audit: {
             create: {
               CreatedById: userId,
