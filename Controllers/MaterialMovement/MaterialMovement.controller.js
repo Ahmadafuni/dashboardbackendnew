@@ -332,12 +332,7 @@ const MaterialMovementController = {
           unitOfQuantity: movement.UnitOfQuantity,
           description: movement.Description,
           movementDate: movement.MovementDate,
-          warehouseFrom: movement.WarehouseFrom,
-          warehouseTo: movement.WarehouseTo,
-          supplier: movement.Supplier,
-          departmentFrom: movement.DepartmentFrom,
-          departmentTo: movement.DepartmentTo,
-          model: movement.Model.Name,
+          model: `${movement.Model?.DemoModelNumber ?? ''} ${movement.Model?.ModelName ?? ''}`,
         };
       });
 
