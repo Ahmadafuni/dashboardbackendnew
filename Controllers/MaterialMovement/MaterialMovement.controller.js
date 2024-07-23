@@ -196,9 +196,9 @@ const MaterialMovementController = {
     const userId = req.userId;
     const id = parseInt(req.params.id);
     try {
-      await prisma.materialMovement.delete({
+      await prisma.materialMovement.update({
         where: {
-          Id: id,
+          Id: +id,
         },
         data: {
           Audit: {
