@@ -314,8 +314,6 @@ const MaterialMovementController = {
         },
       });
 
-      console.log(`Found ${materialMovements.length} movements of type ${movementType}`);
-
       const materialMovementRecord = materialMovements.map((movement) => {
         let fromLocation =
             movement.Supplier?.Name ||
