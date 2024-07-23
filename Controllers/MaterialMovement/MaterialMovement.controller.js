@@ -20,16 +20,35 @@ const MaterialMovementController = {
     } = req.body;
     const userId = req.userId;
 
-    try {
-      const childMaterial = ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : {};
-      const warehouseFrom = WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : {};
-      const warehouseTo = WarehouseToId ? { connect: { Id: +WarehouseToId } } : {};
-      const supplier = SupplierId ? { connect: { Id: +SupplierId } } : {};
-      const departmentFrom = DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : {};
-      const departmentTo = DepartmentToId ? { connect: { Id: +DepartmentToId } } : {};
-      const model = ModelId ? { connect: { Id: +ModelId } } : {};
+    console.log("Received request to create material movement with data:", req.body);
 
-      await prisma.materialMovement.create({
+    try {
+      const childMaterial = ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : undefined;
+      const warehouseFrom = WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : undefined;
+      const warehouseTo = WarehouseToId ? { connect: { Id: +WarehouseToId } } : undefined;
+      const supplier = SupplierId ? { connect: { Id: +SupplierId } } : undefined;
+      const departmentFrom = DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : undefined;
+      const departmentTo = DepartmentToId ? { connect: { Id: +DepartmentToId } } : undefined;
+      const model = ModelId ? { connect: { Id: +ModelId } } : undefined;
+
+      console.log("Processed data for creating material movement:", {
+        MovementType,
+        InvoiceNumber,
+        ParentMaterialId,
+        ChildMaterialId: childMaterial,
+        Quantity,
+        UnitOfQuantity,
+        Description,
+        MovementDate,
+        WarehouseFromId: warehouseFrom,
+        WarehouseToId: warehouseTo,
+        SupplierId: supplier,
+        DepartmentFromId: departmentFrom,
+        DepartmentToId: departmentTo,
+        ModelId: model,
+      });
+
+      const newMovement = await prisma.materialMovement.create({
         data: {
           MovementType,
           InvoiceNumber, // Added InvoiceNumber
@@ -53,14 +72,18 @@ const MaterialMovementController = {
           },
         },
       });
+
+      console.log("Material movement created successfully:", newMovement);
+
       // Return success response
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء حركة المواد الجديدة بنجاح!",
-        data: {},
+        data: newMovement,
       });
     } catch (error) {
       console.error("Error creating material movement:", error);
+
       // Handle error
       return res.status(500).send({
         status: 500,
