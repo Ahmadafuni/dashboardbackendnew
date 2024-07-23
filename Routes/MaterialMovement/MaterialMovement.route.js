@@ -19,6 +19,12 @@ router.get(
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
     MaterialMovementController.getMaterialMovementNames
 );
+
+router.get(
+    "/incoming",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getIncomingMaterialMovements
+);
 router.get(
     "/:id",
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),

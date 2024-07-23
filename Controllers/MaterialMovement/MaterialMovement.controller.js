@@ -291,6 +291,88 @@ const MaterialMovementController = {
       });
     }
   },
+  getIncomingMaterialMovements: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+
+    try {
+      const skip = (page - 1) * itemsPerPage;
+      const materialMovements = await prisma.materialMovement.findMany({
+        where: {
+          MovementType: 'INCOMING',
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        skip: skip,
+        take: itemsPerPage,
+        include: {
+          ParentMaterial: true,
+          ChildMaterial: true,
+          WarehouseFrom: true,
+          WarehouseTo: true,
+          Supplier: true,
+          DepartmentFrom: true,
+          DepartmentTo: true,
+          Model: true,
+        },
+      });
+
+      const incomingMaterialMovements = materialMovements.map((movement) => {
+        let fromLocation =
+            movement.Supplier?.Name ||
+            movement.DepartmentFrom?.Name ||
+            movement.WarehouseFrom?.WarehouseName;
+        let toLocation =
+            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName;
+
+        return {
+          id: movement.Id,
+          name: `${movement.ParentMaterial.Name} moved from ${fromLocation || 'unknown'} to ${toLocation}`,
+          movementType: movement.MovementType,
+          invoiceNumber: movement.InvoiceNumber,
+          parentMaterial: movement.ParentMaterial,
+          childMaterial: movement.ChildMaterial,
+          quantity: movement.Quantity,
+          unitOfQuantity: movement.UnitOfQuantity,
+          description: movement.Description,
+          movementDate: movement.MovementDate,
+          warehouseFrom: movement.WarehouseFrom,
+          warehouseTo: movement.WarehouseTo,
+          supplier: movement.Supplier,
+          departmentFrom: movement.DepartmentFrom,
+          departmentTo: movement.DepartmentTo,
+          model: movement.Model,
+          audit: movement.Audit,
+        };
+      });
+
+      const totalIncomingMovements = await prisma.materialMovement.count({
+        where: {
+          MovementType: 'INCOMING',
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب حركات المواد الواردة بنجاح!",
+        data: {
+          incomingMaterialMovements,
+          count: totalIncomingMovements,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching incoming material movements:", error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
   getMaterialMovementNames: async (req, res, next) => {
     try {
       const materialMovements = await prisma.materialMovement.findMany({
