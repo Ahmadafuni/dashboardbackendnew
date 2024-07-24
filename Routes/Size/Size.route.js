@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  //verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizes
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  //verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizeNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  //verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   SizeController.getSizeById
 );
 router.delete(
