@@ -99,14 +99,14 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "CHECKING",
-          DamagedItem: +DamagedItem,
+          DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
           ReplacedItemInKG: ReplacedItemInKG,
           ClothCount: +ClothCount,
           QuantityInKg: QuantityInKg,
           ClothLength: ClothLength,
           ClothWidth: ClothWidth,
           ClothWeight: ClothWeight,
-          QuantityInNum: +QuantityInNum,
+          QuantityInNum: QuantityInNum ? JSON.parse(QuantityInNum) : [],
           Notes: Notes,
           Audit: {
             update: {
@@ -131,6 +131,7 @@ const TrackingModelController = {
       });
     }
   },
+
   sendForCheckingOthers: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
@@ -170,9 +171,9 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "CHECKING",
-          DamagedItem: +DamagedItem,
-          QuantityDelivered: +QuantityDelivered,
-          QuantityReceived: +QuantityReceived,
+          DamagedItem:  DamagedItem ? JSON.parse(DamagedItem) : [],
+          QuantityDelivered:  QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          QuantityReceived:  QuantityReceived ? JSON.parse(QuantityReceived) : [],
           Notes: Notes,
           Audit: {
             update: {
