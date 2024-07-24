@@ -14,8 +14,9 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
-  TrackingModelController.getAllTrackingBydepartment
+  TrackingModelController.getAllTrackingByDepartment
 );
 
 router.get(
@@ -28,6 +29,7 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.startVariant
 );
@@ -42,6 +44,7 @@ router.post(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.sendForCheckingCutting
 );
@@ -55,6 +58,7 @@ router.post(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.sendForCheckingOthers
 );
@@ -68,6 +72,7 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.confirmVariant
 );
@@ -81,6 +86,7 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.rejectVariant
 );
@@ -95,6 +101,7 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.completeVariant
 );
@@ -109,6 +116,7 @@ router.post(
     "PRINTING",
     "QUALITYASSURANCE",
     "DRAWING",
+    "WAREHOUSEMANAGER",
   ]),
   TrackingModelController.pauseUnpause
 );

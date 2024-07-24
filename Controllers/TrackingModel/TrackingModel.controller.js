@@ -639,7 +639,7 @@ const TrackingModelController = {
       });
     }
   },
-  getAllTrackingBydepartment: async (req, res, next) => {
+  getAllTrackingByDepartment: async (req, res, next) => {
     const userDepartmentId = req.userDepartmentId;
     try {
       const awaiting = await prisma.trakingModels.findMany({
