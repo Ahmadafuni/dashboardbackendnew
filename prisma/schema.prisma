@@ -559,8 +559,8 @@ model TrakingModels {
   EndTime           DateTime?
   MainStatus        MainStatus           @default(AWAITING)
   RunningStatus     RunningStatus        @default(RUNNING)
-  QuantityReceived  Int?
-  QuantityDelivered Int?
+  QuantityReceived  Json?
+  QuantityDelivered Json?
   DamagedItem       Int?                 @default(0)
   ReplacedItemInKG  String?
   ClothCount        Int?
@@ -568,7 +568,7 @@ model TrakingModels {
   ClothLength       String?
   ClothWidth        String?
   ClothWeight       String?
-  QuantityInNum     Int?
+  QuantityInNum     Json?
   Notes             String?
   Audit             AuditRecords         @relation(fields: [AuditId], references: [Id])
   AuditId           Int                  @unique
