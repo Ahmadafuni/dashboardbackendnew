@@ -410,183 +410,141 @@ const MaterialMovementController = {
       });
     }
   },
-  searchMaterialMovements: async (req, res, next) => {
-    const searchTerm = req.params.searchTerm;
+  getMaterialReportMovements: async (req, res, next) => {
+    const { searchTerm, startDate, endDate, parentMaterialId, childMaterialId, movementType } = req.query;
+
     try {
-      if (!searchTerm) {
-        return res.status(400).send({
-          status: 400,
-          message: "لم يتم توفير مصطلح بحث.",
-          data: {},
-        });
+      const whereConditions = {
+        Audit: {
+          IsDeleted: false,
+        },
+      };
+
+      if (searchTerm) {
+        whereConditions.OR = [
+          {
+            DepartmentFrom: {
+              Name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            DepartmentTo: {
+              Name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            WarehouseTo: {
+              WarehouseName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            WarehouseFrom: {
+              WarehouseName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            Material: {
+              Name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            UnitOfQuantity: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+          {
+            Supplier: {
+              Name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ];
       }
 
-      const datas = await prisma.materialMovement.findMany({
-        where: {
-          OR: [
-            {
-              DepartmentFrom: {
-                Name: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              DepartmentTo: {
-                Name: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              WarehouseTo: {
-                WarehouseName: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              WarehouseFrom: {
-                WarehouseName: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              Material: {
-                Name: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-            {
-              UnitOfQuantity: {
-                contains: searchTerm,
-                mode: "insensitive",
-              },
-            },
-            {
-              Supplier: {
-                Name: {
-                  contains: searchTerm,
-                  mode: "insensitive",
-                },
-              },
-            },
-          ],
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        include: {
-          DepartmentFrom: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          Supplier: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          WarehouseFrom: {
-            select: {
-              Id: true,
-              WarehouseName: true,
-            },
-          },
-          Material: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          DepartmentTo: {
-            select: {
-              Id: true,
-              Name: true,
-            },
-          },
-          WarehouseTo: {
-            select: {
-              Id: true,
-              WarehouseName: true,
-            },
-          },
-        },
-      });
-
-      const updatedMaterialMovements = datas.map((movement) => {
-        let fromLocation = movement.Supplier
-            ? {
-              id: movement.Supplier.Id,
-              name: movement.Supplier.Name,
-              from: "Supplier",
-            }
-            : movement.DepartmentFrom
-                ? {
-                  id: movement.DepartmentFrom.Id,
-                  name: movement.DepartmentFrom.Name,
-                  from: "Department",
-                }
-                : {
-                  id: movement.WarehouseFrom.Id,
-                  name: movement.WarehouseFrom.WarehouseName,
-                  from: "Warehouse",
-                };
-        let toLocation = movement.DepartmentTo
-            ? {
-              id: movement.DepartmentTo.Id,
-              name: movement.DepartmentTo.Name,
-              to: "Department",
-            }
-            : movement.WarehouseTo
-                ? {
-                  id: movement.WarehouseTo.Id,
-                  name: movement.WarehouseTo.WarehouseName,
-                  to: "Warehouse",
-                }
-                : {
-                  id: movement.Supplier.Id,
-                  name: movement.Supplier.Name,
-                  to: "Supplier",
-                };
-
-        return {
-          id: movement.Id,
-          materialName: {
-            id: movement.Material.Id,
-            name: movement.Material.Name,
-          },
-          from: fromLocation,
-          to: toLocation,
-          movementType: movement.MovementType,
-          quantity: movement.Quantity,
-          unitOfQuantity: movement.UnitOfQuantity,
-          movementDate: movement.MovementDate,
+      if (startDate && endDate) {
+        whereConditions.MovementDate = {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
         };
+      }
+
+      if (parentMaterialId) {
+        whereConditions.ParentMaterialId = parseInt(parentMaterialId, 10);
+      }
+
+      if (childMaterialId) {
+        whereConditions.ChildMaterialId = parseInt(childMaterialId, 10);
+      }
+
+      if (movementType) {
+        whereConditions.MovementType = movementType;
+      }
+
+      const materialMovements = await prisma.materialMovement.findMany({
+        where: whereConditions,
+        include: {
+          ParentMaterial: true,
+          ChildMaterial: true,
+          WarehouseFrom: true,
+          WarehouseTo: true,
+          Supplier: true,
+          DepartmentFrom: true,
+          DepartmentTo: true,
+          Model: true,
+        },
       });
+
+      const materialReport = materialMovements.map((movement) => ({
+        id: movement.Id,
+        movementType: movement.MovementType,
+        invoiceNumber: movement.InvoiceNumber,
+        parentMaterialName: movement.ParentMaterial?.Name || '',
+        childMaterialName: movement.ChildMaterial?.Name || '',
+        quantity: movement.Quantity,
+        unitOfQuantity: movement.UnitOfQuantity,
+        description: movement.Description,
+        movementDate: movement.MovementDate,
+        warehouseFrom: movement.WarehouseFrom?.WarehouseName || '',
+        warehouseTo: movement.WarehouseTo?.WarehouseName || '',
+        supplier: movement.Supplier?.Name || '',
+        departmentFrom: movement.DepartmentFrom?.Name || '',
+        departmentTo: movement.DepartmentTo?.Name || '',
+        modelName: `${movement.Model?.DemoModelNumber ?? ''} ${movement.Model?.ModelName ?? ''}`,
+      }));
+
       return res.status(200).send({
         status: 200,
-        message: "تم البحث بنجاح!",
-        data: updatedMaterialMovements,
+        message: 'Material report generated successfully!',
+        data: materialReport,
       });
     } catch (error) {
-      console.error("Error searching material movements:", error);
+      console.error('Error generating material report:', error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: 'Internal server error. Please try again later!',
         data: {},
       });
+
     }
-  },
-};
+  }
+  };
 
 export default MaterialMovementController;

@@ -41,9 +41,9 @@ router.put(
     MaterialMovementController.updateMaterialMovement
 );
 router.get(
-    "/search/:searchTerm",
+    "/materialreport/:searchTerm",
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-    MaterialMovementController.searchMaterialMovements
+    MaterialMovementController.getMaterialReportMovements
 );
 
 const MaterialMovementRoute = router;
