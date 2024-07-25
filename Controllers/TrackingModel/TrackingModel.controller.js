@@ -675,6 +675,7 @@ const TrackingModelController = {
           QuantityInNum: true,
           MainStatus: true,
           QuantityDelivered: true,
+          QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
@@ -714,6 +715,7 @@ const TrackingModelController = {
           RunningStatus: true,
           QuantityInNum: true,
           QuantityDelivered: true,
+          QuantityReceived: true,
           MainStatus: true,
           Notes: true,
           ModelVariant: {
@@ -755,6 +757,7 @@ const TrackingModelController = {
           RunningStatus: true,
           QuantityInNum: true,
           QuantityDelivered: true,
+          QuantityReceived: true,
           MainStatus: true,
           Notes: true,
           ModelVariant: {
@@ -797,6 +800,7 @@ const TrackingModelController = {
           Notes: true,
           QuantityInNum: true,
           QuantityDelivered: true,
+          QuantityReceived: true,
           MainStatus: true,
           ModelVariant: {
             select: {
