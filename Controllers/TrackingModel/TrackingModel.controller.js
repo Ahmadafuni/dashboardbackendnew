@@ -327,18 +327,10 @@ const TrackingModelController = {
         });
       }
 
-      // Parse quantities if they are JSON strings or use them directly if they are objects
       const QuantityInNum = safeParseJSON(tracking.QuantityInNum);
       const QuantityReceived = safeParseJSON(tracking.QuantityReceived);
       const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
       const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
-
-      // Debugging logs
-      console.log('Parsed Quantities:');
-      console.log('QuantityInNum:', QuantityInNum);
-      console.log('QuantityReceived:', QuantityReceived);
-      console.log('QuantityDelivered:', QuantityDelivered);
-      console.log('QuantityInKg:', QuantityInKg);
 
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
@@ -405,7 +397,6 @@ const TrackingModelController = {
             },
           },
           NextStage: ifNewNextStage,
-          QuantityReceived: QuantityDelivered, // Assign QuantityDelivered from previous stage
           Audit: {
             create: {
               UpdatedById: userId,
@@ -414,9 +405,6 @@ const TrackingModelController = {
           },
         },
       });
-
-      // Debugging log for create result
-      console.log('Create result:', newTracking);
 
       await prisma.notifications.create({
         data: {
@@ -437,8 +425,6 @@ const TrackingModelController = {
         QuantityDelivered,
         QuantityInKg,
       };
-      console.log('Response data:', responseData);
-
       return res.status(200).send({
         status: 200,
         message: "Variant confirmed successfully!",
