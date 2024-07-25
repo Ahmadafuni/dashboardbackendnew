@@ -279,6 +279,7 @@ const TrackingModelController = {
       });
     }
   },
+
   confirmVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
@@ -294,7 +295,6 @@ const TrackingModelController = {
       }
       return data ? data : null; // If data is falsy (null, undefined, empty string), return null
     };
-
 
     try {
       // Find Current Tracking Id
@@ -317,23 +317,6 @@ const TrackingModelController = {
           },
         },
       });
-      // Update Current Tracking Status to DONE
-      await prisma.trakingModels.update({
-        where: {
-          Id: trackingId,
-        },
-        data: {
-          MainStatus: "DONE",
-          EndTime: new Date(),
-          Audit: {
-            update: {
-              data: {
-                UpdatedById: userId,
-              },
-            },
-          },
-        },
-      });
 
       if (!tracking) {
         console.log("Tracking not found!");
@@ -350,6 +333,28 @@ const TrackingModelController = {
       const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
       const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
 
+      // Debugging logs
+      console.log('Parsed Quantities:');
+      console.log('QuantityInNum:', QuantityInNum);
+      console.log('QuantityReceived:', QuantityReceived);
+      console.log('QuantityDelivered:', QuantityDelivered);
+      console.log('QuantityInKg:', QuantityInKg);
+
+      // Update Current Tracking Status to DONE
+      await prisma.trakingModels.update({
+        where: {
+          Id: trackingId,
+        },
+        data: {
+          MainStatus: "DONE",
+          EndTime: new Date(),
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
 
       // Get Manufacturing Stages
       const mStages = await prisma.manufacturingStages.findMany({
@@ -369,15 +374,18 @@ const TrackingModelController = {
           StageNumber: "asc",
         },
       });
+
       const currentStageIndex = mStages.findIndex(
           (e) => e.Id === tracking.CurrentStageId
       );
+
       const newCurrentStageId = mStages[currentStageIndex + 1].Id;
       const ifNewNextStage = mStages[currentStageIndex + 2]
           ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
           : {};
-      // Create New Tracking with Next Stage
-      await prisma.trakingModels.create({
+
+      // Create New Tracking with Next Stage and assign QuantityReceived from previous stage's QuantityDelivered
+      const newTracking = await prisma.trakingModels.create({
         data: {
           ModelVariant: {
             connect: {
@@ -397,6 +405,7 @@ const TrackingModelController = {
             },
           },
           NextStage: ifNewNextStage,
+          QuantityReceived: QuantityDelivered, // Assign QuantityDelivered from previous stage
           Audit: {
             create: {
               UpdatedById: userId,
@@ -405,6 +414,9 @@ const TrackingModelController = {
           },
         },
       });
+
+      // Debugging log for create result
+      console.log('Create result:', newTracking);
 
       await prisma.notifications.create({
         data: {
@@ -424,25 +436,24 @@ const TrackingModelController = {
         QuantityReceived,
         QuantityDelivered,
         QuantityInKg,
-      }
+      };
       console.log('Response data:', responseData);
 
       return res.status(200).send({
         status: 200,
-        message: "Variant 2 :) confirmed successfully!",
-        data: {
-          responseData
-        },
+        message: "Variant confirmed successfully!",
+        data: responseData,
       });
     } catch (error) {
+      console.error("Error updating tracking:", error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {
-        },
+        message: "Internal server error",
+        data: {},
       });
     }
   },
+
   pauseUnpause: async (req, res, next) => {
     const userId = req.userId;
     const userDepartmentId = req.userDepartmentId;
