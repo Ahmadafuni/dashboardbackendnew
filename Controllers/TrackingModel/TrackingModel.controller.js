@@ -716,6 +716,8 @@ const TrackingModelController = {
         },
         select: {
           Id: true,
+          PrevStage: true,
+          NextStage: true,
           DamagedItem: true,
           StartTime: true,
           Notes: true,
