@@ -131,7 +131,6 @@ const TrackingModelController = {
       });
     }
   },
-
   sendForCheckingOthers: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
@@ -283,6 +282,7 @@ const TrackingModelController = {
   confirmVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
+
     try {
       // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
@@ -307,6 +307,15 @@ const TrackingModelController = {
           },
         },
       });
+
+      if (!tracking) {
+        return res.status(404).send({
+          status: 404,
+          message: "Tracking not found!",
+          data: {},
+        });
+      }
+
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
         where: {
@@ -317,13 +326,12 @@ const TrackingModelController = {
           EndTime: new Date(),
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
       });
+
       // Get Manufacturing Stages
       const mStages = await prisma.manufacturingStages.findMany({
         where: {
@@ -342,13 +350,24 @@ const TrackingModelController = {
           StageNumber: "asc",
         },
       });
+
       const currentStageIndex = mStages.findIndex(
-        (e) => e.Id === tracking.CurrentStageId
+          (e) => e.Id === tracking.CurrentStageId
       );
+
+      if (currentStageIndex === -1 || currentStageIndex + 1 >= mStages.length) {
+        return res.status(400).send({
+          status: 400,
+          message: "Invalid stage configuration!",
+          data: {},
+        });
+      }
+
       const newCurrentStageId = mStages[currentStageIndex + 1].Id;
       const ifNewNextStage = mStages[currentStageIndex + 2]
-        ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
-        : {};
+          ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
+          : {};
+
       // Create New Tracking with Next Stage
       await prisma.trakingModels.create({
         data: {
@@ -397,6 +416,7 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error confirming variant:", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
