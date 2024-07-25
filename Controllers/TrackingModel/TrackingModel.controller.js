@@ -313,6 +313,9 @@ const TrackingModelController = {
         });
       }
 
+      // Extract the required fields
+      const { DamagedItem, QuantityDelivered, QuantityReceived } = tracking;
+
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
         where: {
@@ -410,7 +413,11 @@ const TrackingModelController = {
       return res.status(200).send({
         status: 200,
         message: "Variant confirmed successfully!",
-        data: {},
+        data: {
+          DamagedItem,
+          QuantityDelivered,
+          QuantityReceived,
+        },
       });
     } catch (error) {
       console.error("Error confirming variant:", error);
