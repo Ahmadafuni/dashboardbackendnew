@@ -283,14 +283,16 @@ const TrackingModelController = {
     const userId = req.userId;
     const trackingId = +req.params.id;
 
-    const safeParseJSON = (jsonString) => {
-      try {
-        const parsed = JSON.parse(jsonString);
-        return parsed;
-      } catch (error) {
-        console.error(`Error parsing JSON: ${error.message}`);
-        return null;
+    const safeParseJSON = (data) => {
+      if (typeof data === 'string') {
+        try {
+          return JSON.parse(data);
+        } catch (error) {
+          console.error(`Error parsing JSON: ${error.message}`);
+          return null;
+        }
       }
+      return data; // If it's already an object, return it as is
     };
 
     try {
@@ -324,11 +326,11 @@ const TrackingModelController = {
         });
       }
 
-      // Parse quantities if they are JSON strings
-      const quantityInNum = tracking.QuantityInNum ? safeParseJSON(tracking.QuantityInNum) : null;
-      const quantityReceived = tracking.QuantityReceived ? safeParseJSON(tracking.QuantityReceived) : null;
-      const quantityDelivered = tracking.QuantityDelivered ? safeParseJSON(tracking.QuantityDelivered) : null;
-      const quantityInKg = tracking.QuantityInKg ? safeParseJSON(tracking.QuantityInKg) : null;
+      // Parse quantities if they are JSON strings or use them directly if they are objects
+      const quantityInNum = safeParseJSON(tracking.QuantityInNum);
+      const quantityReceived = safeParseJSON(tracking.QuantityReceived);
+      const quantityDelivered = safeParseJSON(tracking.QuantityDelivered);
+      const quantityInKg = safeParseJSON(tracking.QuantityInKg);
 
       // Check if QuantityInNum has values
       const hasQuantityInNum = quantityInNum && quantityInNum.length > 0;
