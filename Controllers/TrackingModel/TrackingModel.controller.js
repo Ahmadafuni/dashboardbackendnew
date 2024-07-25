@@ -282,6 +282,20 @@ const TrackingModelController = {
   confirmVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
+
+    const safeParseJSON = (data) => {
+      if (typeof data === 'string') {
+        try {
+          return JSON.parse(data);
+        } catch (error) {
+          console.error(`Error parsing JSON: ${error.message}`);
+          return null;
+        }
+      }
+      return data; // If it's already an object, return it as is
+    };
+
+
     try {
       // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
@@ -320,6 +334,23 @@ const TrackingModelController = {
           },
         },
       });
+
+      if (!tracking) {
+        console.log("Tracking not found!");
+        return res.status(404).send({
+          status: 404,
+          message: "Tracking not found!",
+          data: {},
+        });
+      }
+
+      // Parse quantities if they are JSON strings or use them directly if they are objects
+      const quantityInNum = safeParseJSON(tracking.QuantityInNum);
+      const quantityReceived = safeParseJSON(tracking.QuantityReceived);
+      const quantityDelivered = safeParseJSON(tracking.QuantityDelivered);
+      const quantityInKg = safeParseJSON(tracking.QuantityInKg);
+
+
       // Get Manufacturing Stages
       const mStages = await prisma.manufacturingStages.findMany({
         where: {
@@ -389,14 +420,19 @@ const TrackingModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: "Variant confirmed successfully!",
+        message: "Variant :) confirmed successfully!",
         data: {},
       });
     } catch (error) {
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
+        data: {
+          quantityInNum,
+          quantityReceived,
+          quantityDelivered,
+          quantityInKg,
+        },
       });
     }
   },
