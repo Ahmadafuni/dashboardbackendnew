@@ -283,6 +283,16 @@ const TrackingModelController = {
     const userId = req.userId;
     const trackingId = +req.params.id;
 
+    const safeParseJSON = (jsonString) => {
+      try {
+        const parsed = JSON.parse(jsonString);
+        return parsed;
+      } catch (error) {
+        console.error(`Error parsing JSON: ${error.message}`);
+        return null;
+      }
+    };
+
     try {
       // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
@@ -314,40 +324,21 @@ const TrackingModelController = {
         });
       }
 
-      let quantityInNum = [];
-      let quantityReceived = [];
-      let quantityDelivered = [];
-      let quantityInKg = [];
+      // Parse quantities if they are JSON strings
+      const quantityInNum = tracking.QuantityInNum ? safeParseJSON(tracking.QuantityInNum) : null;
+      const quantityReceived = tracking.QuantityReceived ? safeParseJSON(tracking.QuantityReceived) : null;
+      const quantityDelivered = tracking.QuantityDelivered ? safeParseJSON(tracking.QuantityDelivered) : null;
+      const quantityInKg = tracking.QuantityInKg ? safeParseJSON(tracking.QuantityInKg) : null;
 
-      try {
-        quantityInNum = JSON.parse(tracking.QuantityInNum);
-      } catch (error) {
-        console.error("Error parsing QuantityInNum:", error);
-      }
-
-      try {
-        quantityReceived = JSON.parse(tracking.QuantityReceived);
-      } catch (error) {
-        console.error("Error parsing QuantityReceived:", error);
-      }
-
-      try {
-        quantityDelivered = JSON.parse(tracking.QuantityDelivered);
-      } catch (error) {
-        console.error("Error parsing QuantityDelivered:", error);
-      }
-
-      try {
-        quantityInKg = JSON.parse(tracking.QuantityInKg);
-      } catch (error) {
-        console.error("Error parsing QuantityInKg:", error);
-      }
+      // Check if QuantityInNum has values
+      const hasQuantityInNum = quantityInNum && quantityInNum.length > 0;
+      const quantityToUse = hasQuantityInNum ? quantityInNum : quantityDelivered;
 
       // Log the determined quantities
-      console.log('Quantity received:', quantityReceived);
-      console.log('Quantity delivered:', quantityDelivered);
-      console.log('Quantity in Kg:', quantityInKg);
-      console.log('Quantity in Num:', quantityInNum);
+      console.log('Quantity to use:', JSON.stringify(quantityToUse, null, 2));
+      console.log('Quantity received:', JSON.stringify(quantityReceived, null, 2));
+      console.log('Quantity delivered:', JSON.stringify(quantityDelivered, null, 2));
+      console.log('Quantity in Kg:', JSON.stringify(quantityInKg, null, 2));
 
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
@@ -373,7 +364,7 @@ const TrackingModelController = {
           quantityInNum,
           quantityReceived,
           quantityDelivered,
-          quantityInKg
+          quantityInKg,
         },
       });
     } catch (error) {
@@ -385,7 +376,6 @@ const TrackingModelController = {
       });
     }
   },
-
   pauseUnpause: async (req, res, next) => {
     const userId = req.userId;
     const userDepartmentId = req.userDepartmentId;
