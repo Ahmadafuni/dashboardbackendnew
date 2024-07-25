@@ -284,7 +284,7 @@ const TrackingModelController = {
     const trackingId = +req.params.id;
 
     const safeParseJSON = (data) => {
-      if (typeof data === 'string') {
+      if (typeof data === 'string' && data.trim() !== '') {
         try {
           return JSON.parse(data);
         } catch (error) {
@@ -292,7 +292,7 @@ const TrackingModelController = {
           return null;
         }
       }
-      return data; // If it's already an object, return it as is
+      return data ? data : null; // If data is falsy (null, undefined, empty string), return null
     };
 
 
@@ -418,14 +418,20 @@ const TrackingModelController = {
         },
       });
 
+      // Response with data
+      const responseData = {
+        quantityInNum,
+        quantityReceived,
+        quantityDelivered,
+        quantityInKg,
+      }
+      console.log('Response data:', responseData);
+
       return res.status(200).send({
         status: 200,
-        message: "Variant :) confirmed successfully!",
+        message: "Variant 1 :) confirmed successfully!",
         data: {
-          quantityInNum,
-          quantityReceived,
-          quantityDelivered,
-          quantityInKg,
+          responseData
         },
       });
     } catch (error) {
