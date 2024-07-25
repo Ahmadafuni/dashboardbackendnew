@@ -314,26 +314,40 @@ const TrackingModelController = {
         });
       }
 
-      // Extract the required fields
-      const { DamagedItem, QuantityDelivered, QuantityReceived } = tracking;
+      let quantityInNum = [];
+      let quantityReceived = [];
+      let quantityDelivered = [];
+      let quantityInKg = [];
 
-      console.log("DamagedItem:", DamagedItem);
-      console.log("QuantityDelivered:", QuantityDelivered);
-      console.log("QuantityReceived:", QuantityReceived);
-
-      // Validate that the extracted fields are arrays
-      if (
-          (!Array.isArray(DamagedItem) && typeof DamagedItem !== 'object') ||
-          (!Array.isArray(QuantityDelivered) && typeof QuantityDelivered !== 'object') ||
-          (!Array.isArray(QuantityReceived) && typeof QuantityReceived !== 'object')
-      ) {
-        console.log("Invalid field types for DamagedItem, QuantityDelivered, or QuantityReceived.");
-        return res.status(400).send({
-          status: 400,
-          message: "Invalid data format!",
-          data: {},
-        });
+      try {
+        quantityInNum = JSON.parse(tracking.QuantityInNum);
+      } catch (error) {
+        console.error("Error parsing QuantityInNum:", error);
       }
+
+      try {
+        quantityReceived = JSON.parse(tracking.QuantityReceived);
+      } catch (error) {
+        console.error("Error parsing QuantityReceived:", error);
+      }
+
+      try {
+        quantityDelivered = JSON.parse(tracking.QuantityDelivered);
+      } catch (error) {
+        console.error("Error parsing QuantityDelivered:", error);
+      }
+
+      try {
+        quantityInKg = JSON.parse(tracking.QuantityInKg);
+      } catch (error) {
+        console.error("Error parsing QuantityInKg:", error);
+      }
+
+      // Log the determined quantities
+      console.log('Quantity received:', quantityReceived);
+      console.log('Quantity delivered:', quantityDelivered);
+      console.log('Quantity in Kg:', quantityInKg);
+      console.log('Quantity in Num:', quantityInNum);
 
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
@@ -351,99 +365,22 @@ const TrackingModelController = {
         },
       });
 
-      // Get Manufacturing Stages
-      const mStages = await prisma.manufacturingStages.findMany({
-        where: {
-          Template: {
-            Models: {
-              some: {
-                ModelVarients: { some: { Id: tracking.ModelVariantId } },
-              },
-            },
-          },
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        orderBy: {
-          StageNumber: "asc",
-        },
-      });
-
-      const currentStageIndex = mStages.findIndex(
-          (e) => e.Id === tracking.CurrentStageId
-      );
-
-      if (currentStageIndex === -1 || currentStageIndex + 1 >= mStages.length) {
-        console.log("Invalid stage configuration!");
-        return res.status(400).send({
-          status: 400,
-          message: "Invalid stage configuration!",
-          data: {},
-        });
-      }
-
-      const newCurrentStageId = mStages[currentStageIndex + 1].Id;
-      const ifNewNextStage = mStages[currentStageIndex + 2]
-          ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
-          : {};
-
-      // Create New Tracking with Next Stage
-      await prisma.trakingModels.create({
-        data: {
-          ModelVariant: {
-            connect: {
-              Id: tracking.ModelVariantId,
-            },
-          },
-          MainStatus: "TODO",
-          StartTime: new Date(),
-          PrevStage: {
-            connect: {
-              Id: tracking.CurrentStageId,
-            },
-          },
-          CurrentStage: {
-            connect: {
-              Id: newCurrentStageId,
-            },
-          },
-          NextStage: ifNewNextStage,
-          Audit: {
-            create: {
-              UpdatedById: userId,
-              CreatedById: userId,
-            },
-          },
-        },
-      });
-
-      await prisma.notifications.create({
-        data: {
-          Title: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
-          Description: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
-          ToDepartment: {
-            connect: {
-              Id: tracking.CurrentStage.DepartmentId,
-            },
-          },
-        },
-      });
-
+      // Return the response
       return res.status(200).send({
         status: 200,
-        message: "Variant confirmed successfully!",
+        message: "Tracking updated successfully!",
         data: {
-          DamagedItem,
-          QuantityDelivered,
-          QuantityReceived,
+          quantityInNum,
+          quantityReceived,
+          quantityDelivered,
+          quantityInKg
         },
       });
     } catch (error) {
-      console.error("Error confirming variant:", error);
+      console.error("Error updating tracking:", error);
       return res.status(500).send({
         status: 500,
-        message: "Internal server error. Please try again later!",
+        message: "Internal server error",
         data: {},
       });
     }
