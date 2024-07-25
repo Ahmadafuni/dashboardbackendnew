@@ -306,6 +306,7 @@ const TrackingModelController = {
       });
 
       if (!tracking) {
+        console.log("Tracking not found!");
         return res.status(404).send({
           status: 404,
           message: "Tracking not found!",
@@ -315,6 +316,24 @@ const TrackingModelController = {
 
       // Extract the required fields
       const { DamagedItem, QuantityDelivered, QuantityReceived } = tracking;
+
+      console.log("DamagedItem:", DamagedItem);
+      console.log("QuantityDelivered:", QuantityDelivered);
+      console.log("QuantityReceived:", QuantityReceived);
+
+      // Validate that the extracted fields are arrays
+      if (
+          (!Array.isArray(DamagedItem) && typeof DamagedItem !== 'object') ||
+          (!Array.isArray(QuantityDelivered) && typeof QuantityDelivered !== 'object') ||
+          (!Array.isArray(QuantityReceived) && typeof QuantityReceived !== 'object')
+      ) {
+        console.log("Invalid field types for DamagedItem, QuantityDelivered, or QuantityReceived.");
+        return res.status(400).send({
+          status: 400,
+          message: "Invalid data format!",
+          data: {},
+        });
+      }
 
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
@@ -356,6 +375,7 @@ const TrackingModelController = {
       );
 
       if (currentStageIndex === -1 || currentStageIndex + 1 >= mStages.length) {
+        console.log("Invalid stage configuration!");
         return res.status(400).send({
           status: 400,
           message: "Invalid stage configuration!",
@@ -423,11 +443,12 @@ const TrackingModelController = {
       console.error("Error confirming variant:", error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
   },
+
   pauseUnpause: async (req, res, next) => {
     const userId = req.userId;
     const userDepartmentId = req.userDepartmentId;
