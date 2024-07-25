@@ -289,11 +289,20 @@ const TrackingModelController = {
         where: {
           Id: trackingId,
         },
-        include: {
+        select: {
+          Id: true,
           CurrentStage: true,
           QuantityReceived: true,
           QuantityDelivered: true,
           DamagedItem: true,
+          NextStage: {
+            select: {
+              Department: true,
+            },
+          }
+          },
+        include: {
+          CurrentStage: true,
           NextStage: {
             include: {
               Department: true,
