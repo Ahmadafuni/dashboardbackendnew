@@ -139,9 +139,6 @@ const TrackingModelController = {
     const { QuantityDelivered, QuantityReceived, DamagedItem, Notes } = req.body;
 
     try {
-      // Log incoming payload
-      console.log("Payload received:", { QuantityDelivered, QuantityReceived, DamagedItem, Notes });
-
       const tracking = await prisma.trakingModels.findFirst({
         where: {
           ModelVariantId: variantId,

@@ -561,7 +561,7 @@ model TrakingModels {
   RunningStatus     RunningStatus        @default(RUNNING)
   QuantityReceived  Json?
   QuantityDelivered Json?
-  DamagedItem       Int?                 @default(0)
+  DamagedItem       Json?
   ReplacedItemInKG  String?
   ClothCount        Int?
   QuantityInKg      String?
