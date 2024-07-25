@@ -136,9 +136,12 @@ const TrackingModelController = {
     const userId = req.userId;
     const variantId = +req.params.id;
     const userDepartmentId = req.userDepartmentId;
-    const { QuantityDelivered, QuantityReceived, DamagedItem, Notes } =
-      req.body;
+    const { QuantityDelivered, QuantityReceived, DamagedItem, Notes } = req.body;
+
     try {
+      // Log incoming payload
+      console.log("Payload received:", { QuantityDelivered, QuantityReceived, DamagedItem, Notes });
+
       const tracking = await prisma.trakingModels.findFirst({
         where: {
           ModelVariantId: variantId,
@@ -165,15 +168,19 @@ const TrackingModelController = {
           },
         },
       });
+
+      // Log tracking details
+      console.log("Tracking found:", tracking);
+
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
         },
         data: {
           MainStatus: "CHECKING",
-          DamagedItem:  DamagedItem ? JSON.parse(DamagedItem) : [],
-          QuantityDelivered:  QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
-          QuantityReceived:  QuantityReceived ? JSON.parse(QuantityReceived) : [],
+          DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
+          QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          QuantityReceived: QuantityReceived ? JSON.parse(QuantityReceived) : [],
           Notes: Notes,
           Audit: {
             update: {
@@ -203,9 +210,10 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error in sendForCheckingOthers:", error); // Log the error details
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
