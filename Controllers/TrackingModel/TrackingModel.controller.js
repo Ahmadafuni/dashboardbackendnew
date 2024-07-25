@@ -282,19 +282,6 @@ const TrackingModelController = {
   confirmVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
-
-    const safeParseJSON = (data) => {
-      if (typeof data === 'string') {
-        try {
-          return JSON.parse(data);
-        } catch (error) {
-          console.error(`Error parsing JSON: ${error.message}`);
-          return null;
-        }
-      }
-      return data; // If it's already an object, return it as is
-    };
-
     try {
       // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
@@ -316,32 +303,6 @@ const TrackingModelController = {
           },
         },
       });
-
-      if (!tracking) {
-        console.log("Tracking not found!");
-        return res.status(404).send({
-          status: 404,
-          message: "Tracking not found!",
-          data: {},
-        });
-      }
-
-      // Parse quantities if they are JSON strings or use them directly if they are objects
-      const quantityInNum = safeParseJSON(tracking.QuantityInNum);
-      const quantityReceived = safeParseJSON(tracking.QuantityReceived);
-      const quantityDelivered = safeParseJSON(tracking.QuantityDelivered);
-      const quantityInKg = safeParseJSON(tracking.QuantityInKg);
-
-      // Check if QuantityInNum has values
-      const hasQuantityInNum = quantityInNum && quantityInNum.length > 0;
-      const quantityToUse = hasQuantityInNum ? quantityInNum : quantityDelivered;
-
-      // Log the determined quantities
-      console.log('Quantity to use:', JSON.stringify(quantityToUse, null, 2));
-      console.log('Quantity received:', JSON.stringify(quantityReceived, null, 2));
-      console.log('Quantity delivered:', JSON.stringify(quantityDelivered, null, 2));
-      console.log('Quantity in Kg:', JSON.stringify(quantityInKg, null, 2));
-
       // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
         where: {
@@ -352,28 +313,89 @@ const TrackingModelController = {
           EndTime: new Date(),
           Audit: {
             update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+      // Get Manufacturing Stages
+      const mStages = await prisma.manufacturingStages.findMany({
+        where: {
+          Template: {
+            Models: {
+              some: {
+                ModelVarients: { some: { Id: tracking.ModelVariantId } },
+              },
+            },
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+      const currentStageIndex = mStages.findIndex(
+          (e) => e.Id === tracking.CurrentStageId
+      );
+      const newCurrentStageId = mStages[currentStageIndex + 1].Id;
+      const ifNewNextStage = mStages[currentStageIndex + 2]
+          ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
+          : {};
+      // Create New Tracking with Next Stage
+      await prisma.trakingModels.create({
+        data: {
+          ModelVariant: {
+            connect: {
+              Id: tracking.ModelVariantId,
+            },
+          },
+          MainStatus: "TODO",
+          StartTime: new Date(),
+          PrevStage: {
+            connect: {
+              Id: tracking.CurrentStageId,
+            },
+          },
+          CurrentStage: {
+            connect: {
+              Id: newCurrentStageId,
+            },
+          },
+          NextStage: ifNewNextStage,
+          Audit: {
+            create: {
               UpdatedById: userId,
+              CreatedById: userId,
             },
           },
         },
       });
 
-      // Return the response
-      return res.status(200).send({
-        status: 200,
-        message: "Tracking updated successfully!",
+      await prisma.notifications.create({
         data: {
-          quantityInNum,
-          quantityReceived,
-          quantityDelivered,
-          quantityInKg,
+          Title: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
+          Description: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
+          ToDepartment: {
+            connect: {
+              Id: tracking.CurrentStage.DepartmentId,
+            },
+          },
         },
       });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Variant confirmed successfully!",
+        data: {},
+      });
     } catch (error) {
-      console.error("Error updating tracking:", error);
       return res.status(500).send({
         status: 500,
-        message: "Internal server error",
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {},
       });
     }
