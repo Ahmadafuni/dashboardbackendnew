@@ -291,6 +291,9 @@ const TrackingModelController = {
         },
         include: {
           CurrentStage: true,
+          QuantityReceived: true,
+          QuantityDelivered: true,
+          DamagedItem: true,
           NextStage: {
             include: {
               Department: true,
