@@ -345,10 +345,10 @@ const TrackingModelController = {
       }
 
       // Parse quantities if they are JSON strings or use them directly if they are objects
-      const quantityInNum = safeParseJSON(tracking.QuantityInNum);
-      const quantityReceived = safeParseJSON(tracking.QuantityReceived);
-      const quantityDelivered = safeParseJSON(tracking.QuantityDelivered);
-      const quantityInKg = safeParseJSON(tracking.QuantityInKg);
+      const QuantityInNum = safeParseJSON(tracking.QuantityInNum);
+      const QuantityReceived = safeParseJSON(tracking.QuantityReceived);
+      const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
+      const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
 
 
       // Get Manufacturing Stages
@@ -420,16 +420,16 @@ const TrackingModelController = {
 
       // Response with data
       const responseData = {
-        quantityInNum,
-        quantityReceived,
-        quantityDelivered,
-        quantityInKg,
+        QuantityInNum,
+        QuantityReceived,
+        QuantityDelivered,
+        QuantityInKg,
       }
       console.log('Response data:', responseData);
 
       return res.status(200).send({
         status: 200,
-        message: "Variant 1 :) confirmed successfully!",
+        message: "Variant 2 :) confirmed successfully!",
         data: {
           responseData
         },
