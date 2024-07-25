@@ -687,6 +687,7 @@ const TrackingModelController = {
                 select: {
                   ModelName: true,
                   ModelNumber: true,
+                  DemoModelNumber: true,
                   Id: true,
                 },
               },
