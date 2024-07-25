@@ -421,17 +421,18 @@ const TrackingModelController = {
       return res.status(200).send({
         status: 200,
         message: "Variant :) confirmed successfully!",
-        data: {},
+        data: {
+          quantityInNum,
+          quantityReceived,
+          quantityDelivered,
+          quantityInKg,
+        },
       });
     } catch (error) {
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {
-          quantityInNum,
-          quantityReceived,
-          quantityDelivered,
-          quantityInKg,
         },
       });
     }
