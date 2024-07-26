@@ -191,8 +191,8 @@ const TrackingModelController = {
         data: {
           MainStatus: "CHECKING",
           DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
-          QuantityReceived: QuantityReceived ? JSON.parse(QuantityReceived) : [],
-          QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          QuantityReceived:  QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          QuantityDelivered: null,
           Notes: Notes,
           Audit: {
             update: {
