@@ -75,7 +75,9 @@ const TrackingModelController = {
       return res.status(200).send({
         status: 200,
         message: "Variant started successfully!",
-        data: {},
+        data: {
+          QuantityReceived: quantityReceivedFromPreviousDep,
+        },
       });
     } catch (error) {
       return res.status(500).send({
