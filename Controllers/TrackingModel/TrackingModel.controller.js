@@ -49,19 +49,12 @@ const TrackingModelController = {
         },
       });
 
-      const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
-      const QuantityInNum = safeParseJSON(tracking.QuantityInNum);
-      const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
-
-      const quantityReceivedFromPreviousDep = QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
-
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
         },
         data: {
           MainStatus: "INPROGRESS",
-          QuantityReceived: quantityReceivedFromPreviousDep,
           Audit: {
             update: {
               data: {
@@ -76,7 +69,6 @@ const TrackingModelController = {
         status: 200,
         message: "Variant started successfully!",
         data: {
-          QuantityReceived: quantityReceivedFromPreviousDep,
         },
       });
     } catch (error) {
@@ -305,9 +297,6 @@ const TrackingModelController = {
   confirmVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
-
-
-
     try {
       // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
