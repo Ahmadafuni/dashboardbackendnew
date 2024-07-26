@@ -48,6 +48,11 @@ const TrackingModelController = {
           },
         },
       });
+      const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
+      const QuantityInNum = safeParseJSON(tracking.QuantityInNum);
+      const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
+
+      const quantityReceivedFromPreviousDep = QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
 
       await prisma.trakingModels.update({
         where: {
@@ -55,6 +60,7 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "INPROGRESS",
+          QuantityReceived: quantityReceivedFromPreviousDep,
           Audit: {
             update: {
               data: {
@@ -79,6 +85,7 @@ const TrackingModelController = {
       });
     }
   },
+
   sendForCheckingCutting: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
