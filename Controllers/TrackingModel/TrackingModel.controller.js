@@ -1,5 +1,17 @@
 import prisma from "../../client.js";
 
+const safeParseJSON = (data) => {
+  if (typeof data === 'string' && data.trim() !== '') {
+    try {
+      return JSON.parse(data);
+    } catch (error) {
+      console.error(`Error parsing JSON: ${error.message}`);
+      return null;
+    }
+  }
+  return data ? data : null; // If data is falsy (null, undefined, empty string), return null
+};
+
 const TrackingModelController = {
   startVariant: async (req, res, next) => {
     const userId = req.userId;
@@ -36,12 +48,20 @@ const TrackingModelController = {
           },
         },
       });
+
+      const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
+      const QuantityInNum = safeParseJSON(tracking.QuantityInNum);
+      const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
+
+      const quantityReceivedFromPreviousDep = QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
+
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
         },
         data: {
           MainStatus: "INPROGRESS",
+          QuantityReceived: quantityReceivedFromPreviousDep,
           Audit: {
             update: {
               data: {
@@ -284,17 +304,7 @@ const TrackingModelController = {
     const userId = req.userId;
     const trackingId = +req.params.id;
 
-    const safeParseJSON = (data) => {
-      if (typeof data === 'string' && data.trim() !== '') {
-        try {
-          return JSON.parse(data);
-        } catch (error) {
-          console.error(`Error parsing JSON: ${error.message}`);
-          return null;
-        }
-      }
-      return data ? data : null; // If data is falsy (null, undefined, empty string), return null
-    };
+
 
     try {
       // Find Current Tracking Id
