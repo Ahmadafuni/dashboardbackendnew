@@ -376,6 +376,10 @@ const TrackingModelController = {
           ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
           : {};
 
+      const quantityReceivedFromPreviousDep = QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
+
+      console.log("quantityReceivedFromPreviousDep",quantityReceivedFromPreviousDep);
+
       // Create New Tracking with Next Stage and assign QuantityReceived from previous stage's QuantityDelivered
       const newTracking = await prisma.trakingModels.create({
         data: {
@@ -386,6 +390,7 @@ const TrackingModelController = {
           },
           MainStatus: "TODO",
           StartTime: new Date(),
+          QuantityReceived: quantityReceivedFromPreviousDep,
           PrevStage: {
             connect: {
               Id: tracking.CurrentStageId,
