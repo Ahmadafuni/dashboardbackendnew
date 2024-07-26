@@ -146,11 +146,12 @@ const TrackingModelController = {
       });
     }
   },
+
   sendForCheckingOthers: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
     const userDepartmentId = req.userDepartmentId;
-    const { QuantityDelivered, QuantityReceived, DamagedItem, Notes } = req.body;
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
 
     try {
       const tracking = await prisma.trakingModels.findFirst({
@@ -190,14 +191,12 @@ const TrackingModelController = {
         data: {
           MainStatus: "CHECKING",
           DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
-          QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
           QuantityReceived: QuantityReceived ? JSON.parse(QuantityReceived) : [],
+          QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
           Notes: Notes,
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
@@ -229,6 +228,7 @@ const TrackingModelController = {
       });
     }
   },
+
   rejectVariant: async (req, res, next) => {
     const userId = req.userId;
     const trackingId = +req.params.id;
@@ -552,6 +552,7 @@ const TrackingModelController = {
       });
     }
   },
+
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
@@ -691,6 +692,7 @@ const TrackingModelController = {
       });
     }
   },
+
   getAllTrackingByDepartment: async (req, res, next) => {
     const userDepartmentId = req.userDepartmentId;
     try {
