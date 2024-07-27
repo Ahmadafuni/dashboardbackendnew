@@ -957,9 +957,54 @@ const TrackingModelController = {
         },
         select: {
           Id: true,
-          PrevStage: true,
-          NextStage: true,
-          CurrentStage: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
           EndTime: true,
@@ -984,7 +1029,6 @@ const TrackingModelController = {
                   ModelNumber: true,
                   DemoModelNumber: true,
                   Id: true,
-
                 },
               },
               Sizes: true,
@@ -1003,9 +1047,54 @@ const TrackingModelController = {
         },
         select: {
           Id: true,
-          PrevStage: true,
-          NextStage: true,
-          CurrentStage: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
           EndTime: true,
@@ -1051,9 +1140,54 @@ const TrackingModelController = {
         },
         select: {
           Id: true,
-          PrevStage: true,
-          NextStage: true,
-          CurrentStage: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
           EndTime: true,
@@ -1096,6 +1230,54 @@ const TrackingModelController = {
         },
         select: {
           Id: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              TemplateId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  DepartmentName: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
           RunningStatus: true,
