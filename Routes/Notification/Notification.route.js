@@ -5,29 +5,63 @@ import NotificationController from "../../Controllers/Notification/Notification.
 const router = express.Router();
 
 router.get(
-  "/",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-  ]),
-  NotificationController.getAllNotifications
+    "/",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER",
+
+    ]),
+    NotificationController.getNotificationsByDepartment
 );
 
 router.get(
-  "/unread-count",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-  ]),
-  NotificationController.getUnreadCount
+    "/unread-count",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER",
+
+    ]),
+    NotificationController.getUnreadCountByDepartment
+);
+
+router.put(
+    "/:id/read",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER",
+
+    ]),
+    NotificationController.markAsRead
+);
+
+router.put(
+    "/clear-all",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER",
+
+    ]),
+    NotificationController.clearAll
 );
 
 export { router as NotificationRoute };
