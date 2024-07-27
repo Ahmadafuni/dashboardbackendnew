@@ -556,6 +556,12 @@ const TrackingModelController = {
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
+
+    console.log(`Received request to complete variant with ID: ${trackingId}`);
+    console.log(`User ID: ${userId}`);
+    console.log(`Payload:`, req.body);
+
     try {
       const tracking = await prisma.trakingModels.findUnique({
         where: {
@@ -574,6 +580,36 @@ const TrackingModelController = {
         },
       });
 
+      if (!tracking) {
+        console.log(`Tracking not found for ID: ${trackingId}`);
+        return res.status(404).send({
+          status: 404,
+          message: "Tracking not found",
+          data: {},
+        });
+      }
+
+      console.log(`Tracking found:`, tracking);
+
+      // Parse the JSON fields if they are provided as JSON strings
+      let parsedQuantityReceived, parsedQuantityDelivered, parsedDamagedItem;
+      try {
+        parsedQuantityReceived = QuantityReceived ? JSON.parse(QuantityReceived) : [];
+        parsedQuantityDelivered = QuantityDelivered ? JSON.parse(QuantityDelivered) : [];
+        parsedDamagedItem = DamagedItem ? JSON.parse(DamagedItem) : [];
+      } catch (parseError) {
+        console.error("Error parsing JSON:", parseError);
+        return res.status(400).send({
+          status: 400,
+          message: "Invalid JSON in request body",
+          data: {},
+        });
+      }
+
+      console.log(`Parsed QuantityReceived:`, parsedQuantityReceived);
+      console.log(`Parsed QuantityDelivered:`, parsedQuantityDelivered);
+      console.log(`Parsed DamagedItem:`, parsedDamagedItem);
+
       await prisma.trakingModels.update({
         where: {
           Id: trackingId,
@@ -581,15 +617,19 @@ const TrackingModelController = {
         data: {
           MainStatus: "DONE",
           EndTime: new Date(),
+          QuantityReceived: parsedQuantityReceived,
+          QuantityDelivered: parsedQuantityDelivered,
+          DamagedItem: parsedDamagedItem,
+          Notes: Notes,
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
       });
+
+      console.log(`Tracking updated successfully for ID: ${trackingId}`);
 
       await prisma.modelVarients.update({
         where: {
@@ -599,13 +639,13 @@ const TrackingModelController = {
           Status: "DONE",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
       });
+
+      console.log(`ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`);
 
       const undoneVariants = await prisma.modelVarients.count({
         where: {
@@ -620,6 +660,7 @@ const TrackingModelController = {
       });
 
       if (undoneVariants > 0) {
+        console.log(`There are still ${undoneVariants} undone variants for Model ID: ${tracking.ModelVariant.ModelId}`);
         return res.status(200).send({
           status: 200,
           message: "Variant completed successfully",
@@ -635,13 +676,13 @@ const TrackingModelController = {
           Status: "DONE",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
       });
+
+      console.log(`Model updated successfully for ID: ${tracking.ModelVariant.ModelId}`);
 
       const undoneModels = await prisma.models.count({
         where: {
@@ -656,6 +697,7 @@ const TrackingModelController = {
       });
 
       if (undoneModels > 0) {
+        console.log(`There are still ${undoneModels} undone models for Order ID: ${tracking.ModelVariant.Model.OrderId}`);
         return res.status(200).send({
           status: 200,
           message: "Variant completed successfully",
@@ -671,13 +713,13 @@ const TrackingModelController = {
           Status: "COMPLETED",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
       });
+
+      console.log(`Order updated successfully for ID: ${tracking.ModelVariant.Model.OrderId}`);
 
       return res.status(200).send({
         status: 200,
@@ -685,9 +727,10 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error in completeVariant:", error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
