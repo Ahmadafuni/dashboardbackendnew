@@ -121,5 +121,15 @@ router.post(
   TrackingModelController.pauseUnpause
 );
 
+router.get(
+    "/alltracking",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+    ]),
+    TrackingModelController.getAllTracking
+);
+
+
 const TrackingModelRoute = router;
 export { TrackingModelRoute };

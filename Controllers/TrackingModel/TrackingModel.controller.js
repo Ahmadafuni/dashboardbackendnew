@@ -939,6 +939,210 @@ const TrackingModelController = {
       });
     }
   },
+
+  getAllTracking: async (req, res, next) => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    try {
+      const awaiting = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          OR: [
+            { MainStatus: "CHECKING" },
+            { MainStatus: "TODO" },
+          ],
+        },
+        select: {
+          Id: true,
+          PrevStage: true,
+          NextStage: true,
+          CurrentStage: true,
+          DamagedItem: true,
+          StartTime: true,
+          EndTime: true,
+          Notes: true,
+          RunningStatus: true,
+          QuantityInNum: true,
+          QuantityInKg: true,
+          MainStatus: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
+          ModelVariant: {
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
+              Model: {
+                select: {
+                  ModelName: true,
+                  ModelNumber: true,
+                  DemoModelNumber: true,
+                  Id: true,
+
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+            },
+          },
+        },
+      });
+
+      const inProgress = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          MainStatus: "INPROGRESS",
+        },
+        select: {
+          Id: true,
+          PrevStage: true,
+          NextStage: true,
+          CurrentStage: true,
+          DamagedItem: true,
+          StartTime: true,
+          EndTime: true,
+          Notes: true,
+          RunningStatus: true,
+          QuantityInNum: true,
+          QuantityInKg: true,
+          MainStatus: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
+          ModelVariant: {
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
+              Model: {
+                select: {
+                  ModelName: true,
+                  ModelNumber: true,
+                  DemoModelNumber: true,
+                  Id: true,
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+            },
+          },
+        },
+      });
+
+      const completed = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          MainStatus: "DONE",
+          EndTime: {
+            gte: sevenDaysAgo,
+          },
+        },
+        select: {
+          Id: true,
+          PrevStage: true,
+          NextStage: true,
+          CurrentStage: true,
+          DamagedItem: true,
+          StartTime: true,
+          EndTime: true,
+          Notes: true,
+          RunningStatus: true,
+          QuantityInNum: true,
+          QuantityInKg: true,
+          MainStatus: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
+          ModelVariant: {
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
+              Model: {
+                select: {
+                  ModelName: true,
+                  ModelNumber: true,
+                  DemoModelNumber: true,
+                  Id: true,
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+            },
+          },
+        },
+      });
+
+      const givingConfirmation = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          MainStatus: "CHECKING",
+        },
+        select: {
+          Id: true,
+          DamagedItem: true,
+          StartTime: true,
+          RunningStatus: true,
+          Notes: true,
+          QuantityInNum: true,
+          QuantityInKg: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
+          MainStatus: true,
+          ModelVariant: {
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
+              Model: {
+                select: {
+                  ModelName: true,
+                  ModelNumber: true,
+                  DemoModelNumber: true,
+                  Id: true,
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "",
+        data: { awaiting, completed, inProgress, givingConfirmation },
+      });
+    } catch (error) {
+      console.error("Error in getAllTracking:", error);
+      return res.status(500).send({
+        status: 500,
+        message: "Internal server error. Please try again later!",
+        data: {},
+      });
+    }
+  }
+
 };
 
 export default TrackingModelController;
