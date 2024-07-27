@@ -34,6 +34,16 @@ router.get(
     NotificationController.getUnreadCountByDepartment
 );
 
+router.get(
+    "/unread-count/all",
+    verifyUser([
+            "FACTORYMANAGER",
+            "ENGINEERING",]),
+    NotificationController.getAllUnreadCount
+);
+
+
+
 router.put(
     "/:id/read",
     verifyUser([

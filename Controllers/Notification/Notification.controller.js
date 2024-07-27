@@ -51,6 +51,28 @@ const NotificationController = {
     }
   },
 
+  getAllUnreadCount: async (req, res, next) => {
+    try {
+      const unreadCount = await prisma.notifications.count({
+        where: {
+          IsSeen: false,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "Unread notifications!",
+        data: unreadCount,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "Internal server error. Please try again later!",
+        data: {},
+      });
+    }
+  },
+
+
   markAsRead: async (req, res, next) => {
     const { id } = req.params;
     try {
