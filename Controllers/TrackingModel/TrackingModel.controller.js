@@ -556,6 +556,8 @@ const TrackingModelController = {
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
+
     try {
       const tracking = await prisma.trakingModels.findUnique({
         where: {
@@ -580,6 +582,10 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "DONE",
+          DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
+          QuantityReceived: QuantityReceived ? JSON.parse(QuantityReceived) : [],
+          QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          Notes: Notes,
           EndTime: new Date(),
           Audit: {
             update: {
