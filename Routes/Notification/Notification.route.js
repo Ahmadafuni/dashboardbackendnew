@@ -64,4 +64,10 @@ router.put(
     NotificationController.clearAll
 );
 
+router.get(
+    "/all",
+    verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+    NotificationController.getAllNotifications
+);
+
 export { router as NotificationRoute };

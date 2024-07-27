@@ -88,6 +88,29 @@ const NotificationController = {
       });
     }
   },
+
+  getAllNotifications: async (req, res, next) => {
+    try {
+      const notifications = await prisma.notifications.findMany({
+        select: {
+          Id: true,
+          Title: true,
+          Description: true,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "All notifications!",
+        data: notifications,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "Internal server error. Please try again later!",
+        data: {},
+      });
+    }
+  }
 };
 
 export default NotificationController;
