@@ -91,7 +91,7 @@ router.get(
   TrackingModelController.rejectVariant
 );
 
-router.post(
+router.put(
   "/complete/variant/:id",
   verifyUser([
     "FACTORYMANAGER",
