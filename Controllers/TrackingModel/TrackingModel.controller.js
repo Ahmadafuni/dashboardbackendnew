@@ -812,6 +812,8 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          PrevStage: true,
+          NextStage: true,
           Notes: true,
           ModelVariant: {
             select: {
@@ -856,6 +858,8 @@ const TrackingModelController = {
           QuantityReceived: true,
           MainStatus: true,
           Notes: true,
+          PrevStage: true,
+          NextStage: true,
           ModelVariant: {
             select: {
               Id: true,
