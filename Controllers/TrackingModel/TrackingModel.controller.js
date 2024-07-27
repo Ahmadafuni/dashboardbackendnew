@@ -204,8 +204,8 @@ const TrackingModelController = {
 
       await prisma.notifications.create({
         data: {
-          Title: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} came for checking`,
-          Description: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} came for checking from ${tracking.CurrentStage.Department.Name}`,
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} came for checking`,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} came for checking from ${tracking.CurrentStage.Department.Name}`,
           ToDepartment: {
             connect: {
               Id: tracking.NextStage.DepartmentId,
@@ -271,8 +271,8 @@ const TrackingModelController = {
 
       await prisma.notifications.create({
         data: {
-          Title: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got rejected!`,
-          Description: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got rejected by ${tracking.NextStage.Department.Name}`,
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got rejected!`,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got rejected by ${tracking.NextStage.Department.Name}`,
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
@@ -415,8 +415,8 @@ const TrackingModelController = {
 
       await prisma.notifications.create({
         data: {
-          Title: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
-          Description: `${tracking.ModelVariant.Model.ModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
@@ -528,7 +528,7 @@ const TrackingModelController = {
           Description: Reasone,
           Title: `${
             tracking.RunningStatus === "RUNNING" ? "Pausing" : "Unpausing"
-          }${variant.Model.ModelNumber} Variant ${variant.Color.ColorName}`,
+          }${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
           ToDepartment: {
             connect: {
               Id: managerialDep.Id,
