@@ -554,14 +554,14 @@ const TrackingModelController = {
   },
 
   completeVariant: async (req, res, next) => {
+    const trackingId = +req.params.id;
     const userId = req.userId;
-    const variantId = +req.params.id;
-    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body; // Get the new fields from the request body
 
     try {
-      const tracking = await prisma.trakingModels.findFirst({
+      const tracking = await prisma.trakingModels.findUnique({
         where: {
-          Id: variantId,
+          Id: trackingId,
         },
         include: {
           ModelVariant: {
@@ -576,22 +576,21 @@ const TrackingModelController = {
         },
       });
 
+      // Update the tracking record with the new fields
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
         },
         data: {
           MainStatus: "DONE",
-          DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
+          EndTime: new Date(),
           QuantityReceived: QuantityReceived ? JSON.parse(QuantityReceived) : [],
           QuantityDelivered: QuantityDelivered ? JSON.parse(QuantityDelivered) : [],
+          DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
           Notes: Notes,
-          EndTime: new Date(),
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
@@ -605,9 +604,7 @@ const TrackingModelController = {
           Status: "DONE",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
@@ -641,9 +638,7 @@ const TrackingModelController = {
           Status: "DONE",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
@@ -677,9 +672,7 @@ const TrackingModelController = {
           Status: "COMPLETED",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
         },
@@ -691,9 +684,10 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.error("Error in completeVariant:", error); // Log the error details
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
