@@ -738,6 +738,8 @@ const TrackingModelController = {
 
   getAllTrackingByDepartment: async (req, res, next) => {
     const userDepartmentId = req.userDepartmentId;
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
     try {
       const awaiting = await prisma.trakingModels.findMany({
         where: {
@@ -843,6 +845,9 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           MainStatus: "DONE",
+          EndTime: {
+            gte: twoDaysAgo,
+          },
           CurrentStage: {
             DepartmentId: userDepartmentId,
           },
