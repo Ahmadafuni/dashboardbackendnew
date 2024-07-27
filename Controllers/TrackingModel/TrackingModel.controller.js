@@ -968,7 +968,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -984,7 +984,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1000,7 +1000,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1058,7 +1058,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1074,7 +1074,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1090,7 +1090,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1151,7 +1151,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1167,7 +1167,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1183,7 +1183,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1241,7 +1241,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1257,7 +1257,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
@@ -1273,7 +1273,7 @@ const TrackingModelController = {
               AuditId: true,
               Department: {
                 select: {
-                  DepartmentName: true,
+                  Name: true,
                 },
               },
             },
