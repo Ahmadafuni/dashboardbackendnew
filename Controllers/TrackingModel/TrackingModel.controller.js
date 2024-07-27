@@ -554,14 +554,14 @@ const TrackingModelController = {
   },
 
   completeVariant: async (req, res, next) => {
-    const trackingId = +req.params.id;
     const userId = req.userId;
+    const variantId = +req.params.id;
     const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
 
     try {
-      const tracking = await prisma.trakingModels.findUnique({
+      const tracking = await prisma.trakingModels.findFirst({
         where: {
-          Id: trackingId,
+          Id: variantId,
         },
         include: {
           ModelVariant: {
@@ -578,7 +578,7 @@ const TrackingModelController = {
 
       await prisma.trakingModels.update({
         where: {
-          Id: trackingId,
+          Id: tracking.Id,
         },
         data: {
           MainStatus: "DONE",
