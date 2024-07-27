@@ -554,14 +554,14 @@ const TrackingModelController = {
   },
 
   completeVariant: async (req, res, next) => {
-    const trackingId = +req.params.id;
+    const variantId = +req.params.id;
     const userId = req.userId;
     const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body; // Get the new fields from the request body
 
     try {
-      const tracking = await prisma.trakingModels.findUnique({
+      const tracking = await prisma.trakingModels.findFirst({
         where: {
-          Id: trackingId,
+          ModelVariantId: variantId,
         },
         include: {
           ModelVariant: {
@@ -575,6 +575,14 @@ const TrackingModelController = {
           },
         },
       });
+
+      if (!tracking) {
+        return res.status(404).send({
+          status: 404,
+          message: "Tracking not found",
+          data: {},
+        });
+      }
 
       // Update the tracking record with the new fields
       await prisma.trakingModels.update({
