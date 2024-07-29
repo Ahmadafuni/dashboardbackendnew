@@ -17,9 +17,9 @@ router.post("/downloadReports",
 verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
 ReportsController.downloadReports);
 
-router.get("/getAllDrownBox",
+router.get("/getAlldata",
 
-    // verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
      ReportsController.fetchAllData
     
 );
