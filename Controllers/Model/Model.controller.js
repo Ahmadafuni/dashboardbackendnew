@@ -1,6 +1,7 @@
 import prisma from "../../client.js";
 
 const ModelController = {
+
   createModel: async (req, res, next) => {
     const {
       ProductCatalog,
@@ -16,6 +17,7 @@ const ModelController = {
       Description,
       Varients,
       DemoModelNumber,
+      ReasonText
     } = req.body;
 
     const orderId = req.params.id;
@@ -164,6 +166,7 @@ const ModelController = {
           PrintName: PrintName,
           Description: Description,
           PrintLocation: PrintLocation,
+          ReasonText: ReasonText,
           Images: modelImages.join(","),
           Audit: {
             create: {

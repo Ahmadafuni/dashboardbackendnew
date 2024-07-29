@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   uploadModel.array("models"),
   ModelController.createModel
 );
