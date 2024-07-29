@@ -56,7 +56,7 @@ router.put(
   verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   OrderController.holdOrder
 );
-router.put(
+router.get(
   "/restart/:id",
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.restartOrder
