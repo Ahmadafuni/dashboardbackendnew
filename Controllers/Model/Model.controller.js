@@ -37,7 +37,7 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "PENDING") {
+      if (order.Status !== "ONGOING"  || order.Status !=="COMPLETED") {
         return res.status(405).send({
           status: 405,
           message: "Order already started. Cann't add new model!",
@@ -231,6 +231,7 @@ const ModelController = {
       });
     }
   },
+
   getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
     try {
@@ -264,6 +265,7 @@ const ModelController = {
       });
     }
   },
+
   getAllModels: async (req, res, next) => {
     try {
       const models = await prisma.models.findMany({
@@ -295,6 +297,7 @@ const ModelController = {
       });
     }
   },
+
   getModelById: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
@@ -343,6 +346,7 @@ const ModelController = {
       });
     }
   },
+
   deleteModel: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -375,6 +379,7 @@ const ModelController = {
       });
     }
   },
+
   updateModel: async (req, res, next) => {
     const {
       ProductCatalog,
@@ -488,6 +493,7 @@ const ModelController = {
       });
     }
   },
+
   getModelNames: async (req, res, next) => {
     try {
       const modelNames = await prisma.models
@@ -524,6 +530,7 @@ const ModelController = {
       });
     }
   },
+
   getProdModels: async (req, res, next) => {
     const userId = req.userId;
     try {
@@ -616,6 +623,7 @@ const ModelController = {
       });
     }
   },
+
   searchModel: async (req, res, next) => {
     const searchTerm = req.params.searchTerm;
     const { from, to } = req.query;
@@ -737,6 +745,7 @@ const ModelController = {
       });
     }
   },
+
   getAllModelVarients: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -792,6 +801,7 @@ const ModelController = {
       });
     }
   },
+
   getModelVarientById: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -829,6 +839,7 @@ const ModelController = {
       });
     }
   },
+
   createModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
@@ -888,6 +899,7 @@ const ModelController = {
       });
     }
   },
+
   updateModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
@@ -948,6 +960,7 @@ const ModelController = {
       });
     }
   },
+
   deleteModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
@@ -981,6 +994,7 @@ const ModelController = {
       });
     }
   },
+
   getModelSummary: async (req, res, next) => {
     const id = req.params.id;
     try {
