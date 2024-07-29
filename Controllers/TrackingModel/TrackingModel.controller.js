@@ -775,6 +775,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -820,6 +822,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -867,6 +871,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -909,6 +915,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1020,6 +1028,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1109,6 +1119,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1201,6 +1213,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1289,6 +1303,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
