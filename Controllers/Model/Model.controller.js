@@ -37,7 +37,7 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "ONGOING"  || order.Status !=="COMPLETED") {
+      if (order.Status !== "PENDING" || order.Status !=="ONHOLD") {
         return res.status(405).send({
           status: 405,
           message: "Order already started. Cann't add new model!",
