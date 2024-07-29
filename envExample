@@ -1,0 +1,4 @@
+#Database in backendRender  postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a/dashboarddb_vkfy
+
+DATABASE_URL="postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a.frankfurt-postgres.render.com:5432/dashboarddb_vkfy"
+DIRECT_URL="postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a.frankfurt-postgres.render.com:5432/dashboarddb_vkfy"
