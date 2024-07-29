@@ -1212,7 +1212,7 @@ const ModelController = {
     }
   
     if (productCatalogue) {
-      filter.ProductCatalogId = parseInt(productCatalog);
+      filter.ProductCatalogId = parseInt(productCatalogue);
     }
   
     if (productCategoryOne) {
@@ -1250,8 +1250,10 @@ const ModelController = {
         };
       }
     }
-  
+
+
     try {
+      
       const models = await prisma.models.findMany({
         where: filter,
         include: {
