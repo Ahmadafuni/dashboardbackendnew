@@ -462,6 +462,73 @@ const ReportsController = {
       });
     }
   },
+
+    fetchAllData: async (req , res , next) => {
+      const [
+        productCatalogues,
+        productCategoryOne,
+        productCategoryTwo,
+        textiles,
+        templateType,
+        templatePattern,
+      ] = await Promise.all([
+
+        prisma.ProductCatalogs.findMany({
+          select: {
+            Id: true,
+            ProductCatalogName: true,
+          },
+        }),
+        prisma.ProductCatalogCategoryOne.findMany({
+          select: {
+            Id: true,
+            CategoryName: true,
+          },
+        }),
+        prisma.ProductCatalogCategoryTwo.findMany({
+          select: {
+            Id: true,
+            CategoryName: true,
+          },
+        }),
+        prisma.ProductCatalogTextiles.findMany({
+          select: {
+            Id: true,
+            TextileName: true,
+          },
+        }),
+        prisma.TemplateTypes.findMany({
+          select: {
+            Id: true,
+            TemplateTypeName: true,
+          },
+        }),
+        prisma.TemplatePatterns.findMany({
+          select: {
+            Id: true,
+            TemplatePatternName: true,
+          },
+        }),
+      ]);
+  
+    const allData = {
+      productCatalogues,
+      productCategoryOne,
+      productCategoryTwo,
+      textiles,
+      templateType,
+      templatePattern,
+    };
+    
+
+    res.json(allData);
+
+  }
+
+
+  // new test
+
+  
 };
 
 export default ReportsController;
