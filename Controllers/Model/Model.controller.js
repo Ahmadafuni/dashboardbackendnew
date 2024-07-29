@@ -37,10 +37,10 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !=="ONHOLD") {
+      if (order.Status !== "ONHOLD" && order.Status !== "PENDING") {
         return res.status(405).send({
           status: 405,
-          message: "Order already started. Cann't add new model!",
+          message: "Order already started. Can't add new model!",
           data: {},
         });
       }
@@ -219,7 +219,7 @@ const ModelController = {
       // Return response
       return res.status(201).send({
         status: 201,
-        message: "تم إنشاء النموذج بنجاح!",
+        message: "تم إنشاء الموديل بنجاح!",
         data: {},
       });
     } catch (error) {
