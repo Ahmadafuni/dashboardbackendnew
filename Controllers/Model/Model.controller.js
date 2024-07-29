@@ -173,6 +173,7 @@ const ModelController = {
           },
         },
       });
+      
       const revertVarients = JSON.parse(Varients);
 
       for (let i = 0; i < revertVarients.length; i++) {
@@ -1185,6 +1186,95 @@ const ModelController = {
       });
     }
   },
+
+  searchModel : async (req , res , next) =>{
+    const {
+      status,
+      departments,
+      productCatalogue,
+      productCategoryOne,
+      productCategoryTwo,
+      textiles,
+      templateType,
+      templatePattern,
+      startDate,
+      endDate
+    } = req.body;
+  
+    let filters = {};
+  
+    if (status) {
+      filters.status = status;
+    }
+    if (departments) {
+      filters.departmentId = { in: departments };
+    }
+    if (productCatalogue) {
+      filters.productCatalogId = { in: productCatalogue };
+    }
+    if (productCategoryOne) {
+      filters.categoryOneId = { in: productCategoryOne };
+    }
+    if (productCategoryTwo) {
+      filters.categoryTwoId = { in: productCategoryTwo };
+    }
+    if (textiles) {
+      filters.textileId = { in: textiles };
+    }
+    if (templateType) {
+      filters.templateType = templateType;
+    }
+    if (templatePattern) {
+      filters.templatePattern = templatePattern;
+    }
+    if (startDate && endDate) {
+      filters.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+
+    try {
+      const models = await prisma.models.findMany({
+        where: filters,
+        include: {
+          ProductCatalog: true,
+          CategoryOne: true,
+          categoryTwo: true,
+          Textile: true,
+          Template: true,
+          ModelVarients: true,
+          MaterialMovement: true
+        }
+      });
+  
+      const results = models.map(model => ({
+        modelNumber: model.ModelNumber,
+        modelName: model.ModelName,
+        productCatalog: model.ProductCatalog,
+        productCategoryOne: model.CategoryOne,
+        productCategoryTwo: model.categoryTwo,
+        textiles: model.Textile,
+        colors: model.ModelVarients.map(variant => variant.color),
+        sizes: model.ModelVarients.map(variant => variant.size),
+        quantity: model.ModelVarients.reduce((sum, variant) => sum + variant.quantity, 0),
+        totalDurationInDays: model.MaterialMovement.length,
+        action: `View summary for model ${model.ModelNumber}`
+      }));
+  
+      res.json(results);
+    } catch (error) {
+     // Server error or unsolved error
+     return res.status(500).send({
+      status: 500,
+      message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+      data: {},
+    });
+    }  
+
+  },
+
+
 };
 
 export default ModelController;

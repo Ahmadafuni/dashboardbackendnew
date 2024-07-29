@@ -5,6 +5,14 @@ import ModelController from "../../Controllers/Model/Model.controller.js";
 
 const router = express.Router();
 
+
+router.post(
+"/search",
+verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+ModelController.searchModel
+
+);
+
 router.post(
   "/:id",
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
