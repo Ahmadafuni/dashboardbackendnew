@@ -1238,19 +1238,16 @@ const ModelController = {
     }
   
     if (startDate || endDate) {
-      filter.Audit = {};
+      filter.Audit = {
+        CreatedAt: {}
+      };
       if (startDate) {
-        filter.Audit.date = {
-          gte: new Date(startDate)
-        };
+        filter.Audit.CreatedAt.gte = new Date(startDate);
       }
       if (endDate) {
-        filter.Audit.date = {
-          lte: new Date(endDate)
-        };
+        filter.Audit.CreatedAt.lte = new Date(endDate);
       }
     }
-
 
     try {
       
