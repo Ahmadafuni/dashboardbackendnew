@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.post(
 "/search",
-verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
-ModelController.searchModel
+// verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+ModelController.filterModel
 
 );
 

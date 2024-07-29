@@ -1187,10 +1187,10 @@ const ModelController = {
     }
   },
 
-  searchModel : async (req , res , next) =>{
+  filterModel : async (req , res , next) =>{
     const {
       status,
-      departments,
+      department,
       productCatalogue,
       productCategoryOne,
       productCategoryTwo,
@@ -1200,69 +1200,74 @@ const ModelController = {
       startDate,
       endDate
     } = req.body;
-  
-    let filters = {};
+    
+    let filter = {};
   
     if (status) {
-      filters.status = status;
+      filter.Status = status;
     }
-    if (departments) {
-      filters.departmentId = { in: departments };
+  
+    if (department) {
+      filter.Order = { departmentId: parseInt(department) };
     }
+  
     if (productCatalogue) {
-      filters.productCatalogId = { in: productCatalogue };
+      filter.ProductCatalogId = parseInt(productCatalog);
     }
+  
     if (productCategoryOne) {
-      filters.categoryOneId = { in: productCategoryOne };
+      filter.CategoryOneId = parseInt(productCategoryOne);
     }
+  
     if (productCategoryTwo) {
-      filters.categoryTwoId = { in: productCategoryTwo };
+      filter.CategoryTwoId = parseInt(productCategoryTwo);
     }
+  
     if (textiles) {
-      filters.textileId = { in: textiles };
+      filter.TextileId = parseInt(textiles);
     }
-    if (templateType) {
-      filters.templateType = templateType;
+  
+    if (templateType || templatePattern) {
+      filter.Template = {};
+      if (templateType) {
+        filter.Template.type = templateType;
+      }
+      if (templatePattern) {
+        filter.Template.pattern = templatePattern;
+      }
     }
-    if (templatePattern) {
-      filters.templatePattern = templatePattern;
+  
+    if (startDate || endDate) {
+      filter.Audit = {};
+      if (startDate) {
+        filter.Audit.date = {
+          gte: new Date(startDate)
+        };
+      }
+      if (endDate) {
+        filter.Audit.date = {
+          lte: new Date(endDate)
+        };
+      }
     }
-    if (startDate && endDate) {
-      filters.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
-      };
-    }
-
+  
     try {
       const models = await prisma.models.findMany({
-        where: filters,
+        where: filter,
         include: {
           ProductCatalog: true,
           CategoryOne: true,
           categoryTwo: true,
           Textile: true,
           Template: true,
+          Audit: true,
           ModelVarients: true,
           MaterialMovement: true
         }
       });
   
-      const results = models.map(model => ({
-        modelNumber: model.ModelNumber,
-        modelName: model.ModelName,
-        productCatalog: model.ProductCatalog,
-        productCategoryOne: model.CategoryOne,
-        productCategoryTwo: model.categoryTwo,
-        textiles: model.Textile,
-        colors: model.ModelVarients.map(variant => variant.color),
-        sizes: model.ModelVarients.map(variant => variant.size),
-        quantity: model.ModelVarients.reduce((sum, variant) => sum + variant.quantity, 0),
-        totalDurationInDays: model.MaterialMovement.length,
-        action: `View summary for model ${model.ModelNumber}`
-      }));
+      res.json(models);
   
-      res.json(results);
     } catch (error) {
      // Server error or unsolved error
      return res.status(500).send({
