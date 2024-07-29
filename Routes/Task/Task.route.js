@@ -63,6 +63,7 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+     "WAREHOUSEMANAGER"
   ]),
   TaskController.getCurrentTasks
 );
@@ -76,6 +77,7 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER"
   ]),
   TaskController.searchTasks
 );
@@ -94,6 +96,7 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER"
   ]),
   uploadTask.single("task"),
   TaskController.updateTask
@@ -107,6 +110,7 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER"
   ]),
   TaskController.getSubmitFeedback
 );
@@ -119,14 +123,11 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER"
   ]),
   uploadTask.single("task"),
   TaskController.submitFeedback
 );
-// router.get(
-//   "/search/:query",
-//   verifyUser(["FACTORYMANAGER", "CUTTING", "ENGINEERING"]),
-//   TaskController.searchTasks
-// );
+
 const TaskRoute = router;
 export { TaskRoute };
