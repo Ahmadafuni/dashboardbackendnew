@@ -464,6 +464,8 @@ const ReportsController = {
   },
 
     fetchAllData: async (req , res , next) => {
+
+      try{
       const [
         productCatalogues,
         productCategoryOne,
@@ -520,13 +522,18 @@ const ReportsController = {
       templatePattern,
     };
     
-
     res.json(allData);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
 
   }
 
-
-  // new test
 
   
 };
