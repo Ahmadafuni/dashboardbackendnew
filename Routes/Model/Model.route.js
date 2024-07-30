@@ -110,13 +110,28 @@ router.delete(
 
 router.put(
     "/model-variants-hold/:id",
-    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),
     ModelController.holdModelVarient);
 
 router.put(
     "/model-variants-restart/:id",
-    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
-    ModelController.restartModelVarient);
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),    ModelController.restartModelVarient);
 
 router.put("/restart/:id",
     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
