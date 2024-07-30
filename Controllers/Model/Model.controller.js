@@ -173,7 +173,7 @@ const ModelController = {
           },
         },
       });
-      
+
       const revertVarients = JSON.parse(Varients);
 
       for (let i = 0; i < revertVarients.length; i++) {
@@ -1017,9 +1017,25 @@ const ModelController = {
 
       const sizes = [];
       model.ModelVarients.forEach((e) => {
-        JSON.parse(e.Sizes).forEach((f) => {
-          if (!sizes.includes(f.label)) {
-            sizes.push(f.label);
+        let sizeArray;
+
+        try {
+          // Attempt to parse Sizes as JSON
+          sizeArray = JSON.parse(e.Sizes);
+          // Ensure that sizeArray is an array
+          if (!Array.isArray(sizeArray)) {
+            sizeArray = [sizeArray];
+          }
+        } catch (err) {
+          // If parsing fails, treat Sizes as a plain string
+          sizeArray = [e.Sizes];
+        }
+
+        // Iterate over the size array and collect unique sizes
+        sizeArray.forEach((f) => {
+          const sizeLabel = typeof f === "string" ? f : f.label;
+          if (!sizes.includes(sizeLabel)) {
+            sizes.push(sizeLabel);
           }
         });
       });
@@ -1181,13 +1197,12 @@ const ModelController = {
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
-        message:  "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {},
       });
     }
   },
-
-  filterModel : async (req , res , next) =>{
+  filterModel: async (req, res, next) => {
     const {
       status,
       department,
@@ -1198,62 +1213,60 @@ const ModelController = {
       templateType,
       templatePattern,
       startDate,
-      endDate
+      endDate,
     } = req.body;
-    
-    let filter = {
-    };
-  
+
+    let filter = {};
+
     if (status) {
       filter.Status = status;
     }
-  
+
     if (department) {
       filter.Order = { departmentId: parseInt(department) };
     }
-  
+
     if (productCatalogue) {
       filter.ProductCatalogId = parseInt(productCatalogue);
     }
-  
+
     if (productCategoryOne) {
       filter.CategoryOneId = parseInt(productCategoryOne);
     }
-  
+
     if (productCategoryTwo) {
       filter.CategoryTwoId = parseInt(productCategoryTwo);
     }
-  
+
     if (textiles) {
       filter.TextileId = parseInt(textiles);
     }
 
-
     if (templateType || templatePattern) {
       filter.Template = {
-        AND: []
+        AND: [],
       };
-  
+
       if (templateType) {
         filter.Template.AND.push({
           TemplateType: {
-            TemplateTypeName: templateType
-          }
+            TemplateTypeName: templateType,
+          },
         });
       }
-  
+
       if (templatePattern) {
         filter.Template.AND.push({
           TemplatePattern: {
-            TemplatePatternName: templatePattern
-          }
+            TemplatePatternName: templatePattern,
+          },
         });
       }
     }
-  
+
     if (startDate || endDate) {
       filter.Audit = {
-        CreatedAt: {}
+        CreatedAt: {},
       };
       if (startDate) {
         filter.Audit.CreatedAt.gte = new Date(startDate);
@@ -1263,9 +1276,7 @@ const ModelController = {
       }
     }
 
-
     try {
-
       const models = await prisma.models.findMany({
         where: filter,
         select: {
@@ -1273,46 +1284,49 @@ const ModelController = {
           ModelName: true,
           ProductCatalog: {
             select: {
-              ProductCatalogName: true
-            }
+              ProductCatalogName: true,
+            },
           },
           CategoryOne: {
             select: {
-              CategoryName: true
-            }
+              CategoryName: true,
+            },
           },
           categoryTwo: {
             select: {
-              CategoryName: true
-            }
+              CategoryName: true,
+            },
           },
           Textile: {
             select: {
-              TextileName: true
-            }
+              TextileName: true,
+            },
           },
           ModelVarients: {
             select: {
               Color: true,
               Sizes: true,
-              Quantity: true
-            }
+              Quantity: true,
+            },
           },
           Audit: {
             select: {
               CreatedAt: true,
-              UpdatedAt: true
-            }
-          }
-        }
+              UpdatedAt: true,
+            },
+          },
+        },
       });
-  
-      const result = models.map(model => {
-        const totalDuration = Math.floor((new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) / (1000 * 60 * 60 * 24));
-        const details = model.ModelVarients.map(varient => ({
+
+      const result = models.map((model) => {
+        const totalDuration = Math.floor(
+          (new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) /
+            (1000 * 60 * 60 * 24)
+        );
+        const details = model.ModelVarients.map((varient) => ({
           Color: varient.Color.ColorName,
           Sizes: varient.Sizes,
-          Quantity: varient.Quantity
+          Quantity: varient.Quantity,
         }));
         return {
           ModelNumber: model.ModelNumber,
@@ -1323,29 +1337,25 @@ const ModelController = {
           Textiles: model.Textile.TextileName,
           TotalDurationInDays: totalDuration,
           Action: `model/model-summary/${model.Id}`,
-          Details: details
+          Details: details,
         };
       });
-  
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
-        data: result
+        data: result,
       });
-      
-  
     } catch (error) {
-     // Server error or unsolved error
-     return res.status(500).send({
-      status: 500,
-      message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
-      data: {},
-    });
-    }  
-
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message:
+          "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
+        data: {},
+      });
+    }
   },
-
-
 };
 
 export default ModelController;
