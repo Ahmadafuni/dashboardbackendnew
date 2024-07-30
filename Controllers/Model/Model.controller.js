@@ -753,50 +753,51 @@ const ModelController = {
     const id = req.params.id;
     try {
       const varients = await prisma.modelVarients
-        .findMany({
-          where: {
-            ModelId: +id,
-            Audit: {
-              IsDeleted: false,
-            },
-          },
-          select: {
-            Id: true,
-            Color: {
-              select: {
-                ColorName: true,
+          .findMany({
+            where: {
+              ModelId: +id,
+              Audit: {
+                IsDeleted: false,
               },
             },
-            Sizes: true,
-            Quantity: true,
-            Status: true,
-            ReasonText: true,
-            RunningStatus: true,
-            Model: {
-              select: {
-                ModelName: true,
-                TemplateId: true,
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+              Status: true,
+              ReasonText: true,
+              RunningStatus: true,
+              Model: {
+                select: {
+                  ModelName: true,
+                  TemplateId: true,
+                },
               },
             },
-          },
-        })
-        .then((varientss) =>
-          varientss.map((e) => ({
-            Id: e.Id,
-            Color: e.Color.ColorName,
-            Sizes: JSON.parse(e.Sizes),
-            Model: e.Model.ModelName,
-            Status: e.Status,
-            Quantity: e.Quantity,
-            TemplateId: e.Model.TemplateId,
-            ReasonText: e.Model.ReasonText,
-            RunningStatus: e.Model.RunningStatus,
-          }))
-        );
+          })
+          .then((varientss) =>
+              varientss.map((e) => ({
+                Id: e.Id,
+                Color: e.Color.ColorName,
+                Sizes: JSON.parse(e.Sizes),
+                Model: e.Model.ModelName,
+                Status: e.Status,
+                Quantity: e.Quantity,
+                TemplateId: e.Model.TemplateId,
+                ReasonText: e.ReasonText,
+                RunningStatus: e.RunningStatus,
+              }))
+          );
+
       // Return Response
       return res.status(200).send({
         status: 200,
-        message: "Model varients fetched successfully!",
+        message: "Model varients :( fetched successfully!",
         data: varients,
       });
     } catch (error) {
