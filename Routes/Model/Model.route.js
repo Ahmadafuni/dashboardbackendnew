@@ -84,8 +84,16 @@ router.get(
 );
 router.get(
   "/varients/all/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
-  ModelController.getAllModelVarients
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),
+    ModelController.getAllModelVarients
 );
 router.post(
   "/varients/:id",
