@@ -1202,6 +1202,271 @@ const ModelController = {
       });
     }
   },
+
+  holdModel : async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "RUNNING",
+        },
+      });
+
+      if (!model) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model not found or already on hold!",
+          data: {},
+        });
+      }
+
+      // Update the model status to PAUSED
+      await prisma.models.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to PAUSED
+      await prisma.modelVarients.updateMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model and its variants on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  restartModel : async (req, res, next) => {
+    const id = req.params.id; // Model ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "PAUSED",
+        },
+      });
+
+      if (!model) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model not found or already running!",
+          data: {},
+        });
+      }
+
+      // Update the model status to RUNNING
+      await prisma.models.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to RUNNING
+      await prisma.modelVarients.updateMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model and its variants restarted successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  holdModelVarient : async (req, res, next) => {
+    const id = req.params.id; // Model Variant ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const modelVariant = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "RUNNING",
+        },
+      });
+
+      if (!modelVariant) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model variant not found or already on hold!",
+          data: {},
+        });
+      }
+
+      // Update the model variant status to PAUSED
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model variant on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  restartModelVarient : async (req, res, next) => {
+    const id = req.params.id; // Model Variant ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const modelVariant = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "PAUSED",
+        },
+      });
+
+      if (!modelVariant) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model variant not found or already running!",
+          data: {},
+        });
+      }
+
+      // Update the model variant status to RUNNING
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model variant restarted successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
 };
 
 export default ModelController;
