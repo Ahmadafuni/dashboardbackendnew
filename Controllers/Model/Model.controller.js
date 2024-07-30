@@ -770,6 +770,8 @@ const ModelController = {
             Sizes: true,
             Quantity: true,
             Status: true,
+            ReasonText: true,
+            RunningStatus: true,
             Model: {
               select: {
                 ModelName: true,
@@ -787,6 +789,8 @@ const ModelController = {
             Status: e.Status,
             Quantity: e.Quantity,
             TemplateId: e.Model.TemplateId,
+            ReasonText: e.Model.ReasonText,
+            RunningStatus: e.Model.RunningStatus,
           }))
         );
       // Return Response
