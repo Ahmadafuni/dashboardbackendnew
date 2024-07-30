@@ -109,21 +109,21 @@ router.delete(
 );
 
 router.put(
-    "/model-variants/hold/:id",
+    "/model-variants-hold/:id",
     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
     ModelController.holdModelVarient);
 
 router.put(
-    "/model-variants/restart/:id",
+    "/model-variants-restart/:id",
     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
     ModelController.restartModelVarient);
 
-router.put("/models/restart/:id",
+router.put("/restart/:id",
     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
     ModelController.restartModel);
 
 router.put(
-    "/models/hold/:id",
+    "/hold/:id",
     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
     ModelController.holdModel);
 
