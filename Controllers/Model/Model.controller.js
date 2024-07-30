@@ -1264,27 +1264,126 @@ const ModelController = {
 
 
     try {
-      
+
       const models = await prisma.models.findMany({
         where: filter,
-        include: {
-          ProductCatalog: true,
-          CategoryOne: true,
-          categoryTwo: true,
-          Textile: true,
-          Template: {
-            include: {
-              TemplateType: true,
-              TemplatePattern: true
+        select: {
+          ModelNumber: true,
+          ModelName: true,
+          ProductCatalog: {
+            select: {
+              ProductCatalogName: true
             }
           },
-          Audit: true,
-          ModelVarients: true,
-          MaterialMovement: true
+          CategoryOne: {
+            select: {
+              CategoryName: true
+            }
+          },
+          categoryTwo: {
+            select: {
+              CategoryName: true
+            }
+          },
+          Textile: {
+            select: {
+              TextileName: true
+            }
+          },
+          ModelVarients: {
+            select: {
+              Color: true,
+              Sizes: true,
+              Quantity: true
+            }
+          },
+          Audit: {
+            select: {
+              CreatedAt: true,
+              UpdatedAt: true
+            }
+          }
         }
       });
   
-      res.json(models);
+      const result = models.map(model => {
+        const totalDuration = Math.floor((new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) / (1000 * 60 * 60 * 24));
+        return {
+          ModelNumber: model.ModelNumber,
+          ModelName: model.ModelName,
+          ProductCatalog: model.ProductCatalog.Name,
+          CategoryOne: model.CategoryOne.CategoryName,
+          CategoryTwo: model.categoryTwo.CategoryName,
+          Textiles: model.Textile.Name,
+          Colors: model.ModelVarients.map(varient => varient.Color),
+          Sizes: model.ModelVarients.map(varient => varient.Sizes),
+          Quantity: model.ModelVarients.reduce((total, varient) => total + varient.Quantity, 0),
+          TotalDurationInDays: totalDuration,
+          Action: 'View summary Model'
+        };
+      });
+  
+      res.json(result);
+      
+      // const models = await prisma.models.findMany({
+      //   where: filter,
+      //   select: {
+      //     ModelNumber: true,
+      //     ModelName: true,
+      //     ProductCatalog: {
+      //       select: {
+      //         ProductCatalogName: true
+      //       }
+      //     },
+      //     ProductCatalogCategoryOne: {
+      //       select: {
+      //         CategoryName: true
+      //       }
+      //     },
+      //     ProductCatalogCategoryTwo: {
+      //       select: {
+      //         CategoryName: true
+      //       }
+      //     },
+      //     ProductCatalogTextiles: {
+      //       select: {
+      //         TextileName: true
+      //       }
+      //     },
+      //     ModelVarients: {
+      //       select: {
+      //         Color: true,
+      //         Size: true,
+      //         Quantity: true
+      //       }
+      //     },
+      //     Audit: {
+      //       select: {
+      //         CreatedAt: true,
+      //         UpdatedAt: true
+      //       }
+      //     }
+      //   }
+      // });
+  
+      // const result = models.map(model => {
+      //   const totalDuration = Math.floor((new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) / (1000 * 60 * 60 * 24));
+      //   return {
+      //     ModelNumber: model.ModelNumber,
+      //     ModelName: model.ModelName,
+      //     ProductCatalog: model.ProductCatalog.ProductCatalogName,
+      //     CategoryOne: model.ProductCatalogCategoryOne.CategoryName,
+      //     CategoryTwo: model.ProductCatalogCategoryTwo.CategoryName,
+      //     Textiles: model.ProductCatalogTextiles.TextileName,
+      //     Colors: model.ModelVarients.map(varient => varient.Color),
+      //     Sizes: model.ModelVarients.map(varient => varient.Size),
+      //     Quantity: model.ModelVarients.reduce((total, varient) => total + varient.Quantity, 0),
+      //     TotalDurationInDays: totalDuration,
+      //     Action: 'View summary Model'
+      //   };
+      // });
+  
+      // res.json(result);
   
     } catch (error) {
      // Server error or unsolved error
