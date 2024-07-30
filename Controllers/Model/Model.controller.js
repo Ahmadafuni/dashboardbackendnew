@@ -819,6 +819,13 @@ const ModelController = {
             IsDeleted: false,
           },
         },
+        select: {
+          ColorId: true,
+          Sizes: true,
+          Quantity: true,
+          RunningStatus: true,
+          ReasonText: true,
+        },
       });
 
       if (!varient) {
@@ -828,19 +835,21 @@ const ModelController = {
           data: {},
         });
       }
+
       return res.status(200).send({
         status: 200,
-        message: "Model varients fetched successfully!",
+        message: "Model varients :) fetched successfully!",
         data: {
           Color: varient.ColorId.toString(),
           Sizes: JSON.parse(varient.Sizes),
           Quantity: varient.Quantity.toString(),
           RunningStatus: varient.RunningStatus.toString(),
-          ReasonText: varient.ReasonText.toString(),
+          ReasonText: varient.ReasonText ? varient.ReasonText.toString() : "",
         },
       });
     } catch (error) {
       // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
