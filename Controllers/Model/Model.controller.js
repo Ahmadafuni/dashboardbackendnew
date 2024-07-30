@@ -835,6 +835,8 @@ const ModelController = {
           Color: varient.ColorId.toString(),
           Sizes: JSON.parse(varient.Sizes),
           Quantity: varient.Quantity.toString(),
+          RunningStatus: varient.RunningStatus.toString(),
+          ReasonText: varient.ReasonText.toString(),
         },
       });
     } catch (error) {
