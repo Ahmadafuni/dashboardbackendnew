@@ -1181,7 +1181,7 @@ const ModelController = {
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message:  "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {},
       });
     }
@@ -1201,7 +1201,8 @@ const ModelController = {
       endDate
     } = req.body;
     
-    let filter = {};
+    let filter = {
+    };
   
     if (status) {
       filter.Status = status;
@@ -1308,82 +1309,30 @@ const ModelController = {
   
       const result = models.map(model => {
         const totalDuration = Math.floor((new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) / (1000 * 60 * 60 * 24));
+        const details = model.ModelVarients.map(varient => ({
+          Color: varient.Color.ColorName,
+          Sizes: varient.Sizes,
+          Quantity: varient.Quantity
+        }));
         return {
           ModelNumber: model.ModelNumber,
           ModelName: model.ModelName,
-          ProductCatalog: model.ProductCatalog.Name,
+          ProductCatalog: model.ProductCatalog.ProductCatalogName,
           CategoryOne: model.CategoryOne.CategoryName,
           CategoryTwo: model.categoryTwo.CategoryName,
-          Textiles: model.Textile.Name,
-          Colors: model.ModelVarients.map(varient => varient.Color),
-          Sizes: model.ModelVarients.map(varient => varient.Sizes),
-          Quantity: model.ModelVarients.reduce((total, varient) => total + varient.Quantity, 0),
+          Textiles: model.Textile.TextileName,
           TotalDurationInDays: totalDuration,
-          Action: 'View summary Model'
+          Action: `model/model-summary/${model.Id}`,
+          Details: details
         };
       });
   
-      res.json(result);
+      return res.status(200).send({
+        status: 200,
+        message: "Models fetched successfully!",
+        data: result
+      });
       
-      // const models = await prisma.models.findMany({
-      //   where: filter,
-      //   select: {
-      //     ModelNumber: true,
-      //     ModelName: true,
-      //     ProductCatalog: {
-      //       select: {
-      //         ProductCatalogName: true
-      //       }
-      //     },
-      //     ProductCatalogCategoryOne: {
-      //       select: {
-      //         CategoryName: true
-      //       }
-      //     },
-      //     ProductCatalogCategoryTwo: {
-      //       select: {
-      //         CategoryName: true
-      //       }
-      //     },
-      //     ProductCatalogTextiles: {
-      //       select: {
-      //         TextileName: true
-      //       }
-      //     },
-      //     ModelVarients: {
-      //       select: {
-      //         Color: true,
-      //         Size: true,
-      //         Quantity: true
-      //       }
-      //     },
-      //     Audit: {
-      //       select: {
-      //         CreatedAt: true,
-      //         UpdatedAt: true
-      //       }
-      //     }
-      //   }
-      // });
-  
-      // const result = models.map(model => {
-      //   const totalDuration = Math.floor((new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) / (1000 * 60 * 60 * 24));
-      //   return {
-      //     ModelNumber: model.ModelNumber,
-      //     ModelName: model.ModelName,
-      //     ProductCatalog: model.ProductCatalog.ProductCatalogName,
-      //     CategoryOne: model.ProductCatalogCategoryOne.CategoryName,
-      //     CategoryTwo: model.ProductCatalogCategoryTwo.CategoryName,
-      //     Textiles: model.ProductCatalogTextiles.TextileName,
-      //     Colors: model.ModelVarients.map(varient => varient.Color),
-      //     Sizes: model.ModelVarients.map(varient => varient.Size),
-      //     Quantity: model.ModelVarients.reduce((total, varient) => total + varient.Quantity, 0),
-      //     TotalDurationInDays: totalDuration,
-      //     Action: 'View summary Model'
-      //   };
-      // });
-  
-      // res.json(result);
   
     } catch (error) {
      // Server error or unsolved error
