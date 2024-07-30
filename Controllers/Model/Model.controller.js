@@ -1226,14 +1226,27 @@ const ModelController = {
     if (textiles) {
       filter.TextileId = parseInt(textiles);
     }
-  
+
+
     if (templateType || templatePattern) {
-      filter.Template = {};
+      filter.Template = {
+        AND: []
+      };
+  
       if (templateType) {
-        filter.Template.type = templateType;
+        filter.Template.AND.push({
+          TemplateType: {
+            TemplateTypeName: templateType
+          }
+        });
       }
+  
       if (templatePattern) {
-        filter.Template.pattern = templatePattern;
+        filter.Template.AND.push({
+          TemplatePattern: {
+            TemplatePatternName: templatePattern
+          }
+        });
       }
     }
   
@@ -1249,6 +1262,7 @@ const ModelController = {
       }
     }
 
+
     try {
       
       const models = await prisma.models.findMany({
@@ -1258,7 +1272,12 @@ const ModelController = {
           CategoryOne: true,
           categoryTwo: true,
           Textile: true,
-          Template: true,
+          Template: {
+            include: {
+              TemplateType: true,
+              TemplatePattern: true
+            }
+          },
           Audit: true,
           ModelVarients: true,
           MaterialMovement: true
@@ -1271,7 +1290,7 @@ const ModelController = {
      // Server error or unsolved error
      return res.status(500).send({
       status: 500,
-      message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+      message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
       data: {},
     });
     }  
