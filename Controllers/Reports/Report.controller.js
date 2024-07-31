@@ -463,66 +463,81 @@ const ReportsController = {
     }
   },
 
-    fetchAllData: async (req , res , next) => {
-
-      try{
+  fetchAllData: async (req, res, next) => {
+    try {
       const [
+        departments,
         productCatalogues,
         productCategoryOne,
         productCategoryTwo,
         textiles,
         templateType,
         templatePattern,
+        orders,
       ] = await Promise.all([
+        prisma.departments.findMany({
+          select: {
+            Id: true,
+            Name: true,
+          },
+        }),
 
-        prisma.ProductCatalogs.findMany({
+        prisma.productCatalogs.findMany({
           select: {
             Id: true,
             ProductCatalogName: true,
           },
         }),
-        prisma.ProductCatalogCategoryOne.findMany({
+        prisma.productCatalogCategoryOne.findMany({
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
-        prisma.ProductCatalogCategoryTwo.findMany({
+        prisma.productCatalogCategoryTwo.findMany({
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
-        prisma.ProductCatalogTextiles.findMany({
+        prisma.productCatalogTextiles.findMany({
           select: {
             Id: true,
             TextileName: true,
           },
         }),
-        prisma.TemplateTypes.findMany({
+        prisma.templateTypes.findMany({
           select: {
             Id: true,
             TemplateTypeName: true,
           },
         }),
-        prisma.TemplatePatterns.findMany({
+        prisma.templatePatterns.findMany({
           select: {
             Id: true,
             TemplatePatternName: true,
           },
         }),
+        prisma.orders.findMany({
+          select: {
+            Id: true,
+            OrderNumber: true,
+          },
+        }),
       ]);
-  
-    const allData = {
-      productCatalogues,
-      productCategoryOne,
-      productCategoryTwo,
-      textiles,
-      templateType,
-      templatePattern,
-    };
-    
-    res.json(allData);
+
+      const allData = {
+        departments,
+        productCatalogues,
+        productCategoryOne,
+        productCategoryTwo,
+        textiles,
+        templateType,
+        templatePattern,
+        orders,
+      };
+
+      res.json(allData);
     } catch (error) {
       console.error("Error generating report:", error);
       return res.status(500).send({
@@ -531,11 +546,7 @@ const ReportsController = {
         data: {},
       });
     }
-
-  }
-
-
-  
+  },
 };
 
 export default ReportsController;
