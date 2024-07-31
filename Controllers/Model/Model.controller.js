@@ -1207,7 +1207,6 @@ const ModelController = {
   filterModel: async (req, res, next) => {
     const {
       status,
-      department,
       productCatalogue,
       productCategoryOne,
       productCategoryTwo,
@@ -1218,17 +1217,14 @@ const ModelController = {
       endDate,
       orderNumber,
       modelNumber,
-      barcode
+      barcode ,
+      currentStage
     } = req.body;
 
     let filter = {};
 
     if (status) {
       filter.Status = status;
-    }
-
-    if (department) {
-      filter.Order = { departmentId: parseInt(department) };
     }
 
     if (productCatalogue) {
@@ -1294,6 +1290,41 @@ const ModelController = {
     }
 
     try {
+
+     // جلب جميع ModelVariantId التي تطابق currentStage
+    let trackingFilter = {};
+    if (currentStage) {
+      trackingFilter.CurrentStageId = parseInt(currentStage);
+ 
+
+    const trackingModels = await prisma.trakingModels.findMany({
+      where: trackingFilter,
+      select: {
+        ModelVariantId: true
+      }
+    });
+
+    const modelVariantIds = trackingModels.map(tm => tm.ModelVariantId);
+
+    // جلب ModelId من ModelVarients بناءً على ModelVariantId
+    const modelVariants = await prisma.modelVarients.findMany({
+      where: {
+        Id: {
+          in: modelVariantIds
+        }
+      },
+      select: {
+        ModelId: true
+      }
+    });
+
+    const modelIds = modelVariants.map(mv => mv.ModelId);
+    // تعديل الفلتر ليشمل ModelId
+    filter.Id = {
+      in: modelIds
+    };
+  }
+
       const models = await prisma.models.findMany({
         where: filter,
         select: {
