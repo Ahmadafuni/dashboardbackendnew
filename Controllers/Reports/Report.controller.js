@@ -474,6 +474,7 @@ const ReportsController = {
         templateType,
         templatePattern,
         orders,
+        models,
       ] = await Promise.all([
         prisma.departments.findMany({
           select: {
@@ -524,6 +525,13 @@ const ReportsController = {
             OrderNumber: true,
           },
         }),
+        prisma.models.findMany({
+          select: {
+            Id: true,
+            Barcode: true,
+            ModelNumber: true,
+          },
+        }),
       ]);
 
       const allData = {
@@ -535,6 +543,7 @@ const ReportsController = {
         templateType,
         templatePattern,
         orders,
+        models,
       };
 
       res.json(allData);
