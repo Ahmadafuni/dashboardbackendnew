@@ -1202,6 +1202,8 @@ const ModelController = {
       });
     }
   },
+  
+
   filterModel: async (req, res, next) => {
     const {
       status,
@@ -1214,6 +1216,9 @@ const ModelController = {
       templatePattern,
       startDate,
       endDate,
+      orderNumber,
+      modelNumber,
+      barcode
     } = req.body;
 
     let filter = {};
@@ -1276,12 +1281,25 @@ const ModelController = {
       }
     }
 
+    if(orderNumber) {
+      filter.OrderNumber = orderNumber ;
+    }
+
+    if(modelNumber){
+      filter.ModelNumber = modelNumber ;
+    }
+
+    if(barcode){
+      filter.Barcode = barcode ;
+    }
+
     try {
       const models = await prisma.models.findMany({
         where: filter,
         select: {
           ModelNumber: true,
           ModelName: true,
+          Id: true ,
           ProductCatalog: {
             select: {
               ProductCatalogName: true,
@@ -1318,16 +1336,18 @@ const ModelController = {
         },
       });
 
-      const result = models.map((model) => {
+      const result = await Promise.all(models.map(async (model) => {
         const totalDuration = Math.floor(
           (new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) /
-            (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24)
         );
+  
         const details = model.ModelVarients.map((varient) => ({
           Color: varient.Color.ColorName,
           Sizes: varient.Sizes,
           Quantity: varient.Quantity,
         }));
+  
         return {
           ModelNumber: model.ModelNumber,
           ModelName: model.ModelName,
@@ -1336,11 +1356,10 @@ const ModelController = {
           CategoryTwo: model.categoryTwo.CategoryName,
           Textiles: model.Textile.TextileName,
           TotalDurationInDays: totalDuration,
-          Action: `model/model-summary/${model.Id}`,
           Details: details,
         };
-      });
-
+      }));
+  
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
