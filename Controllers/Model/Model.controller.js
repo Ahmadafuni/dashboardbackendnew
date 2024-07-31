@@ -1291,7 +1291,6 @@ const ModelController = {
 
     try {
 
-     // جلب جميع ModelVariantId التي تطابق currentStage
     let trackingFilter = {};
     if (currentStage) {
       trackingFilter.CurrentStageId = parseInt(currentStage);
@@ -1306,7 +1305,6 @@ const ModelController = {
 
     const modelVariantIds = trackingModels.map(tm => tm.ModelVariantId);
 
-    // جلب ModelId من ModelVarients بناءً على ModelVariantId
     const modelVariants = await prisma.modelVarients.findMany({
       where: {
         Id: {
@@ -1319,7 +1317,7 @@ const ModelController = {
     });
 
     const modelIds = modelVariants.map(mv => mv.ModelId);
-    // تعديل الفلتر ليشمل ModelId
+
     filter.Id = {
       in: modelIds
     };
