@@ -1202,7 +1202,6 @@ const ModelController = {
       });
     }
   },
-  
 
   filterModel: async (req, res, next) => {
     const {
@@ -1217,8 +1216,8 @@ const ModelController = {
       endDate,
       orderNumber,
       modelNumber,
-      barcode ,
-      currentStage
+      barcode,
+      currentStage,
     } = req.body;
 
     let filter = {};
@@ -1277,58 +1276,56 @@ const ModelController = {
       }
     }
 
-    if(orderNumber) {
-      filter.OrderNumber = orderNumber ;
+    if (orderNumber) {
+      filter.OrderNumber = orderNumber;
     }
 
-    if(modelNumber){
-      filter.ModelNumber = modelNumber ;
+    if (modelNumber) {
+      filter.ModelNumber = modelNumber;
     }
 
-    if(barcode){
-      filter.Barcode = barcode ;
+    if (barcode) {
+      filter.Barcode = barcode;
     }
 
     try {
+      let trackingFilter = {};
+      if (currentStage) {
+        trackingFilter.CurrentStageId = parseInt(currentStage);
 
-    let trackingFilter = {};
-    if (currentStage) {
-      trackingFilter.CurrentStageId = parseInt(currentStage);
- 
+        const trackingModels = await prisma.trakingModels.findMany({
+          where: trackingFilter,
+          select: {
+            ModelVariantId: true,
+          },
+        });
 
-    const trackingModels = await prisma.trakingModels.findMany({
-      where: trackingFilter,
-      select: {
-        ModelVariantId: true
+        const modelVariantIds = trackingModels.map((tm) => tm.ModelVariantId);
+
+        const modelVariants = await prisma.modelVarients.findMany({
+          where: {
+            Id: {
+              in: modelVariantIds,
+            },
+          },
+          select: {
+            ModelId: true,
+          },
+        });
+
+        const modelIds = modelVariants.map((mv) => mv.ModelId);
+
+        filter.Id = {
+          in: modelIds,
+        };
       }
-    });
-
-    const modelVariantIds = trackingModels.map(tm => tm.ModelVariantId);
-
-    const modelVariants = await prisma.modelVarients.findMany({
-      where: {
-        Id: {
-          in: modelVariantIds
-        }
-      },
-      select: {
-        ModelId: true
-      }
-    });
-
-    const modelIds = modelVariants.map(mv => mv.ModelId);
-
-    filter.Id = {
-      in: modelIds
-    };
-  }
 
       const models = await prisma.models.findMany({
         where: filter,
         select: {
           ModelNumber: true,
           ModelName: true,
-          Id: true ,
+          Id: true,
           ProductCatalog: {
             select: {
               ProductCatalogName: true,
@@ -1365,30 +1362,34 @@ const ModelController = {
         },
       });
 
-      const result = await Promise.all(models.map(async (model) => {
-        const totalDuration = Math.floor(
-          (new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) /
-          (1000 * 60 * 60 * 24)
-        );
-  
-        const details = model.ModelVarients.map((varient) => ({
-          Color: varient.Color.ColorName,
-          Sizes: varient.Sizes,
-          Quantity: varient.Quantity,
-        }));
-  
-        return {
-          ModelNumber: model.ModelNumber,
-          ModelName: model.ModelName,
-          ProductCatalog: model.ProductCatalog.ProductCatalogName,
-          CategoryOne: model.CategoryOne.CategoryName,
-          CategoryTwo: model.categoryTwo.CategoryName,
-          Textiles: model.Textile.TextileName,
-          TotalDurationInDays: totalDuration,
-          Details: details,
-        };
-      }));
-  
+      const result = await Promise.all(
+        models.map(async (model) => {
+          const totalDuration = Math.floor(
+            (new Date(model.Audit.UpdatedAt) -
+              new Date(model.Audit.CreatedAt)) /
+              (1000 * 60 * 60 * 24)
+          );
+
+          const details = model.ModelVarients.map((varient) => ({
+            Color: varient.Color.ColorName,
+            Sizes: varient.Sizes,
+            Quantity: varient.Quantity,
+          }));
+
+          return {
+            ModelId: model.Id,
+            ModelNumber: model.ModelNumber,
+            ModelName: model.ModelName,
+            ProductCatalog: model.ProductCatalog.ProductCatalogName,
+            CategoryOne: model.CategoryOne.CategoryName,
+            CategoryTwo: model.categoryTwo.CategoryName,
+            Textiles: model.Textile.TextileName,
+            TotalDurationInDays: totalDuration,
+            Details: details,
+          };
+        })
+      );
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
