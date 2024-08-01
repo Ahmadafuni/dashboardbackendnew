@@ -1233,6 +1233,7 @@ const ModelController = {
         data: {},
       });
     }
+  },
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;
@@ -1306,7 +1307,6 @@ const ModelController = {
       });
     }
   },
-
   restartModel: async (req, res, next) => {
     const id = req.params.id; // Model ID
     const userId = req.userId;
