@@ -16,7 +16,7 @@ const ModelController = {
       Description,
       Varients,
       DemoModelNumber,
-      ReasonText
+      ReasonText,
     } = req.body;
 
     const orderId = req.params.id;
@@ -753,46 +753,46 @@ const ModelController = {
     const id = req.params.id;
     try {
       const varients = await prisma.modelVarients
-          .findMany({
-            where: {
-              ModelId: +id,
-              Audit: {
-                IsDeleted: false,
+        .findMany({
+          where: {
+            ModelId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          select: {
+            Id: true,
+            Color: {
+              select: {
+                ColorName: true,
               },
             },
-            select: {
-              Id: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-              Status: true,
-              ReasonText: true,
-              RunningStatus: true,
-              Model: {
-                select: {
-                  ModelName: true,
-                  TemplateId: true,
-                },
+            Sizes: true,
+            Quantity: true,
+            Status: true,
+            ReasonText: true,
+            RunningStatus: true,
+            Model: {
+              select: {
+                ModelName: true,
+                TemplateId: true,
               },
             },
-          })
-          .then((varientss) =>
-              varientss.map((e) => ({
-                Id: e.Id,
-                Color: e.Color.ColorName,
-                Sizes: JSON.parse(e.Sizes),
-                Model: e.Model.ModelName,
-                Status: e.Status,
-                Quantity: e.Quantity,
-                TemplateId: e.Model.TemplateId,
-                ReasonText: e.ReasonText,
-                RunningStatus: e.RunningStatus,
-              }))
-          );
+          },
+        })
+        .then((varientss) =>
+          varientss.map((e) => ({
+            Id: e.Id,
+            Color: e.Color.ColorName,
+            Sizes: JSON.parse(e.Sizes),
+            Model: e.Model.ModelName,
+            Status: e.Status,
+            Quantity: e.Quantity,
+            TemplateId: e.Model.TemplateId,
+            ReasonText: e.ReasonText,
+            RunningStatus: e.RunningStatus,
+          }))
+        );
 
       // Return Response
       return res.status(200).send({
@@ -1235,7 +1235,7 @@ const ModelController = {
     }
   },
 
-  holdModel : async (req, res, next) => {
+  holdModel: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
     const { reasonText } = req.body;
@@ -1308,7 +1308,7 @@ const ModelController = {
     }
   },
 
-  restartModel : async (req, res, next) => {
+  restartModel: async (req, res, next) => {
     const id = req.params.id; // Model ID
     const userId = req.userId;
     const { reasonText } = req.body;
@@ -1381,7 +1381,7 @@ const ModelController = {
     }
   },
 
-  holdModelVarient : async (req, res, next) => {
+  holdModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
     const { reasonText } = req.body;
@@ -1440,7 +1440,7 @@ const ModelController = {
     }
   },
 
-  restartModelVarient : async (req, res, next) => {
+  restartModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
     const { reasonText } = req.body;
@@ -1499,8 +1499,6 @@ const ModelController = {
     }
   },
 
-
-
   filterModel: async (req, res, next) => {
     const {
       status,
@@ -1514,8 +1512,8 @@ const ModelController = {
       endDate,
       orderNumber,
       modelNumber,
-      barcode ,
-      currentStage
+      barcode,
+      currentStage,
     } = req.body;
 
     let filter = {};
@@ -1574,58 +1572,56 @@ const ModelController = {
       }
     }
 
-    if(orderNumber) {
-      filter.OrderNumber = orderNumber ;
+    if (orderNumber) {
+      filter.OrderNumber = orderNumber;
     }
 
-    if(modelNumber){
-      filter.ModelNumber = modelNumber ;
+    if (modelNumber) {
+      filter.ModelNumber = modelNumber;
     }
 
-    if(barcode){
-      filter.Barcode = barcode ;
+    if (barcode) {
+      filter.Barcode = barcode;
     }
 
     try {
+      let trackingFilter = {};
+      if (currentStage) {
+        trackingFilter.CurrentStageId = parseInt(currentStage);
 
-    let trackingFilter = {};
-    if (currentStage) {
-      trackingFilter.CurrentStageId = parseInt(currentStage);
+        const trackingModels = await prisma.trakingModels.findMany({
+          where: trackingFilter,
+          select: {
+            ModelVariantId: true,
+          },
+        });
 
+        const modelVariantIds = trackingModels.map((tm) => tm.ModelVariantId);
 
-    const trackingModels = await prisma.trakingModels.findMany({
-      where: trackingFilter,
-      select: {
-        ModelVariantId: true
+        const modelVariants = await prisma.modelVarients.findMany({
+          where: {
+            Id: {
+              in: modelVariantIds,
+            },
+          },
+          select: {
+            ModelId: true,
+          },
+        });
+
+        const modelIds = modelVariants.map((mv) => mv.ModelId);
+
+        filter.Id = {
+          in: modelIds,
+        };
       }
-    });
-
-    const modelVariantIds = trackingModels.map(tm => tm.ModelVariantId);
-
-    const modelVariants = await prisma.modelVarients.findMany({
-      where: {
-        Id: {
-          in: modelVariantIds
-        }
-      },
-      select: {
-        ModelId: true
-      }
-    });
-
-    const modelIds = modelVariants.map(mv => mv.ModelId);
-
-    filter.Id = {
-      in: modelIds
-    };
-  }
 
       const models = await prisma.models.findMany({
         where: filter,
         select: {
           ModelNumber: true,
           ModelName: true,
-          Id: true ,
+          Id: true,
           ProductCatalog: {
             select: {
               ProductCatalogName: true,
@@ -1661,31 +1657,33 @@ const ModelController = {
           },
         },
       });
+      const result = await Promise.all(
+        models.map(async (model) => {
+          const totalDuration = Math.floor(
+            (new Date(model.Audit.UpdatedAt) -
+              new Date(model.Audit.CreatedAt)) /
+              (1000 * 60 * 60 * 24)
+          );
 
-      const result = await Promise.all(models.map(async (model) => {
-        const totalDuration = Math.floor(
-          (new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) /
-          (1000 * 60 * 60 * 24)
-        );
+          const details = model.ModelVarients.map((varient) => ({
+            Color: varient.Color.ColorName,
+            Sizes: varient.Sizes,
+            Quantity: varient.Quantity,
+          }));
 
-        const details = model.ModelVarients.map((varient) => ({
-          Color: varient.Color.ColorName,
-          Sizes: varient.Sizes,
-          Quantity: varient.Quantity,
-        }));
-
-        return {
-          ModelNumber: model.ModelNumber,
-          ModelName: model.ModelName,
-          ProductCatalog: model.ProductCatalog.ProductCatalogName,
-          CategoryOne: model.CategoryOne.CategoryName,
-          CategoryTwo: model.categoryTwo.CategoryName,
-          Textiles: model.Textile.TextileName,
-          TotalDurationInDays: totalDuration,
-          Details: details,
-        };
-      }));
-
+          return {
+            ModelId: model.Id,
+            ModelNumber: model.ModelNumber,
+            ModelName: model.ModelName,
+            ProductCatalog: model.ProductCatalog.ProductCatalogName,
+            CategoryOne: model.CategoryOne.CategoryName,
+            CategoryTwo: model.categoryTwo.CategoryName,
+            Textiles: model.Textile.TextileName,
+            TotalDurationInDays: totalDuration,
+            Details: details,
+          };
+        })
+      );
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
