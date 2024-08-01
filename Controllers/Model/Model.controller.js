@@ -1,7 +1,6 @@
 import prisma from "../../client.js";
 
 const ModelController = {
-
   createModel: async (req, res, next) => {
     const {
       ProductCatalog,
@@ -176,6 +175,7 @@ const ModelController = {
           },
         },
       });
+
       const revertVarients = JSON.parse(Varients);
 
       for (let i = 0; i < revertVarients.length; i++) {
@@ -1049,9 +1049,25 @@ const ModelController = {
 
       const sizes = [];
       model.ModelVarients.forEach((e) => {
-        JSON.parse(e.Sizes).forEach((f) => {
-          if (!sizes.includes(f.label)) {
-            sizes.push(f.label);
+        let sizeArray;
+
+        try {
+          // Attempt to parse Sizes as JSON
+          sizeArray = JSON.parse(e.Sizes);
+          // Ensure that sizeArray is an array
+          if (!Array.isArray(sizeArray)) {
+            sizeArray = [sizeArray];
+          }
+        } catch (err) {
+          // If parsing fails, treat Sizes as a plain string
+          sizeArray = [e.Sizes];
+        }
+
+        // Iterate over the size array and collect unique sizes
+        sizeArray.forEach((f) => {
+          const sizeLabel = typeof f === "string" ? f : f.label;
+          if (!sizes.includes(sizeLabel)) {
+            sizes.push(sizeLabel);
           }
         });
       });
@@ -1483,6 +1499,208 @@ const ModelController = {
     }
   },
 
+
+
+  filterModel: async (req, res, next) => {
+    const {
+      status,
+      productCatalogue,
+      productCategoryOne,
+      productCategoryTwo,
+      textiles,
+      templateType,
+      templatePattern,
+      startDate,
+      endDate,
+      orderNumber,
+      modelNumber,
+      barcode ,
+      currentStage
+    } = req.body;
+
+    let filter = {};
+
+    if (status) {
+      filter.Status = status;
+    }
+
+    if (productCatalogue) {
+      filter.ProductCatalogId = parseInt(productCatalogue);
+    }
+
+    if (productCategoryOne) {
+      filter.CategoryOneId = parseInt(productCategoryOne);
+    }
+
+    if (productCategoryTwo) {
+      filter.CategoryTwoId = parseInt(productCategoryTwo);
+    }
+
+    if (textiles) {
+      filter.TextileId = parseInt(textiles);
+    }
+
+    if (templateType || templatePattern) {
+      filter.Template = {
+        AND: [],
+      };
+
+      if (templateType) {
+        filter.Template.AND.push({
+          TemplateType: {
+            TemplateTypeName: templateType,
+          },
+        });
+      }
+
+      if (templatePattern) {
+        filter.Template.AND.push({
+          TemplatePattern: {
+            TemplatePatternName: templatePattern,
+          },
+        });
+      }
+    }
+
+    if (startDate || endDate) {
+      filter.Audit = {
+        CreatedAt: {},
+      };
+      if (startDate) {
+        filter.Audit.CreatedAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.Audit.CreatedAt.lte = new Date(endDate);
+      }
+    }
+
+    if(orderNumber) {
+      filter.OrderNumber = orderNumber ;
+    }
+
+    if(modelNumber){
+      filter.ModelNumber = modelNumber ;
+    }
+
+    if(barcode){
+      filter.Barcode = barcode ;
+    }
+
+    try {
+
+    let trackingFilter = {};
+    if (currentStage) {
+      trackingFilter.CurrentStageId = parseInt(currentStage);
+
+
+    const trackingModels = await prisma.trakingModels.findMany({
+      where: trackingFilter,
+      select: {
+        ModelVariantId: true
+      }
+    });
+
+    const modelVariantIds = trackingModels.map(tm => tm.ModelVariantId);
+
+    const modelVariants = await prisma.modelVarients.findMany({
+      where: {
+        Id: {
+          in: modelVariantIds
+        }
+      },
+      select: {
+        ModelId: true
+      }
+    });
+
+    const modelIds = modelVariants.map(mv => mv.ModelId);
+
+    filter.Id = {
+      in: modelIds
+    };
+  }
+
+      const models = await prisma.models.findMany({
+        where: filter,
+        select: {
+          ModelNumber: true,
+          ModelName: true,
+          Id: true ,
+          ProductCatalog: {
+            select: {
+              ProductCatalogName: true,
+            },
+          },
+          CategoryOne: {
+            select: {
+              CategoryName: true,
+            },
+          },
+          categoryTwo: {
+            select: {
+              CategoryName: true,
+            },
+          },
+          Textile: {
+            select: {
+              TextileName: true,
+            },
+          },
+          ModelVarients: {
+            select: {
+              Color: true,
+              Sizes: true,
+              Quantity: true,
+            },
+          },
+          Audit: {
+            select: {
+              CreatedAt: true,
+              UpdatedAt: true,
+            },
+          },
+        },
+      });
+
+      const result = await Promise.all(models.map(async (model) => {
+        const totalDuration = Math.floor(
+          (new Date(model.Audit.UpdatedAt) - new Date(model.Audit.CreatedAt)) /
+          (1000 * 60 * 60 * 24)
+        );
+
+        const details = model.ModelVarients.map((varient) => ({
+          Color: varient.Color.ColorName,
+          Sizes: varient.Sizes,
+          Quantity: varient.Quantity,
+        }));
+
+        return {
+          ModelNumber: model.ModelNumber,
+          ModelName: model.ModelName,
+          ProductCatalog: model.ProductCatalog.ProductCatalogName,
+          CategoryOne: model.CategoryOne.CategoryName,
+          CategoryTwo: model.categoryTwo.CategoryName,
+          Textiles: model.Textile.TextileName,
+          TotalDurationInDays: totalDuration,
+          Details: details,
+        };
+      }));
+
+      return res.status(200).send({
+        status: 200,
+        message: "Models fetched successfully!",
+        data: result,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message:
+          "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
+        data: {},
+      });
+    }
+  },
 };
 
 export default ModelController;

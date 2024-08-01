@@ -17,5 +17,12 @@ router.post("/downloadReports",
 verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
 ReportsController.downloadReports);
 
+router.get("/getAlldata",
+
+     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+     ReportsController.fetchAllData
+    
+);
+
 const ReportsRoute = router;
 export { ReportsRoute };

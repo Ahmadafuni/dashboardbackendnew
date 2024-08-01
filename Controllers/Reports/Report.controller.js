@@ -462,6 +462,100 @@ const ReportsController = {
       });
     }
   },
+
+  fetchAllData: async (req, res, next) => {
+    try {
+      const [
+        departments,
+        productCatalogues,
+        productCategoryOne,
+        productCategoryTwo,
+        textiles,
+        templateType,
+        templatePattern,
+        orders,
+        models,
+      ] = await Promise.all([
+        prisma.departments.findMany({
+          select: {
+            Id: true,
+            Name: true,
+          },
+        }),
+
+        prisma.productCatalogs.findMany({
+          select: {
+            Id: true,
+            ProductCatalogName: true,
+          },
+        }),
+        prisma.productCatalogCategoryOne.findMany({
+          select: {
+            Id: true,
+            CategoryName: true,
+          },
+        }),
+        prisma.productCatalogCategoryTwo.findMany({
+          select: {
+            Id: true,
+            CategoryName: true,
+          },
+        }),
+        prisma.productCatalogTextiles.findMany({
+          select: {
+            Id: true,
+            TextileName: true,
+          },
+        }),
+        prisma.templateTypes.findMany({
+          select: {
+            Id: true,
+            TemplateTypeName: true,
+          },
+        }),
+        prisma.templatePatterns.findMany({
+          select: {
+            Id: true,
+            TemplatePatternName: true,
+          },
+        }),
+        prisma.orders.findMany({
+          select: {
+            Id: true,
+            OrderNumber: true,
+          },
+        }),
+        prisma.models.findMany({
+          select: {
+            Id: true,
+            Barcode: true,
+            ModelNumber: true,
+          },
+        }),
+      ]);
+
+      const allData = {
+        departments,
+        productCatalogues,
+        productCategoryOne,
+        productCategoryTwo,
+        textiles,
+        templateType,
+        templatePattern,
+        orders,
+        models,
+      };
+
+      res.json(allData);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
 };
 
 export default ReportsController;
