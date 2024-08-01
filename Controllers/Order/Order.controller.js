@@ -2,7 +2,7 @@ import prisma from "../../client.js";
 
 const OrderController = {
   createOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity } = req.body;
+    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
     const file = req.file;
     const userId = req.userId;
     try {
@@ -19,6 +19,7 @@ const OrderController = {
           },
           Quantity: +quantity,
           Description: description,
+          ReasonText: reasonText,
           DeadlineDate: new Date(deadline),
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
@@ -47,6 +48,7 @@ const OrderController = {
       });
     }
   },
+
   getOrders: async (req, res, next) => {
     try {
       const orders = await prisma.orders.findMany({
@@ -67,6 +69,7 @@ const OrderController = {
           Description: true,
           DeadlineDate: true,
           Quantity: true,
+          ReasonText: true,
           FilePath: true,
           Status: true,
         },
@@ -87,6 +90,7 @@ const OrderController = {
       });
     }
   },
+
   getOrderById: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
@@ -116,6 +120,7 @@ const OrderController = {
           orderName: order.OrderName,
           quantity: order.Quantity.toString(),
           deadline: order.DeadlineDate.toISOString().split("T")[0],
+          reasonText: order.reasonText,
         },
       });
     } catch (error) {
@@ -127,6 +132,7 @@ const OrderController = {
       });
     }
   },
+
   deleteOrder: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -223,8 +229,9 @@ const OrderController = {
       });
     }
   },
+
   updateOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity } = req.body;
+    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
     const file = req.file;
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -253,6 +260,7 @@ const OrderController = {
           Quantity: +quantity,
           Description: description,
           DeadlineDate: new Date(deadline),
+          ReasonText: reasonText,
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : isThere.FilePath,
@@ -287,6 +295,7 @@ const OrderController = {
       }
     }
   },
+
   getOrderNames: async (req, res, next) => {
     try {
       const orderNames = await prisma.orders
@@ -301,6 +310,7 @@ const OrderController = {
             OrderNumber: true,
             OrderDate: true,
             TotalAmount: true,
+            ReasonText: true,
           },
         })
         .then((orders) =>
@@ -327,6 +337,7 @@ const OrderController = {
       });
     }
   },
+
   getOrdersForDash: async (req, res, next) => {
     const page = parseInt(req.headers["page"]) || 1;
     const itemsPerPage = parseInt(req.headers["items-per-page"]) || 7;
@@ -344,6 +355,8 @@ const OrderController = {
         select: {
           OrderNumber: true,
           OrderDate: true,
+          Status: true,
+          ReasonText: true,
           Season: {
             select: {
               SeasonName: true,
@@ -419,6 +432,7 @@ const OrderController = {
       });
     }
   },
+
   searchOrder: async (req, res, next) => {
     const searchTerm = req.params.searchTerm;
     const { from, to } = req.query;
@@ -463,6 +477,7 @@ const OrderController = {
           OrderDate: true,
           TotalAmount: true,
           MainStatus: true,
+          ReasonText: true,
           Season: {
             select: {
               Id: true,
@@ -486,6 +501,7 @@ const OrderController = {
       });
     }
   },
+
   startOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
@@ -539,6 +555,18 @@ const OrderController = {
               },
             },
           },
+        },
+      });
+
+      await prisma.models.updateMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
         },
       });
 
@@ -604,9 +632,12 @@ const OrderController = {
       });
     }
   },
+
   holdOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
+    const { reasonText } = req.body;
+
     try {
       const order = await prisma.orders.findUnique({
         where: {
@@ -626,19 +657,52 @@ const OrderController = {
         });
       }
 
+      // Update the order status to ONHOLD
       await prisma.orders.update({
         where: {
           Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
         },
         data: {
           Status: "ONHOLD",
+          ReasonText: reasonText,
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
+        },
+      });
+
+      // Update the RunningStatus of all related models to PAUSED
+      await prisma.models.updateMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to PAUSED
+      await prisma.modelVarients.updateMany({
+        where: {
+          Model: {
+            OrderId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
         },
       });
 
@@ -649,6 +713,7 @@ const OrderController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -656,11 +721,12 @@ const OrderController = {
       });
     }
   },
+
   restartOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
     try {
-      const order = await prisma.orders.findUnique({
+      const order = await prisma.orders.findFirst({
         where: {
           Id: +id,
           Audit: {
@@ -678,19 +744,49 @@ const OrderController = {
         });
       }
 
+      // Update the order status to ONGOING
       await prisma.orders.update({
         where: {
           Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
         },
         data: {
           Status: "ONGOING",
           Audit: {
             update: {
-              data: {
-                UpdatedById: userId,
-              },
+              UpdatedById: userId,
             },
           },
+        },
+      });
+
+      // Update the RunningStatus of all related models to RUNNING
+      await prisma.models.updateMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to RUNNING
+      await prisma.modelVarients.updateMany({
+        where: {
+          Model: {
+            OrderId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
         },
       });
 
@@ -701,6 +797,7 @@ const OrderController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

@@ -447,6 +447,7 @@ const TrackingModelController = {
     }
   },
 
+  //todo pause on model varinte level
   pauseUnpause: async (req, res, next) => {
     const userId = req.userId;
     const userDepartmentId = req.userDepartmentId;
@@ -766,7 +767,6 @@ const TrackingModelController = {
           DamagedItem: true,
           StartTime: true,
           Notes: true,
-          RunningStatus: true,
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
@@ -775,6 +775,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -808,7 +810,7 @@ const TrackingModelController = {
           Id: true,
           DamagedItem: true,
           StartTime: true,
-          RunningStatus: true,
+
           QuantityInNum: true,
           QuantityInKg: true,
           QuantityDelivered: true,
@@ -820,6 +822,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -856,7 +860,6 @@ const TrackingModelController = {
           Id: true,
           DamagedItem: true,
           StartTime: true,
-          RunningStatus: true,
           QuantityInNum: true,
           QuantityInKg: true,
           QuantityDelivered: true,
@@ -868,6 +871,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -901,7 +906,6 @@ const TrackingModelController = {
           Id: true,
           DamagedItem: true,
           StartTime: true,
-          RunningStatus: true,
           Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
@@ -911,6 +915,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1014,7 +1020,6 @@ const TrackingModelController = {
           StartTime: true,
           EndTime: true,
           Notes: true,
-          RunningStatus: true,
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
@@ -1023,6 +1028,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1104,7 +1111,6 @@ const TrackingModelController = {
           StartTime: true,
           EndTime: true,
           Notes: true,
-          RunningStatus: true,
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
@@ -1113,6 +1119,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1197,7 +1205,6 @@ const TrackingModelController = {
           StartTime: true,
           EndTime: true,
           Notes: true,
-          RunningStatus: true,
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
@@ -1206,6 +1213,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1285,7 +1294,6 @@ const TrackingModelController = {
           },
           DamagedItem: true,
           StartTime: true,
-          RunningStatus: true,
           Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
@@ -1295,6 +1303,8 @@ const TrackingModelController = {
           ModelVariant: {
             select: {
               Id: true,
+              RunningStatus: true,
+              ReasonText: true,
               Color: {
                 select: {
                   ColorName: true,

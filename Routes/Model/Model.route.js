@@ -15,7 +15,7 @@ ModelController.filterModel
 
 router.post(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   uploadModel.array("models"),
   ModelController.createModel
 );
@@ -51,68 +51,112 @@ router.get(
 
 router.get(
   "/all/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModelsByOrderId
 );
 
 router.get(
     "/allmodels",
-    verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
     ModelController.getAllModels
 );
 
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.getModelNames
 );
 
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModelById
 );
 
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.deleteModel
 );
 
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   uploadModel.array("models"),
   ModelController.updateModel
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.searchModel
 );
 router.get(
   "/varients/all/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  ModelController.getAllModelVarients
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),
+    ModelController.getAllModelVarients
 );
 router.post(
   "/varients/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.createModelVarient
 );
 router.get(
   "/varients/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.getModelVarientById
 );
 router.put(
   "/varients/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.updateModelVarient
 );
 router.delete(
   "/varients/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.deleteModelVarient
 );
+
+router.put(
+    "/model-variants-hold/:id",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),
+    ModelController.holdModelVarient);
+
+router.put(
+    "/model-variants-restart/:id",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "WAREHOUSEMANAGER"
+    ]),    ModelController.restartModelVarient);
+
+router.put("/restart/:id",
+    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+    ModelController.restartModel);
+
+router.put(
+    "/hold/:id",
+    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+    ModelController.holdModel);
+
+
 export { router as ModelRoute };

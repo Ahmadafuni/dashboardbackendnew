@@ -37,7 +37,8 @@ enum MainStatus {
 
 enum RunningStatus {
   RUNNING
-  PUASED
+  PAUSED
+  COMPLETED
 }
 
 enum MovementType {
@@ -285,6 +286,8 @@ model Models {
   PrintLocation    String?
   Description      String?
   Status           MainStatus                @default(AWAITING)
+  RunningStatus    RunningStatus             @default(RUNNING)
+  ReasonText       String?
   Images           String?
   Audit            AuditRecords              @relation(fields: [AuditId], references: [Id])
   AuditId          Int                       @unique
@@ -297,6 +300,8 @@ model ModelVarients {
   Model         Models          @relation(fields: [ModelId], references: [Id])
   ModelId       Int
   Status        MainStatus      @default(AWAITING)
+  RunningStatus RunningStatus   @default(RUNNING)
+  ReasonText    String?
   Color         Colors          @relation(fields: [ColorId], references: [Id])
   ColorId       Int
   Sizes         String
@@ -377,6 +382,7 @@ model Orders {
   CollectionId Int
   Quantity     Int
   Status       Status?      @default(PENDING)
+  ReasonText   String?
   Description  String?
   FilePath     String?
   Audit        AuditRecords @relation(fields: [AuditId], references: [Id])
@@ -558,7 +564,6 @@ model TrakingModels {
   StartTime         DateTime?
   EndTime           DateTime?
   MainStatus        MainStatus           @default(AWAITING)
-  RunningStatus     RunningStatus        @default(RUNNING)
   QuantityReceived  Json?
   QuantityDelivered Json?
   DamagedItem       Json?

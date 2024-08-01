@@ -16,6 +16,7 @@ const ModelController = {
       Description,
       Varients,
       DemoModelNumber,
+      ReasonText,
     } = req.body;
 
     const orderId = req.params.id;
@@ -37,10 +38,10 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "PENDING") {
+      if (order.Status !== "ONHOLD" && order.Status !== "PENDING") {
         return res.status(405).send({
           status: 405,
-          message: "Order already started. Cann't add new model!",
+          message: "Order already started. Can't add new model!",
           data: {},
         });
       }
@@ -164,6 +165,7 @@ const ModelController = {
           PrintName: PrintName,
           Description: Description,
           PrintLocation: PrintLocation,
+          ReasonText: ReasonText,
           Images: modelImages.join(","),
           Audit: {
             create: {
@@ -220,7 +222,7 @@ const ModelController = {
       // Return response
       return res.status(201).send({
         status: 201,
-        message: "تم إنشاء النموذج بنجاح!",
+        message: "تم إنشاء الموديل بنجاح!",
         data: {},
       });
     } catch (error) {
@@ -232,6 +234,7 @@ const ModelController = {
       });
     }
   },
+
   getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
     try {
@@ -265,6 +268,7 @@ const ModelController = {
       });
     }
   },
+
   getAllModels: async (req, res, next) => {
     try {
       const models = await prisma.models.findMany({
@@ -296,6 +300,7 @@ const ModelController = {
       });
     }
   },
+
   getModelById: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
@@ -344,6 +349,7 @@ const ModelController = {
       });
     }
   },
+
   deleteModel: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -376,6 +382,7 @@ const ModelController = {
       });
     }
   },
+
   updateModel: async (req, res, next) => {
     const {
       ProductCatalog,
@@ -489,6 +496,7 @@ const ModelController = {
       });
     }
   },
+
   getModelNames: async (req, res, next) => {
     try {
       const modelNames = await prisma.models
@@ -525,6 +533,7 @@ const ModelController = {
       });
     }
   },
+
   getProdModels: async (req, res, next) => {
     const userId = req.userId;
     try {
@@ -617,6 +626,7 @@ const ModelController = {
       });
     }
   },
+
   searchModel: async (req, res, next) => {
     const searchTerm = req.params.searchTerm;
     const { from, to } = req.query;
@@ -738,6 +748,7 @@ const ModelController = {
       });
     }
   },
+
   getAllModelVarients: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -759,6 +770,8 @@ const ModelController = {
             Sizes: true,
             Quantity: true,
             Status: true,
+            ReasonText: true,
+            RunningStatus: true,
             Model: {
               select: {
                 ModelName: true,
@@ -776,12 +789,15 @@ const ModelController = {
             Status: e.Status,
             Quantity: e.Quantity,
             TemplateId: e.Model.TemplateId,
+            ReasonText: e.ReasonText,
+            RunningStatus: e.RunningStatus,
           }))
         );
+
       // Return Response
       return res.status(200).send({
         status: 200,
-        message: "Model varients fetched successfully!",
+        message: "Model varients :( fetched successfully!",
         data: varients,
       });
     } catch (error) {
@@ -793,6 +809,7 @@ const ModelController = {
       });
     }
   },
+
   getModelVarientById: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -803,6 +820,13 @@ const ModelController = {
             IsDeleted: false,
           },
         },
+        select: {
+          ColorId: true,
+          Sizes: true,
+          Quantity: true,
+          RunningStatus: true,
+          ReasonText: true,
+        },
       });
 
       if (!varient) {
@@ -812,17 +836,21 @@ const ModelController = {
           data: {},
         });
       }
+
       return res.status(200).send({
         status: 200,
-        message: "Model varients fetched successfully!",
+        message: "Model varients :) fetched successfully!",
         data: {
           Color: varient.ColorId.toString(),
           Sizes: JSON.parse(varient.Sizes),
           Quantity: varient.Quantity.toString(),
+          RunningStatus: varient.RunningStatus.toString(),
+          ReasonText: varient.ReasonText ? varient.ReasonText.toString() : "",
         },
       });
     } catch (error) {
       // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -830,6 +858,7 @@ const ModelController = {
       });
     }
   },
+
   createModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
@@ -889,6 +918,7 @@ const ModelController = {
       });
     }
   },
+
   updateModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
@@ -949,6 +979,7 @@ const ModelController = {
       });
     }
   },
+
   deleteModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
@@ -982,6 +1013,7 @@ const ModelController = {
       });
     }
   },
+
   getModelSummary: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -1201,6 +1233,269 @@ const ModelController = {
         data: {},
       });
     }
+
+  holdModel: async (req, res, next) => {
+    const id = req.params.id;
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "RUNNING",
+        },
+      });
+
+      if (!model) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model not found or already on hold!",
+          data: {},
+        });
+      }
+
+      // Update the model status to PAUSED
+      await prisma.models.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to PAUSED
+      await prisma.modelVarients.updateMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model and its variants on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  restartModel: async (req, res, next) => {
+    const id = req.params.id; // Model ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "PAUSED",
+        },
+      });
+
+      if (!model) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model not found or already running!",
+          data: {},
+        });
+      }
+
+      // Update the model status to RUNNING
+      await prisma.models.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      // Update the RunningStatus of all related model variants to RUNNING
+      await prisma.modelVarients.updateMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model and its variants restarted successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  holdModelVarient: async (req, res, next) => {
+    const id = req.params.id; // Model Variant ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const modelVariant = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "RUNNING",
+        },
+      });
+
+      if (!modelVariant) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model variant not found or already on hold!",
+          data: {},
+        });
+      }
+
+      // Update the model variant status to PAUSED
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "PAUSED",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model variant on hold successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  restartModelVarient: async (req, res, next) => {
+    const id = req.params.id; // Model Variant ID
+    const userId = req.userId;
+    const { reasonText } = req.body;
+
+    try {
+      const modelVariant = await prisma.modelVarients.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "PAUSED",
+        },
+      });
+
+      if (!modelVariant) {
+        return res.status(405).send({
+          status: 405,
+          message: "Model variant not found or already running!",
+          data: {},
+        });
+      }
+
+      // Update the model variant status to RUNNING
+      await prisma.modelVarients.update({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          ReasonText: reasonText,
+          Audit: {
+            update: {
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Model variant restarted successfully!",
+        data: {},
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
   },
 
   filterModel: async (req, res, next) => {
@@ -1389,7 +1684,6 @@ const ModelController = {
           };
         })
       );
-
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
