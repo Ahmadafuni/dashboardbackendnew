@@ -1233,7 +1233,6 @@ const ModelController = {
         data: {},
       });
     }
-  },
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;
@@ -1657,6 +1656,7 @@ const ModelController = {
           },
         },
       });
+
       const result = await Promise.all(
         models.map(async (model) => {
           const totalDuration = Math.floor(
