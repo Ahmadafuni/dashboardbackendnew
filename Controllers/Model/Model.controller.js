@@ -192,7 +192,7 @@ const ModelController = {
                 Id: +revertVarients[i].Color,
               },
             },
-            Sizes: JSON.stringify(revertVarients[i].Sizes),
+            Sizes: revertVarients[i].Sizes,
             Quantity: +revertVarients[i].Quantity,
             Audit: {
               create: {
