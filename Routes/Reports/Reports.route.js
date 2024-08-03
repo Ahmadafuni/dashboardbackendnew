@@ -4,6 +4,14 @@ import ReportsController from "../../Controllers/Reports/Report.controller.js";
 
 const router = express.Router();
 
+
+router.get("/getStatistics/:type" ,
+
+     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+    ReportsController.getStatistics 
+
+)
+
 router.post("/generateReport", 
 verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
 ReportsController.generateReport);

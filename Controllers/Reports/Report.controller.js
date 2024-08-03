@@ -556,6 +556,274 @@ const ReportsController = {
       });
     }
   },
+
+  getStatistics :async (req , res) => {
+
+  const type = req.params.type;
+  const now = new Date();
+
+  if (type == 1) {
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    try {
+      const models = await prisma.models.findMany({
+        include: { Audit: true },
+        where: {
+          Audit: {
+            CreatedAt: {
+              gte: startOfWeek,
+              lte: endOfWeek,
+            },
+          },
+        },
+      });
+
+      const orders = await prisma.orders.findMany({
+        include: { Audit: true },
+        where: {
+          Audit: {
+            CreatedAt: {
+              gte: startOfWeek,
+              lte: endOfWeek,
+            },
+          },
+        },
+      });
+
+      const modelsStats = Array(7).fill().map(() => ({
+        awaiting: 0,
+        inprogress: 0,
+        done: 0,
+      }));
+
+      const ordersStats = Array(7).fill().map(() => ({
+        pending: 0,
+        ongoing: 0,
+        completed: 0,
+      }));
+
+      models.forEach(model => {
+        const day = model.Audit.CreatedAt.getDay();
+        switch (model.Status) {
+          case 'AWAITING':
+            modelsStats[day].awaiting += 1;
+            break;
+          case 'INPROGRESS':
+            modelsStats[day].inprogress += 1;
+            break;
+          case 'DONE':
+            modelsStats[day].done += 1;
+            break;
+        }
+      });
+
+      orders.forEach(order => {
+        const day = order.Audit.CreatedAt.getDay();
+        switch (order.Status) {
+          case 'PENDING':
+            ordersStats[day].pending += 1;
+            break;
+          case 'ONGOING':
+            ordersStats[day].ongoing += 1;
+            break;
+          case 'COMPLETED':
+            ordersStats[day].completed += 1;
+            break;
+        }
+      });
+
+      res.json({ modelsStats, ordersStats });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+
+  } else if (type == 2) {
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+
+    const weeks = [];
+    let currentStart = new Date(firstDayOfMonth);
+
+    for (let day = 1; day <= daysInMonth; day += 7) {
+      let currentEnd = new Date(now.getFullYear(), now.getMonth(), day + 6);
+      if (day + 6 >= 22) {
+        currentEnd = new Date(now.getFullYear(), now.getMonth(), daysInMonth);
+        weeks.push({ startOfWeek: new Date(currentStart), endOfWeek: new Date(currentEnd) });
+        break;
+      }
+      weeks.push({ startOfWeek: new Date(currentStart), endOfWeek: new Date(currentEnd) });
+      currentStart = new Date(currentEnd);
+      currentStart.setDate(currentStart.getDate() + 1);
+    }
+
+    try {
+      const modelsStats = weeks.map(() => ({
+        awaiting: 0,
+        inprogress: 0,
+        done: 0,
+      }));
+
+      const ordersStats = weeks.map(() => ({
+        pending: 0,
+        ongoing: 0,
+        completed: 0,
+      }));
+
+      for (let i = 0; i < weeks.length; i++) {
+        const { startOfWeek, endOfWeek } = weeks[i];
+
+        const models = await prisma.models.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfWeek,
+                lte: endOfWeek,
+              },
+            },
+          },
+        });
+
+        models.forEach(model => {
+          switch (model.Status) {
+            case 'AWAITING':
+              modelsStats[i].awaiting += 1;
+              break;
+            case 'INPROGRESS':
+              modelsStats[i].inprogress += 1;
+              break;
+            case 'DONE':
+              modelsStats[i].done += 1;
+              break;
+          }
+        });
+
+        const orders = await prisma.orders.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfWeek,
+                lte: endOfWeek,
+              },
+            },
+          },
+        });
+
+        orders.forEach(order => {
+          switch (order.Status) {
+            case 'PENDING':
+              ordersStats[i].pending += 1;
+              break;
+            case 'ONGOING':
+              ordersStats[i].ongoing += 1;
+              break;
+            case 'COMPLETED':
+              ordersStats[i].completed += 1;
+              break;
+          }
+        });
+      }
+
+      res.json({ modelsStats, ordersStats });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+
+  } else if (type == 3) {
+    const currentYear = now.getFullYear();
+    const months = [];
+
+    for (let month = 0; month < 12; month++) {
+      const firstDayOfMonth = new Date(currentYear, month, 1);
+      const lastDayOfMonth = new Date(currentYear, month + 1, 0);
+      months.push({ startOfMonth: firstDayOfMonth, endOfMonth: lastDayOfMonth });
+    }
+
+    try {
+      const modelsStats = months.map(() => ({
+        awaiting: 0,
+        inprogress: 0,
+        done: 0,
+      }));
+
+      const ordersStats = months.map(() => ({
+        pending: 0,
+        ongoing: 0,
+        completed: 0,
+      }));
+
+      for (let i = 0; i < months.length; i++) {
+        const { startOfMonth, endOfMonth } = months[i];
+
+        // جلب إحصائيات الموديلات
+        const models = await prisma.models.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfMonth,
+                lte: endOfMonth,
+              },
+            },
+          },
+        });
+
+        models.forEach(model => {
+          switch (model.Status) {
+            case 'AWAITING':
+              modelsStats[i].awaiting += 1;
+              break;
+            case 'INPROGRESS':
+              modelsStats[i].inprogress += 1;
+              break;
+            case 'DONE':
+              modelsStats[i].done += 1;
+              break;
+          }
+        });
+
+        // جلب إحصائيات الطلبات
+        const orders = await prisma.orders.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfMonth,
+                lte: endOfMonth,
+              },
+            },
+          },
+        });
+
+        orders.forEach(order => {
+          switch (order.Status) {
+            case 'PENDING':
+              ordersStats[i].pending += 1;
+              break;
+            case 'ONGOING':
+              ordersStats[i].ongoing += 1;
+              break;
+            case 'COMPLETED':
+              ordersStats[i].completed += 1;
+              break;
+          }
+        });
+      }
+
+      res.json({ modelsStats, ordersStats });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  }
 };
 
 export default ReportsController;
