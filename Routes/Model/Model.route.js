@@ -22,7 +22,7 @@ router.post(
 router.get(
   "/productionModels",
   verifyUser([
-    "STOREMANAGER",
+    "WAREHOUSEMANAGER",
     "ENGINEERING",
     "CURRINT",
     "CUTTING",
@@ -37,7 +37,7 @@ router.get(
 router.get(
   "/model-summary/:id",
   verifyUser([
-    "STOREMANAGER",
+    "WAREHOUSEMANAGER",
     "ENGINEERING",
     "CURRINT",
     "CUTTING",

@@ -62,6 +62,9 @@ enum DepartmentCategory {
   QUALITYASSURANCE
   TAILORING
   WAREHOUSEMANAGER
+  HumanResource
+  MotherCompany
+  Accounting
 }
 
 enum Season {
@@ -126,6 +129,7 @@ model Collections {
   Description    String?
   Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
   AuditId        Int          @unique
+  Status         Status?      @default(PENDING)
   Orders         Orders[]
 }
 
