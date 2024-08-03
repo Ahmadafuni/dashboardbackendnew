@@ -5,6 +5,13 @@ import ModelController from "../../Controllers/Model/Model.controller.js";
 
 const router = express.Router();
 
+router.get(
+  "/Model-Details" ,
+  // verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+
+   ModelController.getModelDetails
+
+)
 
 router.post(
 "/search",
