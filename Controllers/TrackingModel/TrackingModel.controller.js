@@ -592,7 +592,6 @@ const TrackingModelController = {
 
       console.log(`Tracking found:`, tracking);
 
-      // Parse the JSON fields if they are provided as JSON strings
       let parsedQuantityReceived, parsedQuantityDelivered, parsedDamagedItem;
       try {
         parsedQuantityReceived = QuantityReceived ? JSON.parse(QuantityReceived) : [];
@@ -648,79 +647,143 @@ const TrackingModelController = {
 
       console.log(`ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`);
 
-      const undoneVariants = await prisma.modelVarients.count({
+      const remainingVariants = await prisma.modelVarients.findMany({
         where: {
           ModelId: tracking.ModelVariant.ModelId,
-          NOT: {
-            Status: "DONE",
-          },
           Audit: {
             IsDeleted: false,
           },
         },
+        select: {
+          Status: true,
+        },
       });
 
-      if (undoneVariants > 0) {
-        console.log(`There are still ${undoneVariants} undone variants for Model ID: ${tracking.ModelVariant.ModelId}`);
-        return res.status(200).send({
-          status: 200,
-          message: "Variant completed successfully",
-          data: {},
-        });
-      }
+      const variantStatuses = remainingVariants.map(variant => variant.Status);
 
-      await prisma.models.update({
-        where: {
-          Id: tracking.ModelVariant.ModelId,
-        },
-        data: {
-          Status: "DONE",
-          Audit: {
-            update: {
-              UpdatedById: userId,
+      if (variantStatuses.every(status => status === 'DONE')) {
+        await prisma.models.update({
+          where: {
+            Id: tracking.ModelVariant.ModelId,
+          },
+          data: {
+            Status: 'DONE',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
             },
           },
-        },
-      });
+        });
+        console.log(`Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`);
+      } else if (variantStatuses.includes('INPROGRESS')) {
+        await prisma.models.update({
+          where: {
+            Id: tracking.ModelVariant.ModelId,
+          },
+          data: {
+            Status: 'INPROGRESS',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+        console.log(`Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`);
+      }
 
-      console.log(`Model updated successfully for ID: ${tracking.ModelVariant.ModelId}`);
-
-      const undoneModels = await prisma.models.count({
+      const remainingModels = await prisma.models.findMany({
         where: {
           OrderId: tracking.ModelVariant.Model.OrderId,
-          NOT: {
-            Status: "DONE",
-          },
           Audit: {
             IsDeleted: false,
           },
         },
+        select: {
+          Status: true,
+        },
       });
 
-      if (undoneModels > 0) {
-        console.log(`There are still ${undoneModels} undone models for Order ID: ${tracking.ModelVariant.Model.OrderId}`);
-        return res.status(200).send({
-          status: 200,
-          message: "Variant completed successfully",
-          data: {},
-        });
-      }
+      const modelStatuses = remainingModels.map(model => model.Status);
 
-      await prisma.orders.update({
-        where: {
-          Id: tracking.ModelVariant.Model.OrderId,
-        },
-        data: {
-          Status: "COMPLETED",
-          Audit: {
-            update: {
-              UpdatedById: userId,
+      if (modelStatuses.every(status => status === 'DONE')) {
+        await prisma.orders.update({
+          where: {
+            Id: tracking.ModelVariant.Model.OrderId,
+          },
+          data: {
+            Status: 'COMPLETED',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
             },
           },
+        });
+        console.log(`Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`);
+      } else if (modelStatuses.includes('INPROGRESS')) {
+        await prisma.orders.update({
+          where: {
+            Id: tracking.ModelVariant.Model.OrderId,
+          },
+          data: {
+            Status: 'ONGOING',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+        console.log(`Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`);
+      }
+
+      const remainingOrders = await prisma.orders.findMany({
+        where: {
+          CollectionId: tracking.ModelVariant.Model.Order.CollectionId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Status: true,
         },
       });
 
-      console.log(`Order updated successfully for ID: ${tracking.ModelVariant.Model.OrderId}`);
+      const orderStatuses = remainingOrders.map(order => order.Status);
+
+      if (orderStatuses.every(status => status === 'COMPLETED')) {
+        await prisma.collections.update({
+          where: {
+            Id: tracking.ModelVariant.Model.Order.CollectionId,
+          },
+          data: {
+            Status: 'COMPLETED',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+        console.log(`Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
+      } else if (orderStatuses.includes('ONGOING')) {
+        await prisma.collections.update({
+          where: {
+            Id: tracking.ModelVariant.Model.Order.CollectionId,
+          },
+          data: {
+            Status: 'ONGOING',
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+        console.log(`Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
+      }
 
       return res.status(200).send({
         status: 200,
