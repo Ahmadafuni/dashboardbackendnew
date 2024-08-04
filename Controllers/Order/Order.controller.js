@@ -1,6 +1,7 @@
 import prisma from "../../client.js";
 
 const OrderController = {
+
   createOrder: async (req, res, next) => {
     const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
     const file = req.file;
@@ -805,5 +806,39 @@ const OrderController = {
       });
     }
   },
+
+  getOrderPercentage: async (req , res) => {
+
+    try {
+      const orders = await prisma.orders.findMany({
+        include: { Models: true }
+      });
+  
+      const ordersWithProgress = orders.map(order => {
+        const totalModels = order.Models.length;
+        const doneModels = order.Models.filter(model => model.Status === 'DONE').length;
+        const donePercentage = totalModels > 0 ? (doneModels / totalModels) * 100 : 0;
+  
+        return {
+          OrderId: order.Id,
+          DonePercentage: donePercentage.toFixed(2), 
+        };
+      });
+  
+      res.json(ordersWithProgress);
+    } catch (error) {
+      // Server error or unsolved error
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+
+
+  },
+
+
 };
 export default OrderController;

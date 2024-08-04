@@ -4,6 +4,15 @@ import OrderController from "../../Controllers/Order/Order.controller.js";
 import { uploadOrder } from "../../Middleware/Upload.middleware.js";
 const router = express.Router();
 
+
+router.get(
+  "/getOrderPercentage" ,
+  // verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  OrderController.getOrderPercentage
+
+);
+
+
 router.post(
   "/",
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),

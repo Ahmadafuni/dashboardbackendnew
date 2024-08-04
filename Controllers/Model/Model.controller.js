@@ -1859,6 +1859,37 @@ const ModelController = {
   },
 
 
+  getModelPercentage : async (req , res) => {
+
+    try {
+      const models = await prisma.models.findMany({
+        include: { ModelVarients: true }
+      });
+  
+      const modelsWithProgress = models.map(model => {
+        const totalVarients = model.ModelVarients.length;
+        const doneVarients = model.ModelVarients.filter(varient => varient.Status === 'DONE').length;
+        const donePercentage = totalVarients > 0 ? (doneVarients / totalVarients) * 100 : 0;
+  
+        return {
+          ModelId: model.Id,
+          DonePercentage: donePercentage.toFixed(2),
+        };
+      });
+  
+      res.json(modelsWithProgress);
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
+        data: {},
+      });
+    }
+    
+  },
+
+
   
 
 };
