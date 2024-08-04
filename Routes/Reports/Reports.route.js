@@ -24,5 +24,11 @@ router.get("/getAlldata",
     
 );
 
+router.get(
+     "/getStatistics/:type" ,
+     ReportsController.getStatistics
+
+)
+
 const ReportsRoute = router;
 export { ReportsRoute };
