@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get(
   "/getOrderPercentage" ,
-  // verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.getOrderPercentage
 
 );

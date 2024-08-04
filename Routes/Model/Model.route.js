@@ -8,11 +8,9 @@ const router = express.Router();
 
 router.get(
   "/getModelPercentage" ,
-  // verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
   ModelController.getModelPercentage
-
 );
-
 
 router.get(
   "/Model-Details" ,
@@ -27,87 +25,7 @@ router.post(
   ModelController.filterModel
 );
 
-router.get("/home-graphs", ModelController.getMetrics);
 
-// tests
-router.get("/faisal", async (req, res) => {
-  const tasks = await prisma.tasks.findMany({});
-  res.send(tasks);
-});
-
-router.get("/status-counts", async (req, res) => {
-  try {
-    const orderCounts = await prisma.orders.groupBy({
-      by: ["Status"],
-      _count: {
-        _all: true,
-      },
-    });
-    const allOrders = await prisma.orders.count();
-    const ordersStatus = orderCounts.reduce(
-      (acc, curr) => {
-        acc[curr.Status] = curr._count._all;
-        return acc;
-      },
-      { allOrders }
-    );
-
-    const modelCounts = await prisma.models.groupBy({
-      by: ["Status"],
-      _count: {
-        _all: true,
-      },
-    });
-    const allModels = await prisma.models.count();
-    const modelsStatus = modelCounts.reduce(
-      (acc, curr) => {
-        acc[curr.Status] = curr._count._all;
-        return acc;
-      },
-      { allModels }
-    );
-
-    const taskCounts = await prisma.tasks.groupBy({
-      by: ["Status"],
-      _count: {
-        _all: true,
-      },
-    });
-    const allTasks = await prisma.tasks.count();
-    const tasksStatus = taskCounts.reduce(
-      (acc, curr) => {
-        acc[curr.Status] = curr._count._all;
-        return acc;
-      },
-      { allTasks }
-    );
-    const collectionCounts = await prisma.collections.groupBy({
-      by: ["Status"],
-      _count: {
-        _all: true,
-      },
-    });
-    const allCollections = await prisma.collections.count();
-    const collectionStatus = collectionCounts.reduce(
-      (acc, curr) => {
-        acc[curr.Status] = curr._count._all;
-        return acc;
-      },
-      { allCollections }
-    );
-
-    res.status(200).json({
-      ordersStatus,
-      modelsStatus,
-      tasksStatus,
-      collectionStatus,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to get status counts" });
-  }
-});
-
-//
 router.post(
   "/:id",
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
