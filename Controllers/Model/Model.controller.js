@@ -1585,6 +1585,8 @@ const ModelController = {
 
     try {
       let trackingFilter = {};
+      let stageNames = {};
+
       if (currentStage) {
         trackingFilter.CurrentStageId = parseInt(currentStage);
 
@@ -1592,10 +1594,23 @@ const ModelController = {
           where: trackingFilter,
           select: {
             ModelVariantId: true,
+            CurrentStage: {
+              select: {
+                StageName: true,
+              },
+            },
+            QuantityDelivered: true,
           },
         });
 
         const modelVariantIds = trackingModels.map((tm) => tm.ModelVariantId);
+        stageNames = trackingModels.reduce((acc, tm) => {
+          acc[tm.ModelVariantId] = {
+            stageName: tm.CurrentStage.StageName,
+            QuantityDelivered: tm.QuantityDelivered,
+          };
+          return acc;
+        }, {});
 
         const modelVariants = await prisma.modelVarients.findMany({
           where: {
@@ -1605,6 +1620,46 @@ const ModelController = {
           },
           select: {
             ModelId: true,
+            Id: true,
+          },
+        });
+
+        const modelIds = modelVariants.map((mv) => mv.ModelId);
+
+        filter.Id = {
+          in: modelIds,
+        };
+      } else {
+        const trackingModels = await prisma.trakingModels.findMany({
+          select: {
+            ModelVariantId: true,
+            CurrentStage: {
+              select: {
+                StageName: true,
+              },
+            },
+            QuantityDelivered: true,
+          },
+        });
+
+        const modelVariantIds = trackingModels.map((tm) => tm.ModelVariantId);
+        stageNames = trackingModels.reduce((acc, tm) => {
+          acc[tm.ModelVariantId] = {
+            stageName: tm.CurrentStage.StageName,
+            QuantityDelivered: tm.QuantityDelivered,
+          };
+          return acc;
+        }, {});
+
+        const modelVariants = await prisma.modelVarients.findMany({
+          where: {
+            Id: {
+              in: modelVariantIds,
+            },
+          },
+          select: {
+            ModelId: true,
+            Id: true,
           },
         });
 
@@ -1618,7 +1673,7 @@ const ModelController = {
       const models = await prisma.models.findMany({
         where: filter,
         select: {
-          ModelNumber: true,
+          DemoModelNumber: true,
           ModelName: true,
           Id: true,
           ProductCatalog: {
@@ -1643,6 +1698,7 @@ const ModelController = {
           },
           ModelVarients: {
             select: {
+              Id: true,
               Color: true,
               Sizes: true,
               Quantity: true,
@@ -1665,15 +1721,22 @@ const ModelController = {
               (1000 * 60 * 60 * 24)
           );
 
-          const details = model.ModelVarients.map((varient) => ({
+          const details = model.ModelVarients.filter(
+            (varient) => stageNames[varient.Id]
+          ).map((varient) => ({
             Color: varient.Color.ColorName,
             Sizes: varient.Sizes,
             Quantity: varient.Quantity,
+            QuantityDelivered: stageNames[varient.Id].QuantityDelivered,
+            StageName: stageNames[varient.Id].stageName,
           }));
 
+          if (details.length === 0) {
+            return null;
+          }
+
           return {
-            ModelId: model.Id,
-            ModelNumber: model.ModelNumber,
+            DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
             CategoryOne: model.CategoryOne.CategoryName,
@@ -1684,11 +1747,126 @@ const ModelController = {
           };
         })
       );
+
+      const filteredResult = result.filter((item) => item !== null);
+
       return res.status(200).send({
         status: 200,
-        message: "Models fetched successfully!",
-        data: result,
+        message: "تم جلب النماذج بنجاح!",
+        data: filteredResult,
       });
+    } catch (error) {
+      // خطأ في الخادم أو خطأ غير محسوب
+      return res.status(500).send({
+        status: 500,
+        message:
+          "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
+        data: {},
+      });
+    }
+  },
+
+  getModelDetails: async (req, res, next) => {
+    try {
+      const models = await prisma.models.findMany({
+        where: {
+          Status: "DONE",
+        },
+        select: {
+          Audit: {
+            select: {
+              UpdatedAt: true,
+            },
+          },
+        },
+        orderBy: {
+          Audit: {
+            UpdatedAt: "asc",
+          },
+        },
+      });
+
+      const orders = await prisma.orders.findMany({
+        where: {
+          Status: "COMPLETED",
+        },
+        select: {
+          DeadlineDate: true,
+        },
+        orderBy: {
+          DeadlineDate: "asc",
+        },
+      });
+
+      const modelStatusCounts = await prisma.models.groupBy({
+        by: ["Status"],
+        _count: {
+          Id: true,
+        },
+      });
+
+      const result = {
+        modelFinished: {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+          6: 0,
+          7: 0,
+          8: 0,
+          9: 0,
+          10: 0,
+          11: 0,
+          12: 0,
+        },
+        ordersFinished: {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+          6: 0,
+          7: 0,
+          8: 0,
+          9: 0,
+          10: 0,
+          11: 0,
+          12: 0,
+        },
+        awaiting: 0,
+        inProgress: 0,
+        completed: 0,
+      };
+
+      models.forEach((item) => {
+        const updatedAt = new Date(item.Audit.UpdatedAt);
+        const month = updatedAt.getUTCMonth() + 1;
+        result.modelFinished[month] += 1;
+      });
+
+      orders.forEach((item) => {
+        const deadlineDate = new Date(item.DeadlineDate);
+        const month = deadlineDate.getUTCMonth() + 1;
+        result.ordersFinished[month] += 1;
+      });
+
+      modelStatusCounts.forEach((statusCount) => {
+        switch (statusCount.Status) {
+          case "AWAITING":
+            result.awaiting = statusCount._count.Id;
+            break;
+          case "INPROGRESS":
+            result.inProgress = statusCount._count.Id;
+            break;
+          case "DONE":
+            result.completed = statusCount._count.Id;
+            break;
+        }
+      });
+
+      // Send the response with all results
+      res.json(result);
     } catch (error) {
       // Server error or unsolved error
       return res.status(500).send({
