@@ -1619,7 +1619,7 @@ const ModelController = {
       const models = await prisma.models.findMany({
         where: filter,
         select: {
-          ModelNumber: true,
+          DemoModelNumber: true,
           ModelName: true,
           Id: true,
           ProductCatalog: {
@@ -1674,7 +1674,7 @@ const ModelController = {
 
           return {
             ModelId: model.Id,
-            ModelNumber: model.ModelNumber,
+            DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
             CategoryOne: model.CategoryOne.CategoryName,

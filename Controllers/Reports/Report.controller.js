@@ -529,7 +529,7 @@ const ReportsController = {
           select: {
             Id: true,
             Barcode: true,
-            ModelNumber: true,
+            DemoModelNumber: true,
           },
         }),
       ]);
