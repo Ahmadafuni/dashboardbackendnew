@@ -1911,10 +1911,10 @@ const ModelController = {
 
   getStatistics : async (req , res) => {
 
-    const id = req.params.type;
+    const {type} = req.query;
     const now = new Date();
 
-  if (id == 1) {
+  if (type == "daily") {
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
     startOfWeek.setHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
@@ -1962,7 +1962,7 @@ const ModelController = {
       res.status(500).json({ error: error.message });
     }
 
-  } else if (id == 2) {
+  } else if (type == "weekly") {
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const daysInMonth = lastDayOfMonth.getDate();
@@ -2028,7 +2028,7 @@ const ModelController = {
       res.status(500).json({ error: error.message });
     }
 
-  } else if (id == 3) {
+  } else if (type == "monthly") {
     const currentYear = now.getFullYear();
     const months = [];
 

@@ -6,9 +6,8 @@ import prisma from "../../client.js";
 
 const router = express.Router();
 
-
 router.get(
-  "/getModelStatistics/:type" ,
+  "/getModelStatistics" ,
      ModelController.getStatistics
 
 );
@@ -23,7 +22,6 @@ router.get(
   "/Model-Details" ,
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
    ModelController.getModelDetails
-
 )
 
 router.post(

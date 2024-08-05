@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.get(
-  "/getOrderStatistics/:type" ,
+  "/getOrderStatistics" ,
   OrderController.getStatistics
 
 )
