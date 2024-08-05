@@ -6,6 +6,12 @@ const router = express.Router();
 
 
 router.get(
+  "/getOrderStatistics/:type" ,
+  OrderController.getStatistics
+
+)
+
+router.get(
   "/getOrderPercentage" ,
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.getOrderPercentage

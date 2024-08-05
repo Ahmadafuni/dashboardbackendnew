@@ -6,6 +6,13 @@ import prisma from "../../client.js";
 
 const router = express.Router();
 
+
+router.get(
+  "/getModelStatistics/:type" ,
+     ModelController.getStatistics
+
+);
+
 router.get(
   "/getModelPercentage" ,
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
