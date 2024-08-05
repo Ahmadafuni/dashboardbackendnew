@@ -2,15 +2,37 @@ import express from "express";
 import { verifyUser } from "../../Middleware/Auth.middleware.js";
 import { uploadModel } from "../../Middleware/Upload.middleware.js";
 import ModelController from "../../Controllers/Model/Model.controller.js";
-
+import prisma from "../../client.js";
 const router = express.Router();
 
-
 router.post(
-"/search",
-// verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
-ModelController.filterModel
+  "/search",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.filterModel
+);
 
+router.get(
+  "/tasks-stats",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.getTasksStats
+);
+
+router.get(
+  "/collections-stats",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.getCollectionStats
+);
+
+router.get(
+  "/model-stats",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.getModelStats
+);
+
+router.get(
+  "/orders-stats",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.getOrdersStats
 );
 
 router.post(
@@ -56,9 +78,9 @@ router.get(
 );
 
 router.get(
-    "/allmodels",
-    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
-    ModelController.getAllModels
+  "/allmodels",
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.getAllModels
 );
 
 router.get(
@@ -92,16 +114,16 @@ router.get(
 );
 router.get(
   "/varients/all/:id",
-    verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER"
-    ]),
-    ModelController.getAllModelVarients
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER",
+  ]),
+  ModelController.getAllModelVarients
 );
 router.post(
   "/varients/:id",
@@ -125,38 +147,43 @@ router.delete(
 );
 
 router.put(
-    "/model-variants-hold/:id",
-    verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER"
-    ]),
-    ModelController.holdModelVarient);
+  "/model-variants-hold/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER",
+  ]),
+  ModelController.holdModelVarient
+);
 
 router.put(
-    "/model-variants-restart/:id",
-    verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER"
-    ]),    ModelController.restartModelVarient);
-
-router.put("/restart/:id",
-    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
-    ModelController.restartModel);
+  "/model-variants-restart/:id",
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "CUTTING",
+    "TAILORING",
+    "PRINTING",
+    "QUALITYASSURANCE",
+    "WAREHOUSEMANAGER",
+  ]),
+  ModelController.restartModelVarient
+);
 
 router.put(
-    "/hold/:id",
-    verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
-    ModelController.holdModel);
+  "/restart/:id",
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.restartModel
+);
 
+router.put(
+  "/hold/:id",
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  ModelController.holdModel
+);
 
 export { router as ModelRoute };

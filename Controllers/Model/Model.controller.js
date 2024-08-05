@@ -1511,7 +1511,7 @@ const ModelController = {
       startDate,
       endDate,
       orderNumber,
-      modelNumber,
+      demoModelNumber,
       barcode,
       currentStage,
     } = req.body;
@@ -1576,8 +1576,8 @@ const ModelController = {
       filter.OrderNumber = orderNumber;
     }
 
-    if (modelNumber) {
-      filter.ModelNumber = modelNumber;
+    if (demoModelNumber) {
+      filter.DemoModelNumber = demoModelNumber;
     }
 
     if (barcode) {
@@ -1585,23 +1585,33 @@ const ModelController = {
     }
 
     try {
-      let trackingFilter = {};
       if (currentStage) {
-        trackingFilter.CurrentStageId = parseInt(currentStage);
-
-        const trackingModels = await prisma.trakingModels.findMany({
-          where: trackingFilter,
-          select: {
-            ModelVariantId: true,
+        const maxIds = await prisma.trakingModels.groupBy({
+          by: ["ModelVariantId"],
+          _max: {
+            Id: true,
           },
         });
 
-        const modelVariantIds = trackingModels.map((tm) => tm.ModelVariantId);
+        const latestVariantsInCurrentStage =
+          await prisma.trakingModels.findMany({
+            where: {
+              CurrentStageId: parseInt(currentStage),
+              Id: {
+                in: maxIds.map((item) => item._max.Id),
+              },
+            },
+            select: {
+              ModelVariantId: true,
+            },
+          });
 
         const modelVariants = await prisma.modelVarients.findMany({
           where: {
             Id: {
-              in: modelVariantIds,
+              in: latestVariantsInCurrentStage.map(
+                (variantId) => variantId.ModelVariantId
+              ),
             },
           },
           select: {
@@ -1646,7 +1656,23 @@ const ModelController = {
             select: {
               Color: true,
               Sizes: true,
-              Quantity: true,
+              Status: true,
+              TrakingModels: {
+                orderBy: {
+                  Id: "desc",
+                },
+                take: 1,
+                select: {
+                  Id: true,
+                  CurrentStage: {
+                    select: {
+                      StageName: true,
+                    },
+                  },
+                  QuantityDelivered: true,
+                  QuantityReceived: true,
+                },
+              },
             },
           },
           Audit: {
@@ -1658,6 +1684,46 @@ const ModelController = {
         },
       });
 
+      const modelsWithProgress = models.map((model) => {
+        const totalVarients = model.ModelVarients.length;
+        const doneVarients = model.ModelVarients.filter(
+          (varient) => varient.Status === "DONE"
+        ).length;
+        const donePercentage =
+          totalVarients > 0 ? (doneVarients / totalVarients) * 100 : 0;
+
+        return {
+          ModelId: model.Id,
+          DonePercentage: donePercentage.toFixed(2),
+        };
+      });
+
+      const statuses = ["AWAITING", "TODO", "INPROGRESS", "DONE", "CHECKING"];
+      const results = await Promise.all(
+        statuses.map(async (status) => {
+          const count = await prisma.modelVarients.groupBy({
+            by: ["ModelId"],
+            _count: {
+              _all: true,
+            },
+            where: {
+              Status: status,
+            },
+          });
+          return { status, count };
+        })
+      );
+
+      const finalResult = results.reduce((acc, result) => {
+        result.count.forEach((item) => {
+          if (!acc[item.ModelId]) {
+            acc[item.ModelId] = {};
+          }
+          acc[item.ModelId][result.status] = item._count._all;
+        });
+        return acc;
+      }, {});
+
       const result = await Promise.all(
         models.map(async (model) => {
           const totalDuration = Math.floor(
@@ -1665,15 +1731,42 @@ const ModelController = {
               new Date(model.Audit.CreatedAt)) /
               (1000 * 60 * 60 * 24)
           );
+          const modelProgress = modelsWithProgress.find(
+            (mod) => mod.ModelId == model.Id
+          ).DonePercentage;
+          const details = model.ModelVarients.flatMap((varient) => {
+            return {
+              Color: varient.Color.ColorName,
+              Sizes: varient.Sizes,
+              Quantity: varient.TrakingModels.map((trackingModel) => ({
+                StageName: trackingModel.CurrentStage.StageName,
+                QuantityDelivered: trackingModel.QuantityReceived
+                  ? trackingModel.QuantityReceived.reduce(
+                      (receivedOgj, received) => {
+                        receivedOgj[received.size] = received.value;
+                        return receivedOgj;
+                      },
+                      {}
+                    )
+                  : JSON.parse(varient.Sizes).reduce((emptyObj, size) => {
+                      emptyObj[size] = "";
+                      return emptyObj;
+                    }, {}),
+              }))[0],
+            };
+          });
 
-          const details = model.ModelVarients.map((varient) => ({
-            Color: varient.Color.ColorName,
-            Sizes: varient.Sizes,
-            Quantity: varient.Quantity,
-          }));
+          const modelStats = Object.keys(finalResult).reduce((acc, key) => {
+            if (model.Id == key) {
+              acc = finalResult[key];
+            }
+            return acc;
+          }, {});
 
           return {
             ModelId: model.Id,
+            ModelStats: modelStats,
+            ModelProgress: modelProgress,
             DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
@@ -1698,6 +1791,519 @@ const ModelController = {
           "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
         data: {},
       });
+    }
+  },
+
+  getTasksStats: async (req, res) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const tasksStats = { PENDING: 0, ONGOING: 0, COMPLETED: 0 };
+    const type = req.query.type || "monthly";
+
+    const getDateRanges = (type) => {
+      let start, end;
+
+      if (type === "daily") {
+        start = new Date(now.setDate(now.getDate() - now.getDay()));
+        start.setHours(0, 0, 0, 0);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      } else if (type === "weekly") {
+        start = new Date(currentYear, currentMonth, 1);
+        end = new Date(currentYear, currentMonth + 1, 0);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      } else if (type === "monthly") {
+        start = new Date(currentYear, 0, 1);
+        end = new Date(currentYear, 11, 31);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      }
+    };
+
+    try {
+      const dateRanges = getDateRanges(type);
+      const tasksPromises = dateRanges.map(({ start, end }) =>
+        prisma.tasks.findMany({
+          include: {
+            Audit: true,
+          },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: start,
+                lte: end,
+              },
+            },
+          },
+        })
+      );
+
+      const allTasks = await Promise.all(tasksPromises);
+      allTasks.forEach((tasks) => {
+        tasks.forEach((taskay) => {
+          switch (taskay.Status) {
+            case "PENDING":
+              tasksStats.PENDING++;
+              break;
+            case "ONGOING":
+              tasksStats.ONGOING++;
+              break;
+            case "COMPLETED":
+              tasksStats.COMPLETED++;
+              break;
+          }
+        });
+      });
+
+      res.send(tasksStats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+  getCollectionStats: async (req, res) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const collectionsStats = { PENDING: 0, ONGOING: 0, COMPLETED: 0 };
+    const type = req.query.type || "monthly";
+
+    const getDateRanges = (type) => {
+      let start, end;
+
+      if (type === "daily") {
+        start = new Date(now.setDate(now.getDate() - now.getDay()));
+        start.setHours(0, 0, 0, 0);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      } else if (type === "weekly") {
+        start = new Date(currentYear, currentMonth, 1);
+        end = new Date(currentYear, currentMonth + 1, 0);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      } else if (type === "monthly") {
+        start = new Date(currentYear, 0, 1);
+        end = new Date(currentYear, 11, 31);
+        end.setHours(23, 59, 59, 999);
+        return [{ start, end }];
+      }
+    };
+
+    try {
+      const dateRanges = getDateRanges(type);
+      const collectionPromises = dateRanges.map(({ start, end }) =>
+        prisma.collections.findMany({
+          include: {
+            Audit: true,
+          },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: start,
+                lte: end,
+              },
+            },
+          },
+        })
+      );
+
+      const allCollections = await Promise.all(collectionPromises);
+      allCollections.forEach((collection) => {
+        collection.forEach((collec) => {
+          switch (collec.Status) {
+            case "PENDING":
+              collectionsStats.PENDING++;
+              break;
+            case "ONGOING":
+              collectionsStats.ONGOING++;
+              break;
+            case "COMPLETED":
+              collectionsStats.COMPLETED++;
+              break;
+          }
+        });
+      });
+
+      res.send(collectionsStats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  getModelStats: async (req, res) => {
+    const { type } = req.query;
+    const now = new Date();
+
+    if (type == "daily") {
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      try {
+        const models = await prisma.models.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfWeek,
+                lte: endOfWeek,
+              },
+            },
+          },
+        });
+
+        const modelsStats = Array(7)
+          .fill()
+          .map(() => ({
+            awaiting: 0,
+            inprogress: 0,
+            done: 0,
+          }));
+
+        models.forEach((model) => {
+          const day = model.Audit.CreatedAt.getDay();
+          switch (model.Status) {
+            case "AWAITING":
+              modelsStats[day].awaiting += 1;
+              break;
+            case "INPROGRESS":
+              modelsStats[day].inprogress += 1;
+              break;
+            case "DONE":
+              modelsStats[day].done += 1;
+              break;
+          }
+        });
+
+        res.json(modelsStats);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    } else if (type == "weekly") {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const daysInMonth = lastDayOfMonth.getDate();
+
+      const weeks = [];
+      let currentStart = new Date(firstDayOfMonth);
+
+      for (let day = 1; day <= daysInMonth; day += 7) {
+        let currentEnd = new Date(now.getFullYear(), now.getMonth(), day + 6);
+        if (day + 6 >= 22) {
+          currentEnd = new Date(now.getFullYear(), now.getMonth(), daysInMonth);
+          weeks.push({
+            startOfWeek: new Date(currentStart),
+            endOfWeek: new Date(currentEnd),
+          });
+          break;
+        }
+        weeks.push({
+          startOfWeek: new Date(currentStart),
+          endOfWeek: new Date(currentEnd),
+        });
+        currentStart = new Date(currentEnd);
+        currentStart.setDate(currentStart.getDate() + 1);
+      }
+
+      try {
+        const modelsStats = weeks.map(() => ({
+          awaiting: 0,
+          inprogress: 0,
+          done: 0,
+        }));
+
+        for (let i = 0; i < weeks.length; i++) {
+          const { startOfWeek, endOfWeek } = weeks[i];
+
+          const models = await prisma.models.findMany({
+            include: { Audit: true },
+            where: {
+              Audit: {
+                CreatedAt: {
+                  gte: startOfWeek,
+                  lte: endOfWeek,
+                },
+              },
+            },
+          });
+
+          models.forEach((model) => {
+            switch (model.Status) {
+              case "AWAITING":
+                modelsStats[i].awaiting += 1;
+                break;
+              case "INPROGRESS":
+                modelsStats[i].inprogress += 1;
+                break;
+              case "DONE":
+                modelsStats[i].done += 1;
+                break;
+            }
+          });
+        }
+
+        res.json(modelsStats);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    } else if (type == "monthly") {
+      const currentYear = now.getFullYear();
+      const months = [];
+
+      for (let month = 0; month < 12; month++) {
+        const firstDayOfMonth = new Date(currentYear, month, 1);
+        const lastDayOfMonth = new Date(currentYear, month + 1, 0);
+        months.push({
+          startOfMonth: firstDayOfMonth,
+          endOfMonth: lastDayOfMonth,
+        });
+      }
+
+      try {
+        const modelsStats = months.map(() => ({
+          awaiting: 0,
+          inprogress: 0,
+          done: 0,
+        }));
+
+        for (let i = 0; i < months.length; i++) {
+          const { startOfMonth, endOfMonth } = months[i];
+
+          const models = await prisma.models.findMany({
+            include: { Audit: true },
+            where: {
+              Audit: {
+                CreatedAt: {
+                  gte: startOfMonth,
+                  lte: endOfMonth,
+                },
+              },
+            },
+          });
+
+          models.forEach((model) => {
+            switch (model.Status) {
+              case "AWAITING":
+                modelsStats[i].awaiting += 1;
+                break;
+              case "INPROGRESS":
+                modelsStats[i].inprogress += 1;
+                break;
+              case "DONE":
+                modelsStats[i].done += 1;
+                break;
+            }
+          });
+        }
+
+        res.json(modelsStats);
+      } catch (error) {
+        console.error("Error generating report:", error);
+        return res.status(500).send({
+          status: 500,
+          message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+          data: {},
+        });
+      }
+    }
+  },
+
+  getOrdersStats: async (req, res) => {
+    const { type } = req.query;
+    const now = new Date();
+
+    if (type == "daily") {
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      try {
+        const orders = await prisma.orders.findMany({
+          include: { Audit: true },
+          where: {
+            Audit: {
+              CreatedAt: {
+                gte: startOfWeek,
+                lte: endOfWeek,
+              },
+            },
+          },
+        });
+
+        const ordersStats = Array(7)
+          .fill()
+          .map(() => ({
+            pending: 0,
+            ongoing: 0,
+            completed: 0,
+          }));
+
+        orders.forEach((order) => {
+          const day = order.Audit.CreatedAt.getDay();
+          switch (order.Status) {
+            case "PENDING":
+              ordersStats[day].pending += 1;
+              break;
+            case "ONGOING":
+              ordersStats[day].ongoing += 1;
+              break;
+            case "COMPLETED":
+              ordersStats[day].completed += 1;
+              break;
+          }
+        });
+
+        res.json(ordersStats);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    } else if (type == "weekly") {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const daysInMonth = lastDayOfMonth.getDate();
+
+      const weeks = [];
+      let currentStart = new Date(firstDayOfMonth);
+
+      for (let day = 1; day <= daysInMonth; day += 7) {
+        let currentEnd = new Date(now.getFullYear(), now.getMonth(), day + 6);
+        if (day + 6 >= 22) {
+          currentEnd = new Date(now.getFullYear(), now.getMonth(), daysInMonth);
+          weeks.push({
+            startOfWeek: new Date(currentStart),
+            endOfWeek: new Date(currentEnd),
+          });
+          break;
+        }
+        weeks.push({
+          startOfWeek: new Date(currentStart),
+          endOfWeek: new Date(currentEnd),
+        });
+        currentStart = new Date(currentEnd);
+        currentStart.setDate(currentStart.getDate() + 1);
+      }
+
+      try {
+        const ordersStats = weeks.map(() => ({
+          pending: 0,
+          ongoing: 0,
+          completed: 0,
+        }));
+
+        for (let i = 0; i < weeks.length; i++) {
+          const { startOfWeek, endOfWeek } = weeks[i];
+
+          const models = await prisma.models.findMany({
+            include: { Audit: true },
+            where: {
+              Audit: {
+                CreatedAt: {
+                  gte: startOfWeek,
+                  lte: endOfWeek,
+                },
+              },
+            },
+          });
+
+          const orders = await prisma.orders.findMany({
+            include: { Audit: true },
+            where: {
+              Audit: {
+                CreatedAt: {
+                  gte: startOfWeek,
+                  lte: endOfWeek,
+                },
+              },
+            },
+          });
+
+          orders.forEach((order) => {
+            switch (order.Status) {
+              case "PENDING":
+                ordersStats[i].pending += 1;
+                break;
+              case "ONGOING":
+                ordersStats[i].ongoing += 1;
+                break;
+              case "COMPLETED":
+                ordersStats[i].completed += 1;
+                break;
+            }
+          });
+        }
+
+        res.json(ordersStats);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    } else if (type == "monthly") {
+      const currentYear = now.getFullYear();
+      const months = [];
+
+      for (let month = 0; month < 12; month++) {
+        const firstDayOfMonth = new Date(currentYear, month, 1);
+        const lastDayOfMonth = new Date(currentYear, month + 1, 0);
+        months.push({
+          startOfMonth: firstDayOfMonth,
+          endOfMonth: lastDayOfMonth,
+        });
+      }
+
+      try {
+        const ordersStats = months.map(() => ({
+          pending: 0,
+          ongoing: 0,
+          completed: 0,
+        }));
+
+        for (let i = 0; i < months.length; i++) {
+          const { startOfMonth, endOfMonth } = months[i];
+
+          const orders = await prisma.orders.findMany({
+            include: { Audit: true },
+            where: {
+              Audit: {
+                CreatedAt: {
+                  gte: startOfMonth,
+                  lte: endOfMonth,
+                },
+              },
+            },
+          });
+
+          orders.forEach((order) => {
+            switch (order.Status) {
+              case "PENDING":
+                ordersStats[i].pending += 1;
+                break;
+              case "ONGOING":
+                ordersStats[i].ongoing += 1;
+                break;
+              case "COMPLETED":
+                ordersStats[i].completed += 1;
+                break;
+            }
+          });
+        }
+
+        res.json(ordersStats);
+      } catch (error) {
+        console.error("Error generating report:", error);
+        return res.status(500).send({
+          status: 500,
+          message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+          data: {},
+        });
+      }
     }
   },
 };

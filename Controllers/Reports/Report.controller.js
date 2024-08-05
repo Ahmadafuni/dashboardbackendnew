@@ -476,10 +476,10 @@ const ReportsController = {
         orders,
         models,
       ] = await Promise.all([
-        prisma.departments.findMany({
+        prisma.manufacturingStages.findMany({
           select: {
             Id: true,
-            Name: true,
+            StageName: true,
           },
         }),
 
