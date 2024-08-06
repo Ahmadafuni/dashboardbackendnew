@@ -11,6 +11,51 @@ router.post(
   ModelController.filterModel
 );
 
+//
+router.get("/mokks", async (req, res) => {
+  const models = await prisma.models.findMany({
+    select: {
+      OrderId: true,
+      DemoModelNumber: true,
+      Status: true,
+    },
+  });
+
+  const groupedModels = models.reduce((acc, model) => {
+    if (!acc[model.OrderId]) {
+      acc[model.OrderId] = [];
+    }
+    acc[model.OrderId].push(model);
+    return acc;
+  }, {});
+
+  const finalResult = Object.entries(groupedModels).reduce(
+    (acc, [orderId, orderModels]) => {
+      const doneCount = orderModels.filter(
+        (model) => model.Status === "DONE"
+      ).length;
+      const totalCount = orderModels.length;
+      const percentage = ((doneCount / totalCount) * 100).toFixed(2);
+
+      const stats = orderModels.reduce((modelAcc, model) => {
+        modelAcc[model.DemoModelNumber] = model.Status;
+        return modelAcc;
+      }, {});
+
+      acc[orderId] = {
+        percentage: parseFloat(percentage),
+        stats,
+      };
+
+      return acc;
+    },
+    {}
+  );
+
+  console.log(finalResult);
+  res.send(finalResult);
+});
+//
 router.get(
   "/tasks-stats",
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
