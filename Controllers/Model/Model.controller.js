@@ -1629,6 +1629,7 @@ const ModelController = {
       const models = await prisma.models.findMany({
         where: filter,
         select: {
+          OrderId: true,
           DemoModelNumber: true,
           ModelName: true,
           Id: true,
@@ -1702,7 +1703,7 @@ const ModelController = {
       const results = await Promise.all(
         statuses.map(async (status) => {
           const count = await prisma.modelVarients.groupBy({
-            by: ["ModelId"],
+            by: ["ModelId", "ColorId"],
             _count: {
               _all: true,
             },
@@ -1710,17 +1711,78 @@ const ModelController = {
               Status: status,
             },
           });
-          return { status, count };
+
+          // Fetch color details
+          const colorIds = [...new Set(count.map((item) => item.ColorId))];
+          const colors = await prisma.colors.findMany({
+            where: {
+              Id: { in: colorIds },
+            },
+            select: {
+              Id: true,
+              ColorName: true,
+            },
+          });
+
+          const colorMap = colors.reduce((acc, color) => {
+            acc[color.Id] = color;
+            return acc;
+          }, {});
+
+          return count.map((item) => ({
+            status,
+            modelId: item.ModelId,
+            color: colorMap[item.ColorId],
+          }));
         })
       );
 
-      const finalResult = results.reduce((acc, result) => {
-        result.count.forEach((item) => {
-          if (!acc[item.ModelId]) {
-            acc[item.ModelId] = {};
+      const finalResult = results.flat().reduce((acc, item) => {
+        if (!acc[item.modelId]) {
+          acc[item.modelId] = {};
+        }
+        acc[item.modelId][item.color.ColorName] = item.status;
+        return acc;
+      }, {});
+
+      const modelsForOrdersColumn = await prisma.models.findMany({
+        select: {
+          OrderId: true,
+          DemoModelNumber: true,
+          Status: true,
+        },
+      });
+
+      const groupedModelsForOrdersColumn = modelsForOrdersColumn.reduce(
+        (acc, model) => {
+          if (!acc[model.OrderId]) {
+            acc[model.OrderId] = [];
           }
-          acc[item.ModelId][result.status] = item._count._all;
-        });
+          acc[model.OrderId].push(model);
+          return acc;
+        },
+        {}
+      );
+
+      const finalResultForOrdersColumn = Object.entries(
+        groupedModelsForOrdersColumn
+      ).reduce((acc, [orderId, orderModels]) => {
+        const doneCount = orderModels.filter(
+          (model) => model.Status === "DONE"
+        ).length;
+        const totalCount = orderModels.length;
+        const percentage = ((doneCount / totalCount) * 100).toFixed(2);
+
+        const stats = orderModels.reduce((modelAcc, model) => {
+          modelAcc[model.DemoModelNumber] = model.Status;
+          return modelAcc;
+        }, {});
+
+        acc[orderId] = {
+          percentage: parseFloat(percentage),
+          stats,
+        };
+
         return acc;
       }, {});
 
@@ -1731,9 +1793,11 @@ const ModelController = {
               new Date(model.Audit.CreatedAt)) /
               (1000 * 60 * 60 * 24)
           );
+
           const modelProgress = modelsWithProgress.find(
             (mod) => mod.ModelId == model.Id
           ).DonePercentage;
+
           const details = model.ModelVarients.flatMap((varient) => {
             return {
               Color: varient.Color.ColorName,
@@ -1763,10 +1827,22 @@ const ModelController = {
             return acc;
           }, {});
 
+          const orderInfo = Object.keys(finalResultForOrdersColumn).reduce(
+            (acc, key) => {
+              if (model.OrderId == key) {
+                acc = finalResultForOrdersColumn[key];
+              }
+              return acc;
+            },
+            {}
+          );
+
           return {
             ModelId: model.Id,
             ModelStats: modelStats,
             ModelProgress: modelProgress,
+            OrderStats: orderInfo.stats,
+            OrderProgress: orderInfo.percentage,
             DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
