@@ -2,9 +2,11 @@ import prisma from "../../client.js";
 import bcrypt from "bcrypt";
 import {
   doesExist,
+  generateAccessToken,
   getUser,
   getUserById,
 } from "../../Utils/Auth.utils.js";
+import jwt from "jsonwebtoken";
 
 const SALT_ROUNDS = 12;
 
@@ -12,17 +14,19 @@ const AuthenticationController = {
   login: async (req, res, next) => {
     const { username, password } = req.body;
     console.log("Login attempt:", { username });
+
     try {
       // Get User
       const user = await getUser(username);
-      console.log("User fetched from database:", user);
+      console.log("Fetched user from database:", user);
 
       // Check User
       if (user === null) {
-        console.log("User not found or inactive");
+        console.log("User not found or account inactive.");
         return res.status(401).send({
           status: 401,
-          message: "اسم المستخدم أو كلمة المرور غير صالحة أو الحساب لم يتم تفعيله بعد!",
+          message:
+              "اسم المستخدم أو كلمة المرور غير صالحة أو الحساب لم يتم تفعيله بعد!",
           data: {},
         });
       }
@@ -30,40 +34,45 @@ const AuthenticationController = {
       // Check Password
       const passMatched = await bcrypt.compare(password, user.PasswordHash);
       console.log("Password match status:", passMatched);
+
       if (!passMatched) {
-        console.log("Incorrect password");
+        console.log("Incorrect password for user:", username);
         return res.status(401).send({
           status: 401,
-          message: "اسم المستخدم أو كلمة المرور غير صالحة أو الحساب لم يتم تفعيله بعد!",
+          message:
+              "اسم المستخدم أو كلمة المرور غير صالحة أو الحساب لم يتم تفعيله بعد!",
           data: {},
         });
       }
 
-      // Optionally: Set up session if needed
-      // req.session.userId = user.Id;
+      // Generate JWT
+      const access_token = await generateAccessToken({
+        id: user.Id,
+        username: user.Username,
+        role: user.Role,
+      });
+      console.log("Generated access token:", access_token);
 
-      // Update last login time
       await prisma.users.update({
         where: { Id: user.Id },
         data: {
           LastLogin: new Date(),
+          // HashedRefreshToken: hashedRefreshToken,
         },
       });
-      console.log("User last login time updated");
+      console.log("Updated user's last login time:", user.Id);
 
       return res.status(200).send({
         status: 200,
         message: "تم تسجيل دخول المستخدم بنجاح!",
         data: {
+          access_token: access_token,
           user: {
             id: user.Id,
             name: `${user.Firstname} ${user.Lastname}`,
             email: user.Email,
             userImage: user.PhotoPath,
-            userRole: user.Department.Category,
-            userDepartment: user.Department.Name,
-            userDepartmentId: user.Department.Id,
-            category: user.Department.Category,
+            userRole: user.Role,
           },
         },
       });
@@ -77,11 +86,88 @@ const AuthenticationController = {
     }
   },
 
+  checkSession: async (req, res) => {
+    const Token = req.headers["authorization"];
+    console.log("Checking session with token:", Token);
+
+    try {
+      if (!Token) {
+        console.log("No token provided.");
+        return res.status(401).send({
+          status: 401,
+          message: "لم يتم توفير رمز. الرجاء تسجيل الدخول!",
+        });
+      }
+
+      const access_token = Token.split(" ")[1];
+      console.log("Extracted access token:", access_token);
+
+      const decodedAccess = jwt.verify(access_token, process.env.ACCESS_TOKEN);
+      console.log("Decoded access token:", decodedAccess);
+
+      const now = Math.floor(Date.now() / 1000);
+
+      if (decodedAccess.exp < now) {
+        console.log("Session expired.");
+        return res.status(401).send({
+          status: 401,
+          message: "انتهت صلاحية الجلسة. الرجاء تسجيل الدخول!",
+        });
+      }
+
+      const user = await getUser(decodedAccess.username);
+      console.log("Fetched user for session check:", user);
+
+      return res.status(200).send({
+        user: {
+          id: user.Id,
+          name: `${user.Firstname} ${user.Lastname}`,
+          email: user.Email,
+          userImage: user.PhotoPath,
+          userRole: user.Role,
+        },
+        status: 200,
+        message: "الجلسة صالحة!",
+      });
+    } catch (error) {
+      console.error("Session check error:", error);
+
+      if (
+          error instanceof jwt.JsonWebTokenError ||
+          error instanceof jwt.NotBeforeError ||
+          error instanceof jwt.TokenExpiredError
+      ) {
+        console.log("Invalid or expired token.");
+        return res.status(401).send({
+          status: 401,
+          message: "جلسة غير صالحة أو منتهية. الرجاء تسجيل الدخول!",
+        });
+      }
+
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+      });
+    }
+  },
+
   signOut: async (req, res) => {
     try {
-      console.log("Signing out user");
-      // Optionally: Clear session if used
-      // req.session.destroy();
+      console.log("Signing out user...");
+
+      // Clear the cookies
+      res.clearCookie("Access_Token", {
+        httpOnly: true,
+        sameSite: "Lax",
+        path: "/",
+      });
+      res.clearCookie("Refresh_Token", {
+        httpOnly: true,
+        sameSite: "Lax",
+        path: "/",
+      });
+
+      console.log("User signed out successfully.");
 
       // Send a response indicating the user was signed out
       return res.status(200).send({
@@ -99,44 +185,18 @@ const AuthenticationController = {
 
   createAdmin: async (req, res, next) => {
     const file = req.file;
-    const {
-      username,
-      email,
-      firstname,
-      lastname,
-      phoneNumber,
-      password,
-      department,
-    } = req.body;
+    const { username, email, firstname, lastname, phoneNumber, password } =
+        req.body;
 
-    console.log("Starting createAdmin function");
+    console.log("Creating admin with:", { username, email });
 
     try {
-      // Check if file is provided
-      if (!file) {
-        console.log("File is not provided");
-        return res.status(400).send({
-          status: 400,
-          message: "File is required",
-          data: {},
-        });
-      }
-
-      // Check if department ID is valid
-      if (!department) {
-        console.log("Department ID is not provided");
-        return res.status(400).send({
-          status: 400,
-          message: "Department ID is required",
-          data: {},
-        });
-      }
-
-      console.log("Checking if user credentials already exist");
-      // Check user credentials already exist
+      // Check if user credentials already exist
       const doesExistUser = await doesExist({ username, email, phoneNumber });
+      console.log("User existence check:", doesExistUser);
+
       if (doesExistUser != null) {
-        console.log("User credentials already exist", doesExistUser);
+        console.log("User already exists.");
         return res.status(409).send({
           status: 409,
           message: doesExistUser,
@@ -144,13 +204,12 @@ const AuthenticationController = {
         });
       }
 
-      console.log("Hashing password");
       // Hash password for safe keeping
       const hashedPass = await bcrypt.hash(password, SALT_ROUNDS);
+      console.log("Hashed password generated.");
 
-      console.log("Creating new user in the database");
       // Create new user
-      const newUser = await prisma.users.create({
+      await prisma.users.create({
         data: {
           Email: email,
           Firstname: firstname,
@@ -158,22 +217,14 @@ const AuthenticationController = {
           PasswordHash: hashedPass,
           Username: username,
           PhoneNumber: phoneNumber,
+          Role: "FACTORYMANAGER",
+          Category: "MANAGEMENT",
           IsActive: true,
-          Department: {
-            connect: {
-              Id: +department,
-            },
-          },
           PhotoPath: `/${file.destination.split("/")[1]}/${file.filename}`,
-          Audit: {
-            create: {
-              CreatedAt: new Date(),
-            },
-          },
         },
       });
 
-      console.log("New user created successfully", newUser);
+      console.log("New admin created successfully.");
 
       // If success return success response
       return res.status(201).send({
@@ -182,15 +233,13 @@ const AuthenticationController = {
         data: {},
       });
     } catch (error) {
-      console.error("Error occurred in createAdmin function", error);
+      console.error("Create admin error:", error);
+
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {
-          error: error.message, // Include the error message in the response
-          stack: error.stack    // Optionally include the stack trace
-        },
+        data: {},
       });
     }
   },
@@ -208,16 +257,19 @@ const AuthenticationController = {
       lastname,
       phoneNumber,
       password,
-      department,
+      role,
+      category,
     } = parsedUserInfo;
 
-    console.log("Creating new user:", { username, email, department });
+    console.log("Creating user with:", { username, email });
 
     try {
       // Check if user credentials already exist
       const doesExistUser = await doesExist({ username, email, phoneNumber });
+      console.log("User existence check:", doesExistUser);
+
       if (doesExistUser != null) {
-        console.log("User credentials already exist:", doesExistUser);
+        console.log("User already exists.");
         return res.status(409).send({
           status: 409,
           message: doesExistUser,
@@ -227,8 +279,8 @@ const AuthenticationController = {
 
       // Hash password for safe keeping
       const hashedPass = await bcrypt.hash(password, SALT_ROUNDS);
+      console.log("Hashed password generated.");
 
-      console.log("Hashing password and saving new user to database");
       // Create new user
       await prisma.users.create({
         data: {
@@ -238,11 +290,9 @@ const AuthenticationController = {
           PasswordHash: hashedPass,
           Username: username,
           PhoneNumber: phoneNumber,
-          Department: {
-            connect: {
-              Id: +department,
-            },
-          },
+          Role: role,
+          Category: category,
+          IsActive: true,
           PhotoPath: file
               ? `/${file.destination.split("/")[1]}/${file.filename}`
               : "",
@@ -250,20 +300,79 @@ const AuthenticationController = {
             create: {
               CreatedById: userId,
               UpdatedById: userId,
+              IsDeleted: false,
             },
           },
         },
       });
 
-      console.log("New user created successfully");
+      console.log("New user created successfully.");
 
+      // If success return success response
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء مستخدم جديد بنجاح!",
         data: {},
       });
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Create user error:", error);
+
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  getManagers: async (req, res, next) => {
+    console.log("Fetching managers...");
+    try {
+      const departments = await prisma.departments.findMany({
+        select: {
+          ManagerId: true,
+        },
+      });
+      const warehouses = await prisma.warehouses.findMany({
+        select: {
+          ManagerId: true,
+        },
+      });
+      const warehouseManagerIds = warehouses.map(
+          (warehouse) => warehouse.ManagerId
+      );
+      const managerIds = departments.map((dept) => dept.ManagerId);
+
+      const allIds = [...managerIds, ...warehouseManagerIds];
+
+      const users = await prisma.users.findMany({
+        where: {
+          AND: [
+            { Audit: { IsDeleted: false } },
+            { Role: { not: "FACTORYMANAGER" } },
+            {
+              Id: { notIn: allIds },
+            },
+          ],
+        },
+        select: {
+          Id: true,
+          Firstname: true,
+          Lastname: true,
+          Role: true,
+        },
+      });
+
+      console.log("Managers fetched successfully.");
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب جميع المستخدمين بنجاح!",
+        data: users,
+      });
+    } catch (error) {
+      console.error("Get managers error:", error);
+
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -273,7 +382,7 @@ const AuthenticationController = {
   },
 
   getAllUsers: async (req, res, next) => {
-    console.log("Fetching all users");
+    console.log("Fetching all users...");
     try {
       const users = await prisma.users.findMany({
         where: {
@@ -287,12 +396,18 @@ const AuthenticationController = {
           Lastname: true,
           Username: true,
           Email: true,
+          Role: true,
           PhoneNumber: true,
           Department: {
             select: {
-              Id: true,
               Name: true,
-              Category: true,
+              CategoryName: true,
+            },
+          },
+          Warehouse: {
+            select: {
+              WarehouseName: true,
+              CategoryName: true,
             },
           },
           IsActive: true,
@@ -300,7 +415,7 @@ const AuthenticationController = {
         },
       });
 
-      console.log("Users fetched successfully");
+      console.log("Users fetched successfully.");
 
       return res.status(200).send({
         status: 200,
@@ -308,68 +423,8 @@ const AuthenticationController = {
         data: users,
       });
     } catch (error) {
-      console.error("Error fetching users:", error);
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
+      console.error("Get all users error:", error);
 
-  getUserById: async (req, res, next) => {
-    const id = req.params.id;
-    console.log("Fetching user by ID:", id);
-    try {
-      const user = await prisma.users.findUnique({
-        where: {
-          Id: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        select: {
-          Firstname: true,
-          Lastname: true,
-          Username: true,
-          Email: true,
-          PhoneNumber: true,
-          Department: {
-            select: {
-              Id: true,
-            },
-          },
-        },
-      });
-
-      if (!user) {
-        console.log("User not found");
-        return res.status(404).send({
-          status: 404,
-          message: "User not found!",
-          data: {},
-        });
-      }
-
-      console.log("User found:", user);
-
-      const formatedUser = {
-        username: user.Username,
-        password: "",
-        email: user.Email,
-        firstname: user.Firstname,
-        lastname: user.Lastname,
-        phoneNumber: user.PhoneNumber,
-        department: user.Department.Id.toString(),
-      };
-
-      return res.status(200).send({
-        status: 200,
-        message: "User found!",
-        data: formatedUser,
-      });
-    } catch (error) {
-      console.error("Error fetching user by ID:", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -381,19 +436,20 @@ const AuthenticationController = {
   toggleUser: async (req, res, next) => {
     const toggleUserId = parseInt(req.params.id);
     const userId = req.userId;
-    console.log("Toggling user active status for user ID:", toggleUserId);
+    console.log("Toggling user status for ID:", toggleUserId);
+
     try {
       const user = await getUserById(+toggleUserId);
+      console.log("User to toggle:", user);
+
       if (!user) {
-        console.log("User not found");
+        console.log("User not found.");
         return res.status(404).send({
           status: 404,
           message: "User not found!",
           data: {},
         });
       }
-
-      console.log("User found:", user);
 
       await prisma.users.update({
         where: {
@@ -406,7 +462,7 @@ const AuthenticationController = {
         },
       });
 
-      console.log("User active status toggled");
+      console.log("User status toggled successfully.");
 
       return res.status(200).send({
         status: 200,
@@ -414,7 +470,8 @@ const AuthenticationController = {
         data: {},
       });
     } catch (error) {
-      console.error("Error toggling user status:", error);
+      console.error("Toggle user error:", error);
+
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -424,13 +481,13 @@ const AuthenticationController = {
   },
 
   deleteUser: async (req, res, next) => {
-    const userId = req.userId;
-    const id = req.params.id;
-    console.log("Deleting user with ID:", id);
+    const userId = parseInt(req.params.id);
+    console.log("Deleting user with ID:", userId);
+
     try {
       await prisma.users.update({
         where: {
-          Id: +id,
+          Id: +userId,
         },
         data: {
           Audit: {
@@ -444,14 +501,15 @@ const AuthenticationController = {
         },
       });
 
-      console.log("User deleted successfully");
+      console.log("User deleted successfully.");
 
       return res.status(200).send({
         status: 200,
         message: "تم حذف المستخدم بنجاح!",
       });
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Delete user error:", error);
+
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -460,43 +518,41 @@ const AuthenticationController = {
   },
 
   updateUser: async (req, res, next) => {
-    const userId = req.userId;
+    const userId =
+        req.params.id !== "undefined" ? parseInt(req.params.id) : req.userId;
     const file = req.file;
-    const id = req.params.id;
-
     const { userInfo } = req.body;
     const parsedUserInfo = JSON.parse(userInfo);
     const {
       firstname,
       lastname,
+      role,
       username,
+      isActive,
       password,
       phoneNumber,
       email,
-      department,
     } = parsedUserInfo;
 
-    console.log("Updating user with ID:", id);
+    console.log("Updating user with ID:", userId);
 
     try {
       // Ensure the user exists
       const existingUser = await prisma.users.findUnique({
         where: {
-          Id: +id,
+          Id: userId,
         },
       });
+      console.log("Existing user:", existingUser);
 
       if (!existingUser) {
-        console.log("User not found");
+        console.log("User not found.");
         return res.status(404).send({
           status: 404,
           message: "المستخدم غير موجود!",
         });
       }
 
-      console.log("User found:", existingUser);
-
-      // Optional: Validate updates here
       // Optional: Hash password if it's being updated
       let hashedPass = existingUser.PasswordHash;
       if (password.length > 0) {
@@ -513,46 +569,36 @@ const AuthenticationController = {
         PasswordHash: hashedPass,
         PhoneNumber: phoneNumber ? phoneNumber : existingUser.PhoneNumber,
         Email: email ? email : existingUser.Email,
+        Role: role ? role : existingUser.Role,
+        IsActive:
+            isActive !== undefined ? JSON.parse(isActive) : existingUser.IsActive,
         PhotoPath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : existingUser.PhotoPath,
       };
 
-      // Only add Username to updateData if it's different and provided
       if (username && username !== existingUser.Username) {
         updateData.Username = username;
       }
 
       console.log("Updating user with data:", updateData);
 
-      // Update user
       await prisma.users.update({
         where: {
-          Id: +id,
+          Id: userId,
         },
-        data: {
-          ...updateData,
-          Department: {
-            connect: {
-              Id: +department,
-            },
-          },
-          Audit: {
-            update: {
-              UpdatedById: userId,
-            },
-          },
-        },
+        data: updateData,
       });
 
-      console.log("User updated successfully");
+      console.log("User updated successfully.");
 
       return res.status(200).send({
         status: 200,
         message: "تم تحديث المستخدم بنجاح!",
       });
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Update user error:", error);
+
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -563,9 +609,10 @@ const AuthenticationController = {
   searchUsers: async (req, res) => {
     const searchTerm = req.params.searchTerm;
     console.log("Searching users with term:", searchTerm);
+
     try {
       if (!searchTerm) {
-        console.log("No search term provided");
+        console.log("No search term provided.");
         return res.status(400).send({
           status: 400,
           message: "لم يتم توفير مصطلح بحث.",
@@ -612,12 +659,18 @@ const AuthenticationController = {
           Lastname: true,
           Username: true,
           Email: true,
+          Role: true,
           PhoneNumber: true,
           Department: {
             select: {
-              Id: true,
               Name: true,
-              Category: true,
+              CategoryName: true,
+            },
+          },
+          Warehouse: {
+            select: {
+              WarehouseName: true,
+              CategoryName: true,
             },
           },
           IsActive: true,
@@ -633,7 +686,8 @@ const AuthenticationController = {
         data: datas,
       });
     } catch (error) {
-      console.error("Error searching users:", error);
+      console.error("Search users error:", error);
+
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
