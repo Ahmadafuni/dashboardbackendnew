@@ -51,10 +51,8 @@ let corsOptions = {
       "http://localhost:3000",
       "https://dashboardnew-3bgv.onrender.com",
       "https://factorydashboard.online"],
-  credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  allowedHeaders: 'Content-Type,Authorization'
-}
+  credentials: true
+};
 
 app.use(cors(corsOptions));
 
