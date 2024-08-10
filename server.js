@@ -47,9 +47,15 @@ export let socketUserList = [];
 const app = express();
 
 let corsOptions = {
-  origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com","https://dashboard-backend.qnv2oe.easypanel.host","https://factorydashboard.online"],
+  origin: [
+      "http://localhost:3000",
+      "https://dashboardnew-3bgv.onrender.com",
+      "https://factorydashboard.online"],
   credentials: true,
-};
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type,Authorization'
+}
+
 app.use(cors(corsOptions));
 
 // app setup
