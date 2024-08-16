@@ -2,7 +2,14 @@ import prisma from "../../client.js";
 
 const OrderController = {
   createOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const userId = req.userId;
     try {
@@ -41,6 +48,78 @@ const OrderController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  getArchivedOrders: async (req, res, next) => {
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          IsArchived: true,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Id: true,
+          OrderName: true,
+          OrderNumber: true,
+          Collection: {
+            select: {
+              CollectionName: true,
+            },
+          },
+          Description: true,
+          DeadlineDate: true,
+          Quantity: true,
+          ReasonText: true,
+          FilePath: true,
+          Status: true,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب الطلبات بنجاح!",
+        data: orders,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  toggleArchivedOrderById: async (req, res, next) => {
+    const { toggle, id } = req.query;
+    const isToggleTrue = toggle === "true";
+    console.log(isToggleTrue, id);
+    try {
+      const orders = await prisma.orders.update({
+        where: {
+          Id: parseInt(id),
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          IsArchived: isToggleTrue,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "تم تحديث الطلب بنجاح!",
+        data: orders,
+      });
+    } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -231,7 +310,14 @@ const OrderController = {
   },
 
   updateOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const id = parseInt(req.params.id);
     const userId = req.userId;

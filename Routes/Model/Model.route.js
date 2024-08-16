@@ -10,6 +10,16 @@ router.post(
   verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
   ModelController.filterModel
 );
+router.get(
+  "/archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.getArchivedModels
+);
+router.get(
+  "/update-archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  ModelController.toggleArchivedModelById
+);
 
 //
 router.get("/mokks", async (req, res) => {

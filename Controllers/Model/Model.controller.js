@@ -1516,6 +1516,17 @@ const ModelController = {
       currentStage,
     } = req.body;
 
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+
+    const totalRecords = await prisma.models.count({
+      where: {
+        IsArchived: false,
+      },
+    });
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     let filter = {};
 
     if (status) {
@@ -1627,7 +1638,21 @@ const ModelController = {
       }
 
       const models = await prisma.models.findMany({
-        where: filter,
+        where: {
+          ...filter,
+          IsArchived: false,
+          Order: {
+            IsArchived: false,
+          },
+        },
+        orderBy: {
+          Audit: {
+            CreatedAt: "desc",
+          },
+        },
+        skip: (page - 1) * size,
+        take: size,
+
         select: {
           OrderId: true,
           DemoModelNumber: true,
@@ -1841,6 +1866,7 @@ const ModelController = {
             ModelId: model.Id,
             ModelStats: modelStats,
             ModelProgress: modelProgress,
+            OrderId: model.OrderId,
             OrderStats: orderInfo.stats,
             OrderProgress: orderInfo.percentage,
             DemoModelNumber: model.DemoModelNumber,
@@ -1857,6 +1883,7 @@ const ModelController = {
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
+        totalPages,
         data: result,
       });
     } catch (error) {
@@ -1865,6 +1892,67 @@ const ModelController = {
         status: 500,
         message:
           "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا! " + error,
+        data: {},
+      });
+    }
+  },
+
+  getArchivedModels: async (req, res, next) => {
+    try {
+      const models = await prisma.models.findMany({
+        where: {
+          IsArchived: true,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          CategoryOne: true,
+          categoryTwo: true,
+          ProductCatalog: true,
+          Template: true,
+          Textile: true,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب النماذج بنجاح!",
+        data: models,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  toggleArchivedModelById: async (req, res, next) => {
+    const { toggle, id } = req.query;
+    const isToggleTrue = toggle === "true";
+    try {
+      const orders = await prisma.models.update({
+        where: {
+          Id: parseInt(id),
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          IsArchived: isToggleTrue,
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "تم تحديث المودل بنجاح!",
+        data: orders,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {},
       });
     }

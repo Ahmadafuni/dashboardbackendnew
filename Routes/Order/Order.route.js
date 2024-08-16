@@ -10,6 +10,18 @@ router.post(
   uploadOrder.single("orders"),
   OrderController.createOrder
 );
+
+router.get(
+  "/archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  OrderController.getArchivedOrders
+);
+router.get(
+  "/update-archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  OrderController.toggleArchivedOrderById
+);
+
 router.get(
   "/all",
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
