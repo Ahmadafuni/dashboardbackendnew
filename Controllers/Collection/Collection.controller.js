@@ -34,12 +34,12 @@ const CollectionController = {
     }
   },
   getCollections: async (req, res, next) => {
-    const { isArchived } = req.query;
-    const isArchivedTrue = isArchived == "true";
+    //const { isArchived } = req.query;
+    //const isArchivedTrue = isArchived == "true";
     try {
       const collections = await prisma.collections.findMany({
         where: {
-          IsArchived: isArchivedTrue,
+          //IsArchived: isArchivedTrue,
           Audit: {
             IsDeleted: false,
           },
@@ -55,7 +55,7 @@ const CollectionController = {
         status: 200,
         message: "Collections fetched successfully!",
         data: collections,
-        isArchivedTrue,
+        //isArchivedTrue,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -208,7 +208,7 @@ const CollectionController = {
     try {
       const collections = await prisma.collections.findMany({
         where: {
-          IsArchived: true,
+          //IsArchived: true,
           Audit: {
             IsDeleted: false,
           },
