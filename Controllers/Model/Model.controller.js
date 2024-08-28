@@ -241,6 +241,11 @@ const ModelController = {
       const models = await prisma.models.findMany({
         where: {
           OrderId: +orderId,
+          Order: {
+            Collection: {
+              IsArchived: false,
+            },
+          },
           Audit: {
             IsDeleted: false,
           },
@@ -276,6 +281,11 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
+          Order: {
+            Collection: {
+              IsArchived: false,
+            },
+          },
         },
         include: {
           CategoryOne: true,
@@ -306,6 +316,11 @@ const ModelController = {
     try {
       const model = await prisma.models.findUnique({
         where: {
+          Order: {
+            Collection: {
+              IsArchived: false,
+            },
+          },
           Id: +id,
           Audit: {
             IsDeleted: false,
@@ -561,6 +576,11 @@ const ModelController = {
               DepartmentId: departId,
             },
           },
+          Order: {
+            Collection: {
+              IsArchived: false,
+            },
+          },
         },
         select: {
           Id: true,
@@ -756,6 +776,13 @@ const ModelController = {
         .findMany({
           where: {
             ModelId: +id,
+            Model: {
+              Order: {
+                Collection: {
+                  IsArchived: false,
+                },
+              },
+            },
             Audit: {
               IsDeleted: false,
             },
@@ -1587,6 +1614,11 @@ const ModelController = {
     try {
       if (currentStage) {
         const maxIds = await prisma.trakingModels.groupBy({
+          where: {
+            ModelVariant: {
+              Model: { Order: { Collection: { IsArchived: false } } },
+            },
+          },
           by: ["ModelVariantId"],
           _max: {
             Id: true,
@@ -1597,6 +1629,9 @@ const ModelController = {
           await prisma.trakingModels.findMany({
             where: {
               CurrentStageId: parseInt(currentStage),
+              ModelVariant: {
+                Model: { Order: { Collection: { IsArchived: false } } },
+              },
               Id: {
                 in: maxIds.map((item) => item._max.Id),
               },
@@ -1608,6 +1643,9 @@ const ModelController = {
 
         const modelVariants = await prisma.modelVarients.findMany({
           where: {
+            Model: {
+              Order: { Collection: { IsArchived: false } },
+            },
             Id: {
               in: latestVariantsInCurrentStage.map(
                 (variantId) => variantId.ModelVariantId
@@ -1627,8 +1665,19 @@ const ModelController = {
       }
 
       const models = await prisma.models.findMany({
-        where: filter,
+        where: {
+          ...filter,
+          Order: {
+            Collection: { IsArchived: false },
+            Audit: { IsDeleted: false },
+          },
+        },
         select: {
+          Order: {
+            select: {
+              CollectionId: true,
+            },
+          },
           OrderId: true,
           DemoModelNumber: true,
           ModelName: true,
@@ -1684,7 +1733,7 @@ const ModelController = {
           },
         },
       });
-
+      console.log(models);
       const modelsWithProgress = models.map((model) => {
         const totalVarients = model.ModelVarients.length;
         const doneVarients = model.ModelVarients.filter(
@@ -1746,6 +1795,13 @@ const ModelController = {
       }, {});
 
       const modelsForOrdersColumn = await prisma.models.findMany({
+        where: {
+          Order: {
+            Collection: {
+              IsArchived: false,
+            },
+          },
+        },
         select: {
           OrderId: true,
           DemoModelNumber: true,
@@ -1836,13 +1892,13 @@ const ModelController = {
             },
             {}
           );
-
           return {
             ModelId: model.Id,
             ModelStats: modelStats,
             ModelProgress: modelProgress,
             OrderStats: orderInfo.stats,
             OrderProgress: orderInfo.percentage,
+            CollectionId: model.Order.CollectionId,
             DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,

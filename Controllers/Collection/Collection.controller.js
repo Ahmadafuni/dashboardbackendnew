@@ -34,9 +34,12 @@ const CollectionCotroller = {
     }
   },
   getCollections: async (req, res, next) => {
+    const { isArchived } = req.query;
+    const isArchivedTrue = isArchived == "true";
     try {
       const collections = await prisma.collections.findMany({
         where: {
+          IsArchived: isArchivedTrue,
           Audit: {
             IsDeleted: false,
           },
@@ -52,6 +55,7 @@ const CollectionCotroller = {
         status: 200,
         message: "Collections fetched successfully!",
         data: collections,
+        isArchivedTrue,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -193,6 +197,61 @@ const CollectionCotroller = {
       });
     } catch (error) {
       // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+  getArchivedCollections: async (req, res, next) => {
+    try {
+      const collections = await prisma.collections.findMany({
+        where: {
+          IsArchived: true,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب الكولكشنز بنجاح!",
+        data: collections,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  toggleArchivedCollectionById: async (req, res, next) => {
+    const { toggle, id } = req.query;
+    const isToggleTrue = toggle === "true";
+    try {
+      console.log(toggle, id);
+      const collection = await prisma.collections.update({
+        where: {
+          Id: parseInt(id),
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        data: {
+          IsArchived: isToggleTrue,
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "تم تحديث الكولكشن بنجاح!",
+        data: collection,
+      });
+    } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

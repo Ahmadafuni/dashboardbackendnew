@@ -9,9 +9,22 @@ router.post(
   verifyUser(["FACTORYMANAGER"]),
   CollectionCotroller.createCollection
 );
+
+router.get(
+  "/update-archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  CollectionCotroller.toggleArchivedCollectionById
+);
+
+router.get(
+  "/archived",
+  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  CollectionCotroller.getArchivedCollections
+);
+
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  // verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   CollectionCotroller.getCollections
 );
 router.get(

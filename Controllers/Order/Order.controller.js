@@ -2,7 +2,14 @@ import prisma from "../../client.js";
 
 const OrderController = {
   createOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const userId = req.userId;
     try {
@@ -55,6 +62,9 @@ const OrderController = {
         where: {
           Audit: {
             IsDeleted: false,
+          },
+          Collection: {
+            IsArchived: false,
           },
         },
         select: {
@@ -132,15 +142,13 @@ const OrderController = {
       });
     }
   },
-
   deleteOrder: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
+
     try {
       await prisma.orders.update({
-        where: {
-          Id: +id,
-        },
+        where: { Id: id },
         data: {
           Audit: {
             update: {
@@ -150,21 +158,19 @@ const OrderController = {
           },
         },
       });
-      // Delete all models
+
       const models = await prisma.models.findMany({
         where: {
-          OrderId: +id,
+          OrderId: id,
           Audit: {
             IsDeleted: false,
           },
         },
       });
 
-      for (var model of models) {
+      for (const model of models) {
         await prisma.models.update({
-          where: {
-            Id: model.Id,
-          },
+          where: { Id: model.Id },
           data: {
             Audit: {
               update: {
@@ -174,33 +180,40 @@ const OrderController = {
             },
           },
         });
-      }
-      // Delete all variants
-      const mVariants = await prisma.modelVarients.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          Model: {
-            OrderId: +id,
-          },
-        },
-      });
 
-      for (const variant of mVariants) {
-        await prisma.modelVarients.update({
+        // Find and update related model variants
+        const mVariants = await prisma.modelVarients.findMany({
           where: {
-            Id: variant.Id,
+            ModelId: model.Id,
+            Audit: { IsDeleted: false },
           },
-          data: {
-            Audit: {
-              update: {
-                IsDeleted: true,
-                UpdatedById: userId,
+          select: { Id: true },
+        });
+
+        for (const variant of mVariants) {
+          await prisma.modelVarients.update({
+            where: { Id: variant.Id },
+            data: {
+              Audit: {
+                update: {
+                  IsDeleted: true,
+                  UpdatedById: userId,
+                },
               },
             },
-            TrakingModels: {
-              update: {
+          });
+
+          const trackings = await prisma.trakingModels.findMany({
+            where: {
+              ModelVariantId: variant.Id,
+              Audit: { IsDeleted: false },
+            },
+          });
+
+          for (const track of trackings) {
+            await prisma.trakingModels.update({
+              where: { Id: track.Id },
+              data: {
                 Audit: {
                   update: {
                     IsDeleted: true,
@@ -208,20 +221,18 @@ const OrderController = {
                   },
                 },
               },
-            },
-          },
-        });
+            });
+          }
+        }
       }
 
-      // Return response
       return res.status(200).send({
         status: 200,
         message: "تم حذف الطلب بنجاح!",
         data: {},
       });
     } catch (error) {
-      // Server error or unsolved error
-      console.log(error);
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -231,7 +242,14 @@ const OrderController = {
   },
 
   updateOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const id = parseInt(req.params.id);
     const userId = req.userId;
