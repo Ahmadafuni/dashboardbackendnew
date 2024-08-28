@@ -839,6 +839,23 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                },
+              },
+            },
+          },
           OR: [
             {
               MainStatus: "CHECKING",
@@ -893,6 +910,23 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                },
+              },
+            },
+          },
           MainStatus: "INPROGRESS",
           CurrentStage: {
             DepartmentId: userDepartmentId,
@@ -939,6 +973,23 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                },
+              },
+            },
           },
           MainStatus: "DONE",
           EndTime: {
@@ -988,6 +1039,23 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                },
+              },
+            },
           },
           MainStatus: "CHECKING",
           CurrentStage: {
@@ -1052,6 +1120,23 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false, // Ensure Model is not deleted
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false, // Ensure Order is not deleted
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false, // Ensure Collection is not deleted
+                  },
+                },
+              },
+            },
           },
           OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
         },
@@ -1170,6 +1255,23 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false, // Ensure Model is not deleted
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false, // Ensure Order is not deleted
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false, // Ensure Collection is not deleted
+                  },
+                },
+              },
+            },
+          },
           MainStatus: "INPROGRESS",
         },
         select: {
@@ -1287,6 +1389,23 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false, // Ensure Model is not deleted
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false, // Ensure Order is not deleted
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false, // Ensure Collection is not deleted
+                  },
+                },
+              },
+            },
           },
           MainStatus: "DONE",
           EndTime: {
@@ -1409,6 +1528,23 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
+          ModelVariant: {
+            Model: {
+              Audit: {
+                IsDeleted: false, // Ensure Model is not deleted
+              },
+              Order: {
+                Audit: {
+                  IsDeleted: false, // Ensure Order is not deleted
+                },
+                Collection: {
+                  Audit: {
+                    IsDeleted: false, // Ensure Collection is not deleted
+                  },
+                },
+              },
+            },
+          },
           MainStatus: "CHECKING",
         },
         select: {
@@ -1497,7 +1633,6 @@ const TrackingModelController = {
                     },
                   },
                   Barcode: true,
-
                   ModelName: true,
                   ModelNumber: true,
                   DemoModelNumber: true,
