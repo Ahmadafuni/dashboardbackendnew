@@ -839,15 +839,6 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
-          ModelVariant: {
-            Model: {
-              Order: {
-                Collection: {
-                  IsArchived: false,
-                },
-              },
-            },
-          },
           OR: [
             {
               MainStatus: "CHECKING",
@@ -1062,9 +1053,6 @@ const TrackingModelController = {
           Audit: {
             IsDeleted: false,
           },
-          ModelVariant: {
-            Model: { Order: { Collection: { IsArchived: false } } },
-          },
           OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
         },
         select: {
@@ -1181,9 +1169,6 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: { Order: { Collection: { IsArchived: false } } },
           },
           MainStatus: "INPROGRESS",
         },
@@ -1302,9 +1287,6 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: { Order: { Collection: { IsArchived: false } } },
           },
           MainStatus: "DONE",
           EndTime: {
@@ -1426,9 +1408,6 @@ const TrackingModelController = {
         where: {
           Audit: {
             IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: { Order: { Collection: { IsArchived: false } } },
           },
           MainStatus: "CHECKING",
         },

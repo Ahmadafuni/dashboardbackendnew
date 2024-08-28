@@ -63,9 +63,6 @@ const OrderController = {
           Audit: {
             IsDeleted: false,
           },
-          Collection: {
-            IsArchived: false,
-          },
         },
         select: {
           Id: true,
