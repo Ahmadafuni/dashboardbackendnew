@@ -1,6 +1,6 @@
 import prisma from "../../client.js";
 
-const CollectionCotroller = {
+const CollectionController = {
   createCollection: async (req, res, next) => {
     const { name, description } = req.body;
     const userId = req.userId;
@@ -261,4 +261,4 @@ const CollectionCotroller = {
   },
 };
 
-export default CollectionCotroller;
+export default CollectionController;
