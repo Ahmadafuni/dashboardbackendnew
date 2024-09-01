@@ -103,6 +103,7 @@ app.use("/productcatalogtdetail", ProductCatalogDetailRoute);
 app.use("/templatepattern", TemplatePatternRoute);
 app.use("/templatetype", TemplateTypeRoute);
 app.use("/manufacturingstage", ManufacturingStageRoute);
+app.use("/manufacturingstagemodel", ManufacturingStageModelRoute);
 app.use("/component", ComponentRoute);
 app.use("/templatesize", TemplateSizeRoute);
 app.use("/template", TemplateRoute);
