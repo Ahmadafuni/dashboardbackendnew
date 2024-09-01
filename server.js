@@ -40,6 +40,7 @@ import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
 import { NoteRoute } from "./Routes/Note/Note.route.js";
 import { Server } from "socket.io";
 import { NotificationRoute } from "./Routes/Notification/Notification.route.js";
+import {ManufacturingStageModelRoute} from "./Routes/ManufacturingStageModel/ManufacturingStageModel.route.js";
 
 // Socket User List
 export let socketUserList = [];
