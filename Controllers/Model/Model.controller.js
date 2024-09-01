@@ -62,26 +62,6 @@ const ModelController = {
         });
       }
 
-      const mStages = await prisma.manufacturingStages.findMany({
-        where: {
-          TemplateId: template.Id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        orderBy: {
-          StageNumber: "asc",
-        },
-      });
-
-      if (mStages.length <= 0) {
-        return res.status(405).send({
-          status: 405,
-          message: "Please add stages to template!",
-          data: {},
-        });
-      }
-
       const pCatalogue = await prisma.productCatalogs.findUnique({
         where: {
           Id: +ProductCatalog,
@@ -256,7 +236,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
     } catch (error) {
@@ -288,7 +268,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
     } catch (error) {
@@ -316,14 +296,14 @@ const ModelController = {
         // Return response
         return res.status(404).send({
           status: 404,
-          message: "النموذج غير موجود!",
+          message: "الموديل غير موجود!",
           data: {},
         });
       }
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: {
           ProductCatalog: model.ProductCatalogId.toString(),
           CategoryOne: model.CategoryOneId.toString(),
@@ -370,7 +350,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم حذف النموذج بنجاح!",
+        message: "تم حذف الموديل بنجاح!",
         data: {},
       });
     } catch (error) {
@@ -521,7 +501,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب أسماء النماذج بنجاح!",
+        message: "تم جلب أسماء الموديلات بنجاح!",
         data: modelNames,
       });
     } catch (error) {
@@ -614,7 +594,7 @@ const ModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: "تم جلب نماذج الإنتاج بنجاح!",
+        message: "تم جلب الموديل الإنتاج بنجاح!",
         data: transformedData,
       });
     } catch (error) {
@@ -1947,6 +1927,7 @@ const ModelController = {
       res.status(500).json({ error: error.message });
     }
   },
+
   getCollectionStats: async (req, res) => {
     const now = new Date();
     const currentYear = now.getFullYear();

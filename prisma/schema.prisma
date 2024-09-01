@@ -128,7 +128,7 @@ model Collections {
   Id             Int          @id @default(autoincrement())
   CollectionName String       @db.VarChar(255)
   Description    String?
-  IsArchived     Boolean?     @default(false)
+  IsArchived     Boolean      @default(false)
   Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
   AuditId        Int          @unique
   Status         Status?      @default(PENDING)
