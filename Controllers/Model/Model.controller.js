@@ -14,7 +14,6 @@ const ModelController = {
       PrintName,
       PrintLocation,
       Description,
-      Varients,
       DemoModelNumber,
       ReasonText,
     } = req.body;
@@ -155,33 +154,6 @@ const ModelController = {
           },
         },
       });
-
-      const revertVarients = JSON.parse(Varients);
-
-      for (let i = 0; i < revertVarients.length; i++) {
-        await prisma.modelVarients.create({
-          data: {
-            Model: {
-              connect: {
-                Id: model.Id,
-              },
-            },
-            Color: {
-              connect: {
-                Id: +revertVarients[i].Color,
-              },
-            },
-            Sizes: JSON.stringify(revertVarients[i].Sizes),
-            Quantity: +revertVarients[i].Quantity,
-            Audit: {
-              create: {
-                CreatedById: userId,
-                UpdatedById: userId,
-              },
-            },
-          },
-        });
-      }
       // Return response
       return res.status(201).send({
         status: 201,
