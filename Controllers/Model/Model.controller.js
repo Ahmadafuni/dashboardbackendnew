@@ -102,7 +102,7 @@ const ModelController = {
       let modelCount = await prisma.models.count({});
       modelCount++;
 
-      const model = await prisma.models.create({
+      const createdModel = await prisma.models.create({
         data: {
           ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
           ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
@@ -158,7 +158,7 @@ const ModelController = {
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء الموديل بنجاح!",
-        data: {},
+        data: createdModel,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -166,7 +166,7 @@ const ModelController = {
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
         data: {},
-      });
+      })
     }
   },
 
