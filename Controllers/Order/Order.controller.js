@@ -696,6 +696,36 @@ const OrderController = {
         });
       }
 
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
+      }
+
       // Update the order status to ONHOLD
       await prisma.orders.update({
         where: {
@@ -781,6 +811,36 @@ const OrderController = {
           message: "Order not found or the order already completed!",
           data: {},
         });
+      }
+
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
       }
 
       // Update the order status to ONGOING
