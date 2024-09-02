@@ -186,6 +186,12 @@ const ModelController = {
           ProductCatalog: true,
           Template: true,
           Textile: true,
+          Order: {
+            select: {
+              Status: true,
+              ReasonText: true,
+            },
+          },
         },
       });
       // Return response

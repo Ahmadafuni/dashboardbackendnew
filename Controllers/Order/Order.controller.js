@@ -139,6 +139,7 @@ const OrderController = {
       });
     }
   },
+
   deleteOrder: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -521,6 +522,7 @@ const OrderController = {
     const id = req.params.id;
     const userId = req.userId;
     try {
+      // Find the order and ensure it exists and is not started
       const order = await prisma.orders.findUnique({
         where: {
           Id: +id,
@@ -538,25 +540,46 @@ const OrderController = {
         });
       }
 
-      const models = await prisma.models.count({
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
         where: {
-          Order: {
-            Id: +id,
-          },
+          OrderId: +id,
           Audit: {
             IsDeleted: false,
           },
         },
       });
-      if (models <= 0) {
+
+      // Ensure at least one model is added to the order
+      if (models.length <= 0) {
         return res.status(405).send({
           status: 405,
-          message:
-            "Can't start the order. Either there is no model added to the order or the order already started!",
+          message: "Can't start the order. No models are added to the order!",
           data: {},
         });
       }
 
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
+      }
+
+      // Update order status to ONGOING
       await prisma.orders.update({
         where: {
           Id: +id,
@@ -573,6 +596,7 @@ const OrderController = {
         },
       });
 
+      // Update models to RUNNING status
       await prisma.models.updateMany({
         where: {
           OrderId: +id,
