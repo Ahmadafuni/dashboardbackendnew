@@ -1149,7 +1149,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1165,7 +1165,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1181,7 +1181,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1283,7 +1283,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1299,7 +1299,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1315,7 +1315,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1421,7 +1421,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1437,7 +1437,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1453,7 +1453,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1556,7 +1556,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1572,7 +1572,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
@@ -1588,7 +1588,7 @@ const TrackingModelController = {
               StageName: true,
               WorkDescription: true,
               Duration: true,
-              TemplateId: true,
+              ModelId: true,
               AuditId: true,
               Department: {
                 select: {
