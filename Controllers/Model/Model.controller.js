@@ -798,7 +798,9 @@ const ModelController = {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
     const userId = req.userId;
+
     try {
+      // Check if the variant with the same color already exists for the model
       const isThere = await prisma.modelVarients.findFirst({
         where: {
           ColorId: +Color,
@@ -812,12 +814,34 @@ const ModelController = {
       if (isThere) {
         return res.status(409).send({
           status: 409,
-          message: "Color already exist!",
+          message: "Color already exists!",
           data: {},
         });
       }
 
-      await prisma.modelVarients.create({
+      // Fetch manufacturing stages for the specific model
+      const mStages = await prisma.manufacturingStagesModel.findMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+
+      if (mStages.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No manufacturing stages found for this model.",
+          data: {},
+        });
+      }
+
+      // Create the model variant and track it in the manufacturing stages
+      const newVariant = await prisma.modelVarients.create({
         data: {
           Model: {
             connect: {
@@ -837,18 +861,35 @@ const ModelController = {
               UpdatedById: +userId,
             },
           },
+          TrakingModels: {
+            create: {
+              CurrentStage: {
+                connect: {
+                  Id: mStages[0].Id, // Start with the first stage of this specific model
+                },
+              },
+              NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // Connect to the next stage if available
+              Audit: {
+                create: {
+                  CreatedById: +userId,
+                  UpdatedById: +userId,
+                },
+              },
+            },
+          },
         },
       });
+
       return res.status(201).send({
         status: 201,
-        message: "Model varient created successfully!",
-        data: {},
+        message: "Model variant created successfully!",
+        data: { Id: newVariant.Id },
       });
     } catch (error) {
-      // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later.",
         data: {},
       });
     }
