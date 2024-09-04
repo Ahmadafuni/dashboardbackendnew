@@ -355,15 +355,13 @@ const TrackingModelController = {
       });
 
       // Get Manufacturing Stages
-      const mStages = await prisma.manufacturingStages.findMany({
+      const mStages = await prisma.manufacturingStagesModel.findMany({
         where: {
-          Template: {
             Models: {
               some: {
                 ModelVarients: { some: { Id: tracking.ModelVariantId } },
               },
             },
-          },
           Audit: {
             IsDeleted: false,
           },

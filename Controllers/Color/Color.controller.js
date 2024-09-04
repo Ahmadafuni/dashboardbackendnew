@@ -4,9 +4,7 @@ const ColorController = {
   createColor: async (req, res, next) => {
     const { ColorName, Description, ColorCode } = req.body;
     const userId = req.userId;
-
     try {
-      // Attempt to create the color entry
       await prisma.colors.create({
         data: {
           ColorName: ColorName,
@@ -20,31 +18,14 @@ const ColorController = {
           },
         },
       });
-
-      // Return success response
+      // Return response
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء اللون بنجاح!",
         data: {},
       });
-
     } catch (error) {
-      // Enhanced error handling
-      console.error('Error creating color:', error); // Log the error details
-
-      // Check if the error is a known Prisma error
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          // Handle unique constraint violation
-          return res.status(400).send({
-            status: 400,
-            message: 'هناك لون بنفس الاسم أو الرمز موجود بالفعل.',
-            data: {},
-          });
-        }
-      }
-
-      // General server error
+      // Server error or unsolved error
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
