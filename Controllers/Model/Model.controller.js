@@ -37,7 +37,7 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "COMPLETED") {
+      if (order.Status === "COMPLETED") {
         return res.status(405).send({
           status: 405,
           message: "Order already COMPLETED. Can't add new model!",
