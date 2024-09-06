@@ -801,7 +801,7 @@ const ModelController = {
   },
 
   createModelVarient: async (req, res, next) => {
-    const id = req.params.id;
+    const id = req.params.id; // Model ID
     const { Sizes, Color, Quantity } = req.body;
     const userId = req.userId;
 
@@ -885,6 +885,56 @@ const ModelController = {
           },
         },
       });
+
+      // Check the status of the associated order
+      const parentModel = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+        },
+        include: {
+          Order: true,
+        },
+      });
+
+      // If the order status is "ONGOING"
+      if (parentModel && parentModel.Order.Status === "ONGOING") {
+        // Update the parent model RunningStatus to "RUNNING"
+        await prisma.models.update({
+          where: {
+            Id: +id,
+          },
+          data: {
+            RunningStatus: "RUNNING",
+          },
+        });
+
+        // Update only the newly created model variant's status to "TODO"
+        await prisma.modelVarients.update({
+          where: {
+            Id: newVariant.Id,
+          },
+          data: {
+            Status: "TODO",
+          },
+        });
+
+        // Update the tracking model associated with the new variant to "TODO"
+        await prisma.trakingModels.updateMany({
+          where: {
+            ModelVariantId: newVariant.Id,
+            MainStatus: "AWAITING",
+          },
+          data: {
+            MainStatus: "TODO",
+            StartTime: new Date(),
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+      }
 
       return res.status(201).send({
         status: 201,
