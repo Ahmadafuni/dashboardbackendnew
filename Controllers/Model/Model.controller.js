@@ -907,7 +907,7 @@ const ModelController = {
 
         // Update the parent model's RunningStatus
         await prisma.models.update({
-          where: { Id: +modelId },
+          where: { Id: +id },
           data: { RunningStatus: runningStatus },
         });
 
