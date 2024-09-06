@@ -905,13 +905,6 @@ const ModelController = {
           },
           data: {
             RunningStatus: "RUNNING",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
           },
         });
 
@@ -922,13 +915,6 @@ const ModelController = {
           },
           data: {
             Status: "TODO",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
           },
         });
 
@@ -941,14 +927,13 @@ const ModelController = {
           data: {
             MainStatus: "TODO",
             StartTime: new Date(),
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
           },
+        });
+
+        return res.status(201).send({
+          status: 201,
+          message: "Model variant created & started successfully!",
+          data: { Id: newVariant.Id },
         });
       }
 
