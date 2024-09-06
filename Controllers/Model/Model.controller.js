@@ -898,7 +898,7 @@ const ModelController = {
 
       const orderStatus = parentModel.Order.Status;
       if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
-        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED"; // Corrected condition
+        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
 
         // Update the parent model RunningStatus to "RUNNING"
         await prisma.models.update({
@@ -917,6 +917,7 @@ const ModelController = {
           },
           data: {
             Status: "TODO",
+            RunningStatus: runningStatus,
           },
         });
 
