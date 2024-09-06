@@ -896,25 +896,28 @@ const ModelController = {
         },
       });
 
-      // Determine the order status and update accordingly
       const orderStatus = parentModel.Order.Status;
-      if (orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
-        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
-        const message =
-          orderStatus === "ONGOING"
-            ? "Model variant created and started successfully as the order is ongoing."
-            : "Model variant created but paused because the order is on hold.";
+      if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
+        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED"; // Corrected condition
 
-        // Update the parent model's RunningStatus
+        // Update the parent model RunningStatus to "RUNNING"
         await prisma.models.update({
-          where: { Id: +id },
-          data: { RunningStatus: runningStatus },
+          where: {
+            Id: +id,
+          },
+          data: {
+            RunningStatus: runningStatus,
+          },
         });
 
-        // Update the newly created model variant's status to "TODO"
+        // Update only the newly created model variant's status to "TODO"
         await prisma.modelVarients.update({
-          where: { Id: newVariant.Id },
-          data: { Status: "TODO" },
+          where: {
+            Id: newVariant.Id,
+          },
+          data: {
+            Status: "TODO",
+          },
         });
 
         // Update the tracking model associated with the new variant to "TODO"
@@ -929,23 +932,20 @@ const ModelController = {
           },
         });
 
-        console.log(message);
         return res.status(201).send({
           status: 201,
-          message,
+          message: "Model variant created & started successfully!",
           data: { Id: newVariant.Id },
         });
       }
 
-      // Default message for successfully created variant without status changes
-      console.log("Model variant created successfully without any status changes.");
       return res.status(201).send({
         status: 201,
-        message: "Model variant created successfully without any status changes.",
+        message: "Model variant created successfully!",
         data: { Id: newVariant.Id },
       });
     } catch (error) {
-      console.error("Internal server error:", error);
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later.",
