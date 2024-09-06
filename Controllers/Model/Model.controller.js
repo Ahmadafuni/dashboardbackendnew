@@ -896,8 +896,8 @@ const ModelController = {
         },
       });
 
-      // If the order status is "ONGOING"
-      if (parentModel && parentModel.Order.Status === "ONGOING") {
+      // If the order status is "ONGOING" or "ONHOLD"
+      if (parentModel && parentModel.Order.Status === "ONGOING" || parentModel.Order.Status === "ONHOLD")) {
         // Update the parent model RunningStatus to "RUNNING"
         await prisma.models.update({
           where: {
