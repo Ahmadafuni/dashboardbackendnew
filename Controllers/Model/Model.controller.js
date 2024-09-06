@@ -905,6 +905,13 @@ const ModelController = {
           },
           data: {
             RunningStatus: "RUNNING",
+            Audit: {
+              update: {
+                data: {
+                  UpdatedById: userId,
+                },
+              },
+            },
           },
         });
 
@@ -915,6 +922,13 @@ const ModelController = {
           },
           data: {
             Status: "TODO",
+            Audit: {
+              update: {
+                data: {
+                  UpdatedById: userId,
+                },
+              },
+            },
           },
         });
 
@@ -929,7 +943,9 @@ const ModelController = {
             StartTime: new Date(),
             Audit: {
               update: {
-                UpdatedById: userId,
+                data: {
+                  UpdatedById: userId,
+                },
               },
             },
           },
