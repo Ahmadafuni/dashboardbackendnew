@@ -37,10 +37,10 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "ONHOLD" && order.Status !== "PENDING") {
+      if (order.Status !== "COMPLETED") {
         return res.status(405).send({
           status: 405,
-          message: "Order already started. Can't add new model!",
+          message: "Order already COMPLETED. Can't add new model!",
           data: {},
         });
       }
@@ -1780,7 +1780,7 @@ const ModelController = {
           const totalDuration = Math.floor(
             (new Date(model.Audit.UpdatedAt) -
               new Date(model.Audit.CreatedAt)) /
-              (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24)
           );
 
           const modelProgress = modelsWithProgress.find(
@@ -1795,16 +1795,16 @@ const ModelController = {
                 StageName: trackingModel.CurrentStage.StageName,
                 QuantityDelivered: trackingModel.QuantityReceived
                   ? trackingModel.QuantityReceived.reduce(
-                      (receivedOgj, received) => {
-                        receivedOgj[received.size] = received.value;
-                        return receivedOgj;
-                      },
-                      {}
-                    )
+                    (receivedOgj, received) => {
+                      receivedOgj[received.size] = received.value;
+                      return receivedOgj;
+                    },
+                    {}
+                  )
                   : JSON.parse(varient.Sizes).reduce((emptyObj, size) => {
-                      emptyObj[size] = "";
-                      return emptyObj;
-                    }, {}),
+                    emptyObj[size] = "";
+                    return emptyObj;
+                  }, {}),
               }))[0],
             };
           });

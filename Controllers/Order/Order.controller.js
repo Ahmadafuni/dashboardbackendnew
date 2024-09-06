@@ -332,9 +332,8 @@ const OrderController = {
         .then((orders) =>
           orders.map((order) => ({
             id: order.Id,
-            name: `Order ${order.OrderNumber} dated ${
-              order.OrderDate.toISOString().split("T")[0]
-            } with amount ${order.TotalAmount}`,
+            name: `Order ${order.OrderNumber} dated ${order.OrderDate.toISOString().split("T")[0]
+              } with amount ${order.TotalAmount}`,
           }))
         );
 
@@ -609,6 +608,7 @@ const OrderController = {
         },
       });
 
+      // Update modelVarients status
       await prisma.modelVarients.updateMany({
         where: {
           Audit: {
@@ -637,7 +637,7 @@ const OrderController = {
           MainStatus: "AWAITING",
         },
       });
-
+      // Update trackings status
       for (let i = 0; i < trackings.length; i++) {
         await prisma.trakingModels.update({
           where: {
