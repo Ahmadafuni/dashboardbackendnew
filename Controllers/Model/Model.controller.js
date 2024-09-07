@@ -45,7 +45,8 @@ const ModelController = {
         });
       }
 
-      const template = await prisma.templates.findUnique({
+      // due to import order from excel,sometimes we dont have template
+      /*const template = await prisma.templates.findUnique({
         where: {
           Id: +Template,
           Audit: {
@@ -59,7 +60,7 @@ const ModelController = {
           message: "Template not found!",
           data: {},
         });
-      }
+      }*/
 
       const pCatalogue = await prisma.productCatalogs.findUnique({
         where: {
