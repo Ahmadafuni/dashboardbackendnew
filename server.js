@@ -40,6 +40,7 @@ import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
 import { NoteRoute } from "./Routes/Note/Note.route.js";
 import { Server } from "socket.io";
 import { NotificationRoute } from "./Routes/Notification/Notification.route.js";
+import {ManufacturingStageModelRoute} from "./Routes/ManufacturingStageModel/ManufacturingStageModel.route.js";
 
 // Socket User List
 export let socketUserList = [];
@@ -47,7 +48,7 @@ export let socketUserList = [];
 const app = express();
 
 let corsOptions = {
-  origin: ["http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
+  origin: ["https://factorydashboard.online","http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -103,6 +104,7 @@ app.use("/productcatalogtdetail", ProductCatalogDetailRoute);
 app.use("/templatepattern", TemplatePatternRoute);
 app.use("/templatetype", TemplateTypeRoute);
 app.use("/manufacturingstage", ManufacturingStageRoute);
+app.use("/manufacturingstagemodel", ManufacturingStageModelRoute);
 app.use("/component", ComponentRoute);
 app.use("/templatesize", TemplateSizeRoute);
 app.use("/template", TemplateRoute);

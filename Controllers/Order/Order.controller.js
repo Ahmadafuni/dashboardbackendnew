@@ -2,7 +2,14 @@ import prisma from "../../client.js";
 
 const OrderController = {
   createOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const userId = req.userId;
     try {
@@ -136,11 +143,10 @@ const OrderController = {
   deleteOrder: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
+
     try {
       await prisma.orders.update({
-        where: {
-          Id: +id,
-        },
+        where: { Id: id },
         data: {
           Audit: {
             update: {
@@ -150,21 +156,19 @@ const OrderController = {
           },
         },
       });
-      // Delete all models
+
       const models = await prisma.models.findMany({
         where: {
-          OrderId: +id,
+          OrderId: id,
           Audit: {
             IsDeleted: false,
           },
         },
       });
 
-      for (var model of models) {
+      for (const model of models) {
         await prisma.models.update({
-          where: {
-            Id: model.Id,
-          },
+          where: { Id: model.Id },
           data: {
             Audit: {
               update: {
@@ -174,33 +178,40 @@ const OrderController = {
             },
           },
         });
-      }
-      // Delete all variants
-      const mVariants = await prisma.modelVarients.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          Model: {
-            OrderId: +id,
-          },
-        },
-      });
 
-      for (const variant of mVariants) {
-        await prisma.modelVarients.update({
+        // Find and update related model variants
+        const mVariants = await prisma.modelVarients.findMany({
           where: {
-            Id: variant.Id,
+            ModelId: model.Id,
+            Audit: { IsDeleted: false },
           },
-          data: {
-            Audit: {
-              update: {
-                IsDeleted: true,
-                UpdatedById: userId,
+          select: { Id: true },
+        });
+
+        for (const variant of mVariants) {
+          await prisma.modelVarients.update({
+            where: { Id: variant.Id },
+            data: {
+              Audit: {
+                update: {
+                  IsDeleted: true,
+                  UpdatedById: userId,
+                },
               },
             },
-            TrakingModels: {
-              update: {
+          });
+
+          const trackings = await prisma.trakingModels.findMany({
+            where: {
+              ModelVariantId: variant.Id,
+              Audit: { IsDeleted: false },
+            },
+          });
+
+          for (const track of trackings) {
+            await prisma.trakingModels.update({
+              where: { Id: track.Id },
+              data: {
                 Audit: {
                   update: {
                     IsDeleted: true,
@@ -208,20 +219,18 @@ const OrderController = {
                   },
                 },
               },
-            },
-          },
-        });
+            });
+          }
+        }
       }
 
-      // Return response
       return res.status(200).send({
         status: 200,
         message: "تم حذف الطلب بنجاح!",
         data: {},
       });
     } catch (error) {
-      // Server error or unsolved error
-      console.log(error);
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -231,7 +240,14 @@ const OrderController = {
   },
 
   updateOrder: async (req, res, next) => {
-    const { orderName, collection, description, deadline, quantity, reasonText } = req.body;
+    const {
+      orderName,
+      collection,
+      description,
+      deadline,
+      quantity,
+      reasonText,
+    } = req.body;
     const file = req.file;
     const id = parseInt(req.params.id);
     const userId = req.userId;
@@ -316,9 +332,8 @@ const OrderController = {
         .then((orders) =>
           orders.map((order) => ({
             id: order.Id,
-            name: `Order ${order.OrderNumber} dated ${
-              order.OrderDate.toISOString().split("T")[0]
-            } with amount ${order.TotalAmount}`,
+            name: `Order ${order.OrderNumber} dated ${order.OrderDate.toISOString().split("T")[0]
+              } with amount ${order.TotalAmount}`,
           }))
         );
 
@@ -506,6 +521,7 @@ const OrderController = {
     const id = req.params.id;
     const userId = req.userId;
     try {
+      // Find the order and ensure it exists and is not started
       const order = await prisma.orders.findUnique({
         where: {
           Id: +id,
@@ -523,25 +539,46 @@ const OrderController = {
         });
       }
 
-      const models = await prisma.models.count({
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
         where: {
-          Order: {
-            Id: +id,
-          },
+          OrderId: +id,
           Audit: {
             IsDeleted: false,
           },
         },
       });
-      if (models <= 0) {
+
+      // Ensure at least one model is added to the order
+      if (models.length <= 0) {
         return res.status(405).send({
           status: 405,
-          message:
-            "Can't start the order. Either there is no model added to the order or the order already started!",
+          message: "Can't start the order. No models are added to the order!",
           data: {},
         });
       }
 
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
+      }
+
+      // Update order status to ONGOING
       await prisma.orders.update({
         where: {
           Id: +id,
@@ -558,6 +595,7 @@ const OrderController = {
         },
       });
 
+      // Update models to RUNNING status
       await prisma.models.updateMany({
         where: {
           OrderId: +id,
@@ -570,6 +608,7 @@ const OrderController = {
         },
       });
 
+      // Update modelVarients status
       await prisma.modelVarients.updateMany({
         where: {
           Audit: {
@@ -598,7 +637,7 @@ const OrderController = {
           MainStatus: "AWAITING",
         },
       });
-
+      // Update trackings status
       for (let i = 0; i < trackings.length; i++) {
         await prisma.trakingModels.update({
           where: {
@@ -655,6 +694,36 @@ const OrderController = {
           message: "Order not found or the order already completed!",
           data: {},
         });
+      }
+
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
       }
 
       // Update the order status to ONHOLD
@@ -742,6 +811,36 @@ const OrderController = {
           message: "Order not found or the order already completed!",
           data: {},
         });
+      }
+
+      // Fetch all models associated with the order
+      const models = await prisma.models.findMany({
+        where: {
+          OrderId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if every model has stages defined
+      for (const model of models) {
+        const stagesCount = await prisma.manufacturingStagesModel.count({
+          where: {
+            ModelId: model.Id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+
+        if (stagesCount === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+            data: {},
+          });
+        }
       }
 
       // Update the order status to ONGOING

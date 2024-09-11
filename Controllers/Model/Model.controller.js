@@ -14,7 +14,6 @@ const ModelController = {
       PrintName,
       PrintLocation,
       Description,
-      Varients,
       DemoModelNumber,
       ReasonText,
     } = req.body;
@@ -38,15 +37,16 @@ const ModelController = {
           data: {},
         });
       }
-      if (order.Status !== "ONHOLD" && order.Status !== "PENDING") {
+      if (order.Status === "COMPLETED") {
         return res.status(405).send({
           status: 405,
-          message: "Order already started. Can't add new model!",
+          message: "Order already COMPLETED. Can't add new model!",
           data: {},
         });
       }
 
-      const template = await prisma.templates.findUnique({
+      // due to import order from excel,sometimes we dont have template
+      /*const template = await prisma.templates.findUnique({
         where: {
           Id: +Template,
           Audit: {
@@ -60,27 +60,7 @@ const ModelController = {
           message: "Template not found!",
           data: {},
         });
-      }
-
-      const mStages = await prisma.manufacturingStages.findMany({
-        where: {
-          TemplateId: template.Id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        orderBy: {
-          StageNumber: "asc",
-        },
-      });
-
-      if (mStages.length <= 0) {
-        return res.status(405).send({
-          status: 405,
-          message: "Please add stages to template!",
-          data: {},
-        });
-      }
+      }*/
 
       const pCatalogue = await prisma.productCatalogs.findUnique({
         where: {
@@ -123,7 +103,7 @@ const ModelController = {
       let modelCount = await prisma.models.count({});
       modelCount++;
 
-      const model = await prisma.models.create({
+      const createdModel = await prisma.models.create({
         data: {
           ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
           ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
@@ -175,55 +155,11 @@ const ModelController = {
           },
         },
       });
-
-      const revertVarients = JSON.parse(Varients);
-
-      for (let i = 0; i < revertVarients.length; i++) {
-        const nextStage = mStages[1] ? { connect: { Id: mStages[1].Id } } : {};
-        await prisma.modelVarients.create({
-          data: {
-            Model: {
-              connect: {
-                Id: model.Id,
-              },
-            },
-            Color: {
-              connect: {
-                Id: +revertVarients[i].Color,
-              },
-            },
-            Sizes: JSON.stringify(revertVarients[i].Sizes),
-            Quantity: +revertVarients[i].Quantity,
-            Audit: {
-              create: {
-                CreatedById: userId,
-                UpdatedById: userId,
-              },
-            },
-            TrakingModels: {
-              create: {
-                CurrentStage: {
-                  connect: {
-                    Id: mStages[0].Id,
-                  },
-                },
-                Audit: {
-                  create: {
-                    CreatedById: userId,
-                    UpdatedById: userId,
-                  },
-                },
-                NextStage: nextStage,
-              },
-            },
-          },
-        });
-      }
       // Return response
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء الموديل بنجاح!",
-        data: {},
+        data: createdModel,
       });
     } catch (error) {
       // Server error or unsolved error
@@ -251,12 +187,18 @@ const ModelController = {
           ProductCatalog: true,
           Template: true,
           Textile: true,
+          Order: {
+            select: {
+              Status: true,
+              ReasonText: true,
+            },
+          },
         },
       });
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
     } catch (error) {
@@ -288,7 +230,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
     } catch (error) {
@@ -316,14 +258,14 @@ const ModelController = {
         // Return response
         return res.status(404).send({
           status: 404,
-          message: "النموذج غير موجود!",
+          message: "الموديل غير موجود!",
           data: {},
         });
       }
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب النماذج بنجاح!",
+        message: "تم جلب الموديلات بنجاح!",
         data: {
           ProductCatalog: model.ProductCatalogId.toString(),
           CategoryOne: model.CategoryOneId.toString(),
@@ -370,7 +312,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم حذف النموذج بنجاح!",
+        message: "تم حذف الموديل بنجاح!",
         data: {},
       });
     } catch (error) {
@@ -521,7 +463,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
-        message: "تم جلب أسماء النماذج بنجاح!",
+        message: "تم جلب أسماء الموديلات بنجاح!",
         data: modelNames,
       });
     } catch (error) {
@@ -614,7 +556,7 @@ const ModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: "تم جلب نماذج الإنتاج بنجاح!",
+        message: "تم جلب الموديل الإنتاج بنجاح!",
         data: transformedData,
       });
     } catch (error) {
@@ -860,10 +802,12 @@ const ModelController = {
   },
 
   createModelVarient: async (req, res, next) => {
-    const id = req.params.id;
+    const id = req.params.id; // Model ID
     const { Sizes, Color, Quantity } = req.body;
     const userId = req.userId;
+
     try {
+      // Check if the variant with the same color already exists for the model
       const isThere = await prisma.modelVarients.findFirst({
         where: {
           ColorId: +Color,
@@ -877,12 +821,34 @@ const ModelController = {
       if (isThere) {
         return res.status(409).send({
           status: 409,
-          message: "Color already exist!",
+          message: "Color already exists!",
           data: {},
         });
       }
 
-      await prisma.modelVarients.create({
+      // Fetch manufacturing stages for the specific model
+      const mStages = await prisma.manufacturingStagesModel.findMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+
+      if (mStages.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No manufacturing stages found for this model.",
+          data: {},
+        });
+      }
+
+      // Create the model variant and track it in the manufacturing stages
+      const newVariant = await prisma.modelVarients.create({
         data: {
           Model: {
             connect: {
@@ -910,10 +876,10 @@ const ModelController = {
         data: {},
       });
     } catch (error) {
-      // Server error or unsolved error
+      console.error(error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later.",
         data: {},
       });
     }
@@ -1644,6 +1610,11 @@ const ModelController = {
         take: size,
 
         select: {
+          Order: {
+            select: {
+              CollectionId: true,
+            },
+          },
           OrderId: true,
           DemoModelNumber: true,
           ModelName: true,
@@ -1699,7 +1670,7 @@ const ModelController = {
           },
         },
       });
-
+      console.log(models);
       const modelsWithProgress = models.map((model) => {
         const totalVarients = model.ModelVarients.length;
         const doneVarients = model.ModelVarients.filter(
@@ -1851,7 +1822,6 @@ const ModelController = {
             },
             {}
           );
-
           return {
             ModelId: model.Id,
             ModelStats: modelStats,
@@ -1859,6 +1829,7 @@ const ModelController = {
             OrderId: model.OrderId,
             OrderStats: orderInfo.stats,
             OrderProgress: orderInfo.percentage,
+            CollectionId: model.Order.CollectionId,
             DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
@@ -1957,6 +1928,7 @@ const ModelController = {
       res.status(500).json({ error: error.message });
     }
   },
+
   getCollectionStats: async (req, res) => {
     const now = new Date();
     const currentYear = now.getFullYear();

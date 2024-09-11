@@ -33,6 +33,7 @@ const ColorController = {
       });
     }
   },
+
   getColors: async (req, res, next) => {
     try {
       const colors = await prisma.colors.findMany({

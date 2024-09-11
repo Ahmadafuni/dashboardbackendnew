@@ -1,38 +1,51 @@
 import express from "express";
 import { verifyUser } from "../../Middleware/Auth.middleware.js";
-import CollectionCotroller from "../../Controllers/Collection/Collection.controller.js";
+import CollectionController from "../../Controllers/Collection/Collection.controller.js";
 
 const router = express.Router();
 
 router.post(
   "/",
   verifyUser(["FACTORYMANAGER"]),
-  CollectionCotroller.createCollection
+  CollectionController.createCollection
 );
+
+router.get(
+  "/update-archived",
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  CollectionController.toggleArchivedCollectionById
+);
+
+router.get(
+  "/archived",
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  CollectionController.getArchivedCollections
+);
+
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  CollectionCotroller.getCollections
+  // verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  CollectionController.getCollections
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  CollectionCotroller.getCollectionNames
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  CollectionController.getCollectionNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  CollectionCotroller.getCollectionById
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  CollectionController.getCollectionById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  CollectionCotroller.deleteCollection
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  CollectionController.deleteCollection
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
-  CollectionCotroller.updateCollection
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  CollectionController.updateCollection
 );
 
 export { router as CollectionRoute };
