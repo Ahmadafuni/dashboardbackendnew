@@ -1516,6 +1516,13 @@ const ModelController = {
       currentStage,
     } = req.body;
 
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+
+    const totalRecords = await prisma.models.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     let filter = {};
 
     if (status) {
@@ -1628,6 +1635,14 @@ const ModelController = {
 
       const models = await prisma.models.findMany({
         where: filter,
+        orderBy: {
+          Audit: {
+            CreatedAt: "desc",
+          },
+        },
+        skip: (page - 1) * size,
+        take: size,
+
         select: {
           OrderId: true,
           DemoModelNumber: true,
@@ -1841,6 +1856,7 @@ const ModelController = {
             ModelId: model.Id,
             ModelStats: modelStats,
             ModelProgress: modelProgress,
+            OrderId: model.OrderId,
             OrderStats: orderInfo.stats,
             OrderProgress: orderInfo.percentage,
             DemoModelNumber: model.DemoModelNumber,
@@ -1857,6 +1873,7 @@ const ModelController = {
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
+        totalPages,
         data: result,
       });
     } catch (error) {
