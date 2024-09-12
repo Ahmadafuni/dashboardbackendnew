@@ -1698,7 +1698,6 @@ const ModelController = {
             },
           });
 
-          // Fetch color details
           const colorIds = [...new Set(count.map((item) => item.ColorId))];
           const colors = await prisma.colors.findMany({
             where: {
@@ -1785,6 +1784,17 @@ const ModelController = {
           ).DonePercentage;
 
           const details = model.ModelVarients.flatMap((varient) => {
+            let sizes = [];
+
+            try {
+              sizes = JSON.parse(varient.Sizes);
+              if (!Array.isArray(sizes)) {
+                sizes = [];
+              }
+            } catch (e) {
+              sizes = [];
+            }
+
             return {
               Color: varient.Color.ColorName,
               Sizes: varient.Sizes,
@@ -1798,7 +1808,7 @@ const ModelController = {
                       },
                       {}
                     )
-                  : JSON.parse(varient.Sizes).reduce((emptyObj, size) => {
+                  : sizes.reduce((emptyObj, size) => {
                       emptyObj[size] = "";
                       return emptyObj;
                     }, {}),
@@ -1848,7 +1858,6 @@ const ModelController = {
         data: result,
       });
     } catch (error) {
-      // Server error or unsolved error
       return res.status(500).send({
         status: 500,
         message:
