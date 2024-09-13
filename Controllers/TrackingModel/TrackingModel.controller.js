@@ -9,7 +9,7 @@ const safeParseJSON = (data) => {
       return null;
     }
   }
-  return data ? data : null; // If data is falsy (null, undefined, empty string), return null
+  return data ? data : null;
 };
 
 const TrackingModelController = {
@@ -181,7 +181,6 @@ const TrackingModelController = {
         },
       });
 
-      // Log tracking details
       console.log("Tracking found:", tracking);
 
       await prisma.trakingModels.update({
@@ -224,7 +223,7 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
-      console.error("Error in sendForCheckingOthers:", error); // Log the error details
+      console.error("Error in sendForCheckingOthers:", error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later!",
@@ -303,7 +302,6 @@ const TrackingModelController = {
     const userId = req.userId;
     const trackingId = +req.params.id;
     try {
-      // Find Current Tracking Id
       const tracking = await prisma.trakingModels.findFirst({
         where: {
           Id: trackingId,
@@ -338,7 +336,6 @@ const TrackingModelController = {
       const QuantityDelivered = safeParseJSON(tracking.QuantityDelivered);
       const QuantityInKg = safeParseJSON(tracking.QuantityInKg);
 
-      // Update Current Tracking Status to DONE
       await prisma.trakingModels.update({
         where: {
           Id: trackingId,
@@ -354,15 +351,14 @@ const TrackingModelController = {
         },
       });
 
-      // Get Manufacturing Stages
       const mStages = await prisma.manufacturingStagesModel.findMany({
         where: {
           Model: {
             ModelVarients: {
               some: {
-                Id: tracking.ModelVariantId
-              }
-            }
+                Id: tracking.ModelVariantId,
+              },
+            },
           },
           Audit: {
             IsDeleted: false,
@@ -390,7 +386,6 @@ const TrackingModelController = {
         quantityReceivedFromPreviousDep
       );
 
-      // Create New Tracking with Next Stage and assign QuantityReceived from previous stage's QuantityDelivered
       const newTracking = await prisma.trakingModels.create({
         data: {
           ModelVariant: {
@@ -433,7 +428,6 @@ const TrackingModelController = {
         },
       });
 
-      // Response with data
       const responseData = {
         QuantityInNum,
         QuantityReceived,
@@ -1115,6 +1109,135 @@ const TrackingModelController = {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    const pages = {
+      awaiting: parseInt(req.query.awaitingPage) || 2,
+      inProgress: parseInt(req.query.inProgressPage) || 1,
+      completed: parseInt(req.query.completedPage) || 1,
+      givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
+    };
+    const sizes = {
+      awaiting: parseInt(req.query.awaitingSize) || 10,
+      inProgress: parseInt(req.query.inProgressSize) || 10,
+      completed: parseInt(req.query.completedSize) || 10,
+      givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
+    };
+
+    const totalRecordsAwaiting = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
+      },
+    });
+    const totalRecordsInProgress = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        MainStatus: "INPROGRESS",
+      },
+    });
+    const totalRecordsCompleted = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        MainStatus: "DONE",
+        EndTime: {
+          gte: sevenDaysAgo,
+        },
+      },
+    });
+
+    const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        MainStatus: "CHECKING",
+      },
+    });
+
+    const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
+    const totalPagesInProgress = Math.ceil(
+      totalRecordsInProgress / sizes.inProgress
+    );
+    const totalPagesCompleted = Math.ceil(
+      totalRecordsCompleted / sizes.completed
+    );
+    const totalPagesGivingConfirmation = Math.ceil(
+      totalRecordsGivingConfirmation / sizes.givingConfirmation
+    );
+
     try {
       const awaiting = await prisma.trakingModels.findMany({
         where: {
@@ -1124,15 +1247,15 @@ const TrackingModelController = {
           ModelVariant: {
             Model: {
               Audit: {
-                IsDeleted: false, // Ensure Model is not deleted
+                IsDeleted: false,
               },
               Order: {
                 Audit: {
-                  IsDeleted: false, // Ensure Order is not deleted
+                  IsDeleted: false,
                 },
                 Collection: {
                   Audit: {
-                    IsDeleted: false, // Ensure Collection is not deleted
+                    IsDeleted: false,
                   },
                 },
               },
@@ -1140,6 +1263,8 @@ const TrackingModelController = {
           },
           OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
         },
+        skip: (pages.awaiting - 1) * sizes.awaiting,
+        take: sizes.awaiting,
         select: {
           Id: true,
           PrevStage: {
@@ -1258,15 +1383,15 @@ const TrackingModelController = {
           ModelVariant: {
             Model: {
               Audit: {
-                IsDeleted: false, // Ensure Model is not deleted
+                IsDeleted: false,
               },
               Order: {
                 Audit: {
-                  IsDeleted: false, // Ensure Order is not deleted
+                  IsDeleted: false,
                 },
                 Collection: {
                   Audit: {
-                    IsDeleted: false, // Ensure Collection is not deleted
+                    IsDeleted: false,
                   },
                 },
               },
@@ -1274,6 +1399,9 @@ const TrackingModelController = {
           },
           MainStatus: "INPROGRESS",
         },
+        skip: (pages.inProgress - 1) * sizes.inProgress,
+        take: sizes.inProgress,
+
         select: {
           Id: true,
           PrevStage: {
@@ -1393,15 +1521,15 @@ const TrackingModelController = {
           ModelVariant: {
             Model: {
               Audit: {
-                IsDeleted: false, // Ensure Model is not deleted
+                IsDeleted: false,
               },
               Order: {
                 Audit: {
-                  IsDeleted: false, // Ensure Order is not deleted
+                  IsDeleted: false,
                 },
                 Collection: {
                   Audit: {
-                    IsDeleted: false, // Ensure Collection is not deleted
+                    IsDeleted: false,
                   },
                 },
               },
@@ -1412,6 +1540,9 @@ const TrackingModelController = {
             gte: sevenDaysAgo,
           },
         },
+        skip: (pages.completed - 1) * sizes.completed,
+        take: sizes.completed,
+
         select: {
           Id: true,
           PrevStage: {
@@ -1531,15 +1662,15 @@ const TrackingModelController = {
           ModelVariant: {
             Model: {
               Audit: {
-                IsDeleted: false, // Ensure Model is not deleted
+                IsDeleted: false,
               },
               Order: {
                 Audit: {
-                  IsDeleted: false, // Ensure Order is not deleted
+                  IsDeleted: false,
                 },
                 Collection: {
                   Audit: {
-                    IsDeleted: false, // Ensure Collection is not deleted
+                    IsDeleted: false,
                   },
                 },
               },
@@ -1547,6 +1678,9 @@ const TrackingModelController = {
           },
           MainStatus: "CHECKING",
         },
+        skip: (pages.givingConfirmation - 1) * sizes.givingConfirmation,
+        take: sizes.givingConfirmation,
+
         select: {
           Id: true,
           PrevStage: {
@@ -1656,7 +1790,7 @@ const TrackingModelController = {
         },
       });
 
-      const addNameField = (items) =>
+      const addNameField = (items, stage) =>
         items.map((item) => {
           const modelName = item.ModelVariant.Model.ModelName;
           const categoryOneName =
@@ -1675,10 +1809,10 @@ const TrackingModelController = {
           };
         });
 
-      const awaitingWithNames = addNameField(awaiting);
-      const inProgressWithNames = addNameField(inProgress);
-      const completedWithNames = addNameField(completed);
-      const givingConfirmationWithNames = addNameField(givingConfirmation);
+      const awaitingWithNames = addNameField(awaiting, 1);
+      const inProgressWithNames = addNameField(inProgress, 2);
+      const completedWithNames = addNameField(completed, 3);
+      const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
 
       return res.status(200).send({
         status: 200,
@@ -1688,6 +1822,12 @@ const TrackingModelController = {
           completed: completedWithNames,
           inProgress: inProgressWithNames,
           givingConfirmation: givingConfirmationWithNames,
+        },
+        totalPages: {
+          totalPagesAwaiting,
+          totalPagesInProgress,
+          totalPagesCompleted,
+          totalPagesGivingConfirmation,
         },
       });
     } catch (error) {
