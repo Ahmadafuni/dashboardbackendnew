@@ -230,5 +230,11 @@ router.put(
   verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   ModelController.holdModel
 );
+router.post(
+  "/addFileXsl/:id" ,
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+   ModelController.addFileXsl
+);
+
 
 export { router as ModelRoute };
