@@ -26,6 +26,7 @@ const AuthenticationController = {
       // Get User
       const user = await getUser(username);
 
+
       // Check User
       if (user === null) {
         return res.status(401).send({
@@ -46,6 +47,7 @@ const AuthenticationController = {
           data: {},
         });
       }
+
 
       // Generate JWT
       const access_token = await generateAccessToken({
@@ -88,6 +90,7 @@ const AuthenticationController = {
       });
     }
   },
+
   checkSession: async (req, res) => {
     const Token = req.headers["authorization"];
     try {

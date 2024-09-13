@@ -1,6 +1,298 @@
 import prisma from "../../client.js";
 
 const ModelController = {
+
+
+  addFileXsl: async (req, res) => {
+    const orderId = req.params.id;
+    const { Models, ModelsVarients } = req.body; 
+    const userId = req.userId;
+  
+    try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: +orderId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+  
+      if (!order) {
+        return res.status(404).send({
+          status: 404,
+          message: "Order not found!",
+          data: {},
+        });
+      }
+  
+      if (order.Status === "COMPLETED") {
+        return res.status(405).send({
+          status: 405,
+          message: "Order already COMPLETED. Can't add new models!",
+          data: {},
+        });
+      }
+  
+      for (let model of Models) {
+        const {
+          ModelNumber,
+          CategoryOne,
+          CategoryTwo,
+          ProductName,
+          Textiles,
+          templateId,
+          Stages,
+          scale,
+          ...color
+        } = model;
+  
+        const colors = { ...color };
+        console.log(colors);
+  
+        const stageCodeToIdMap = {
+          S: 2,
+          C: 3,
+          T1: 4,
+          T2: 5,
+          T3: 6,
+          T4: 7,
+          T5: 8,
+          A: 9,
+          PM: 24,
+          PA: 25,
+        };
+
+        const colorNameToIdMap = {
+          'White': 3,
+          'black': 2,
+          'oil': 7,
+          'drunken': 8,
+          'iron': 11,
+          'navyBlue': 14,
+          'SilverMons': 15,
+          'feathery' : 16
+        };
+  
+        const stageIds = Stages.split("-").map(stage => stageCodeToIdMap[stage]);
+  
+        const pCatalogue = await prisma.productCatalogs.findUnique({
+          where: {
+            Id: +ProductName,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+  
+        if (!pCatalogue) {
+          return res.status(404).send({
+            status: 404,
+            message: "Product catalogue not found!",
+            data: {},
+          });
+        }
+  
+        const cOne = await prisma.productCatalogCategoryOne.findUnique({
+          where: {
+            Id: +CategoryOne,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+        });
+  
+        if (!cOne) {
+          return res.status(404).send({
+            status: 404,
+            message: "Category one not found!",
+            data: {},
+          });
+        }
+  
+        let modelCount = await prisma.models.count({});
+        modelCount++;
+  
+        const createdModel = await prisma.models.create({
+          data: {
+            ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
+            ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
+            DemoModelNumber: ModelNumber.toString(),
+            Order: {
+              connect: {
+                Id: +orderId,
+              },
+            },
+            OrderNumber: order.OrderNumber,
+            CategoryOne: {
+              connect: {
+                Id: +CategoryOne,
+              },
+            },
+            categoryTwo: {
+              connect: {
+                Id: +CategoryTwo,
+              },
+            },
+            Textile: {
+              connect: {
+                Id: 4,
+              },
+            },
+            ProductCatalog: {
+              connect: {
+                Id: +ProductName,
+              },
+            },
+            Template: {
+              connect: {
+                Id: +Textiles,
+              },
+            },
+            Audit: {
+              create: {
+                CreatedById: +userId,
+                UpdatedById: +userId,
+              },
+            },
+          },
+        });
+  
+        for (const stageId of stageIds) {
+          const stagesCount = await prisma.manufacturingStagesModel.count({
+            where: {
+              ModelId: createdModel.Id,
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+          });
+  
+          await prisma.manufacturingStagesModel.create({
+            data: {
+              Duration: 0,
+              StageName: "",
+              StageNumber: stagesCount + 1,
+              Department: { connect: { Id: stageId } }, 
+              Model: { connect: { Id: createdModel.Id } },
+              WorkDescription: "",
+              Audit: {
+                create: {
+                  CreatedById: +userId,
+                  UpdatedById: +userId,
+                },
+              },
+            },
+          });
+        }
+  
+        for (const [colorKey, colorValue] of Object.entries(colors)) {
+          const colorId = colorNameToIdMap[colorKey.trim()];
+          
+          if (!colorId) {
+            return res.status(400).send({
+              status: 400,
+              message: `Color '${colorKey}' not recognized.`,
+              data: {},
+            });
+          }
+
+          const isThere = await prisma.modelVarients.findFirst({
+            where: {
+              ColorId: +colorId,
+              ModelId: createdModel.Id,
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+          });
+  
+          if (isThere) {
+            return res.status(409).send({
+              status: 409,
+              message: `Color '${colorKey}' already exists for this model!`,
+              data: {},
+            });
+          }
+  
+          // جلب المراحل التصنيعية للموديل
+          const mStages = await prisma.manufacturingStagesModel.findMany({
+            where: {
+              ModelId: createdModel.Id,
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            orderBy: {
+              StageNumber: "asc",
+            },
+          });
+  
+          if (mStages.length === 0) {
+            return res.status(400).send({
+              status: 400,
+              message: "No manufacturing stages found for this model.",
+              data: {},
+            });
+          }
+  
+          await prisma.modelVarients.create({
+            data: {
+              Model: {
+                connect: {
+                  Id: createdModel.Id,
+                },
+              },
+              Color: {
+                connect: {
+                  Id: +colorId,
+                },
+              },
+              Sizes: JSON.stringify(scale.split("-")), 
+              Quantity: colorValue, 
+              Audit: {
+                create: {
+                  CreatedById: +userId,
+                  UpdatedById: +userId,
+                },
+              },
+              TrakingModels: {
+                create: {
+                  CurrentStage: {
+                    connect: {
+                      Id: mStages[0].Id, // ابدأ بأول مرحلة
+                    },
+                  },
+                  NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // إذا كانت المرحلة التالية موجودة
+                  Audit: {
+                    create: {
+                      CreatedById: +userId,
+                      UpdatedById: +userId,
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
+      }
+  
+      return res.status(201).send({
+        status: 201,
+        message: "تم إنشاء جميع الموديلات والألوان بنجاح!",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  } ,
+  
+
+
   createModel: async (req, res, next) => {
     const {
       ProductCatalog,
@@ -171,6 +463,163 @@ const ModelController = {
     }
   },
 
+
+  createModelVarient: async (req, res, next) => {
+
+    const id = req.params.id; // Model ID
+    const { Sizes, Color, Quantity } = req.body;
+    const userId = req.userId;
+
+    try {
+      // Check if the variant with the same color already exists for the model
+      const isThere = await prisma.modelVarients.findFirst({
+        where: {
+          ColorId: +Color,
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      if (isThere) {
+        return res.status(409).send({
+          status: 409,
+          message: "Color already exists!",
+          data: {},
+        });
+      }
+
+      // Fetch manufacturing stages for the specific model
+      const mStages = await prisma.manufacturingStagesModel.findMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        orderBy: {
+          StageNumber: "asc",
+        },
+      });
+
+      if (mStages.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No manufacturing stages found for this model.",
+          data: {},
+        });
+      }
+
+      // Create the model variant and track it in the manufacturing stages
+      const newVariant = await prisma.modelVarients.create({
+        data: {
+          Model: {
+            connect: {
+              Id: +id,
+            },
+          },
+          Color: {
+            connect: {
+              Id: +Color,
+            },
+          },
+          Sizes: JSON.stringify(Sizes),
+          Quantity: +Quantity,
+          Audit: {
+            create: {
+              CreatedById: +userId,
+              UpdatedById: +userId,
+            },
+          },
+          TrakingModels: {
+            create: {
+              CurrentStage: {
+                connect: {
+                  Id: mStages[0].Id, // Start with the first stage of this specific model
+                },
+              },
+              NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // Connect to the next stage if available
+              Audit: {
+                create: {
+                  CreatedById: +userId,
+                  UpdatedById: +userId,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Check the status of the associated order
+      const parentModel = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+        },
+        include: {
+          Order: true,
+        },
+      });
+
+      const orderStatus = parentModel.Order.Status;
+      if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
+        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
+
+        // Update the parent model RunningStatus to "RUNNING"
+        await prisma.models.update({
+          where: {
+            Id: +id,
+          },
+          data: {
+            RunningStatus: runningStatus,
+          },
+        });
+
+        // Update only the newly created model variant's status to "TODO"
+        await prisma.modelVarients.update({
+          where: {
+            Id: newVariant.Id,
+          },
+          data: {
+            Status: "TODO",
+            RunningStatus: runningStatus,
+          },
+        });
+
+        // Update the tracking model associated with the new variant to "TODO"
+        await prisma.trakingModels.updateMany({
+          where: {
+            ModelVariantId: newVariant.Id,
+            MainStatus: "AWAITING",
+          },
+          data: {
+            MainStatus: "TODO",
+            StartTime: new Date(),
+          },
+        });
+
+        return res.status(201).send({
+          status: 201,
+          message: "Model variant created & started successfully!",
+          data: { Id: newVariant.Id },
+        });
+      }
+
+      return res.status(201).send({
+        status: 201,
+        message: "Model variant created successfully!",
+        data: { Id: newVariant.Id },
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: "Internal server error. Please try again later.",
+        data: {},
+      });
+    }
+  },
+
   getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
     try {
@@ -280,6 +729,7 @@ const ModelController = {
           PrintLocation: model.PrintLocation,
           Description: model.Description,
           DemoModelNumber: !model.DemoModelNumber ? "" : model.DemoModelNumber,
+          image:model.Images
         },
       });
     } catch (error) {
@@ -801,160 +1251,9 @@ const ModelController = {
     }
   },
 
-  createModelVarient: async (req, res, next) => {
-    const id = req.params.id; // Model ID
-    const { Sizes, Color, Quantity } = req.body;
-    const userId = req.userId;
 
-    try {
-      // Check if the variant with the same color already exists for the model
-      const isThere = await prisma.modelVarients.findFirst({
-        where: {
-          ColorId: +Color,
-          ModelId: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
 
-      if (isThere) {
-        return res.status(409).send({
-          status: 409,
-          message: "Color already exists!",
-          data: {},
-        });
-      }
 
-      // Fetch manufacturing stages for the specific model
-      const mStages = await prisma.manufacturingStagesModel.findMany({
-        where: {
-          ModelId: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        orderBy: {
-          StageNumber: "asc",
-        },
-      });
-
-      if (mStages.length === 0) {
-        return res.status(400).send({
-          status: 400,
-          message: "No manufacturing stages found for this model.",
-          data: {},
-        });
-      }
-
-      // Create the model variant and track it in the manufacturing stages
-      const newVariant = await prisma.modelVarients.create({
-        data: {
-          Model: {
-            connect: {
-              Id: +id,
-            },
-          },
-          Color: {
-            connect: {
-              Id: +Color,
-            },
-          },
-          Sizes: JSON.stringify(Sizes),
-          Quantity: +Quantity,
-          Audit: {
-            create: {
-              CreatedById: +userId,
-              UpdatedById: +userId,
-            },
-          },
-          TrakingModels: {
-            create: {
-              CurrentStage: {
-                connect: {
-                  Id: mStages[0].Id, // Start with the first stage of this specific model
-                },
-              },
-              NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // Connect to the next stage if available
-              Audit: {
-                create: {
-                  CreatedById: +userId,
-                  UpdatedById: +userId,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      // Check the status of the associated order
-      const parentModel = await prisma.models.findUnique({
-        where: {
-          Id: +id,
-        },
-        include: {
-          Order: true,
-        },
-      });
-
-      const orderStatus = parentModel.Order.Status;
-      if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
-        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
-
-        // Update the parent model RunningStatus to "RUNNING"
-        await prisma.models.update({
-          where: {
-            Id: +id,
-          },
-          data: {
-            RunningStatus: runningStatus,
-          },
-        });
-
-        // Update only the newly created model variant's status to "TODO"
-        await prisma.modelVarients.update({
-          where: {
-            Id: newVariant.Id,
-          },
-          data: {
-            Status: "TODO",
-            RunningStatus: runningStatus,
-          },
-        });
-
-        // Update the tracking model associated with the new variant to "TODO"
-        await prisma.trakingModels.updateMany({
-          where: {
-            ModelVariantId: newVariant.Id,
-            MainStatus: "AWAITING",
-          },
-          data: {
-            MainStatus: "TODO",
-            StartTime: new Date(),
-          },
-        });
-
-        return res.status(201).send({
-          status: 201,
-          message: "Model variant created & started successfully!",
-          data: { Id: newVariant.Id },
-        });
-      }
-
-      return res.status(201).send({
-        status: 201,
-        message: "Model variant created successfully!",
-        data: { Id: newVariant.Id },
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({
-        status: 500,
-        message: "Internal server error. Please try again later.",
-        data: {},
-      });
-    }
-  },
 
   updateModelVarient: async (req, res, next) => {
     const id = req.params.id;

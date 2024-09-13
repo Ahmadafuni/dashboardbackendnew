@@ -65,7 +65,7 @@ export const getUser = async (username) => {
         Audit: { IsDeleted: false },
       },
     });
-
+    
     return user;
   } catch (error) {}
 };

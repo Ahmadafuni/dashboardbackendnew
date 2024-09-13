@@ -81,6 +81,13 @@ router.get(
 );
 
 router.post(
+  "/addFileXsl/:id" ,
+  // verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  // uploadModel.array("models"),
+   ModelController.addFileXsl
+);
+
+router.post(
   "/:id",
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   uploadModel.array("models"),

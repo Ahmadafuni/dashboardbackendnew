@@ -32,6 +32,7 @@ router.get(
   verifyUser(["FACTORYMANAGER", "CUTTING", "TAILORING"]),
   AuthenticationController.getAllUsers
 );
+
 router.get(
   "/:id",
   verifyUser([

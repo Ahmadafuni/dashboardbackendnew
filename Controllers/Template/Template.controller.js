@@ -14,6 +14,7 @@ const TemplateController = {
       season,
     } = req.body;
     const userId = req.userId;
+    console.log(userId)
     try {
       const template = await prisma.templates.create({
         data: {
