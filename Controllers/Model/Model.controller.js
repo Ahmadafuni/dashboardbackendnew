@@ -45,8 +45,7 @@ const ModelController = {
         });
       }
 
-      // due to import order from excel,sometimes we dont have template
-      /*const template = await prisma.templates.findUnique({
+      const template = await prisma.templates.findUnique({
         where: {
           Id: +Template,
           Audit: {
@@ -60,7 +59,7 @@ const ModelController = {
           message: "Template not found!",
           data: {},
         });
-      }*/
+      }
 
       const pCatalogue = await prisma.productCatalogs.findUnique({
         where: {
@@ -868,12 +867,83 @@ const ModelController = {
               UpdatedById: +userId,
             },
           },
+          TrakingModels: {
+            create: {
+              CurrentStage: {
+                connect: {
+                  Id: mStages[0].Id, // Start with the first stage of this specific model
+                },
+              },
+              NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // Connect to the next stage if available
+              Audit: {
+                create: {
+                  CreatedById: +userId,
+                  UpdatedById: +userId,
+                },
+              },
+            },
+          },
         },
       });
+
+      // Check the status of the associated order
+      const parentModel = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+        },
+        include: {
+          Order: true,
+        },
+      });
+
+      const orderStatus = parentModel.Order.Status;
+      if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
+        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
+
+        // Update the parent model RunningStatus to "RUNNING"
+        await prisma.models.update({
+          where: {
+            Id: +id,
+          },
+          data: {
+            RunningStatus: runningStatus,
+          },
+        });
+
+        // Update only the newly created model variant's status to "TODO"
+        await prisma.modelVarients.update({
+          where: {
+            Id: newVariant.Id,
+          },
+          data: {
+            Status: "TODO",
+            RunningStatus: runningStatus,
+          },
+        });
+
+        // Update the tracking model associated with the new variant to "TODO"
+        await prisma.trakingModels.updateMany({
+          where: {
+            ModelVariantId: newVariant.Id,
+            MainStatus: "AWAITING",
+          },
+          data: {
+            MainStatus: "TODO",
+            StartTime: new Date(),
+          },
+        });
+
+        return res.status(201).send({
+          status: 201,
+          message: "Model variant created & started successfully!",
+          data: { Id: newVariant.Id },
+        });
+      }
+
       return res.status(201).send({
         status: 201,
-        message: "Model varient created successfully!",
-        data: {},
+        message: "Model variant created successfully!",
+        data: { Id: newVariant.Id },
       });
     } catch (error) {
       console.error(error);
@@ -1777,7 +1847,7 @@ const ModelController = {
           const totalDuration = Math.floor(
             (new Date(model.Audit.UpdatedAt) -
               new Date(model.Audit.CreatedAt)) /
-              (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24)
           );
 
           const modelProgress = modelsWithProgress.find(
@@ -1792,16 +1862,16 @@ const ModelController = {
                 StageName: trackingModel.CurrentStage.StageName,
                 QuantityDelivered: trackingModel.QuantityReceived
                   ? trackingModel.QuantityReceived.reduce(
-                      (receivedOgj, received) => {
-                        receivedOgj[received.size] = received.value;
-                        return receivedOgj;
-                      },
-                      {}
-                    )
+                    (receivedOgj, received) => {
+                      receivedOgj[received.size] = received.value;
+                      return receivedOgj;
+                    },
+                    {}
+                  )
                   : JSON.parse(varient.Sizes).reduce((emptyObj, size) => {
-                      emptyObj[size] = "";
-                      return emptyObj;
-                    }, {}),
+                    emptyObj[size] = "";
+                    return emptyObj;
+                  }, {}),
               }))[0],
             };
           });
@@ -2374,9 +2444,9 @@ const ModelController = {
 
   addFileXsl: async (req, res) => {
     const orderId = req.params.id;
-    const { Models, ModelsVarients } = req.body; 
+    const { Models, ModelsVarients } = req.body;
     const userId = req.userId;
-  
+
     try {
       const order = await prisma.orders.findUnique({
         where: {
@@ -2386,7 +2456,7 @@ const ModelController = {
           },
         },
       });
-  
+
       if (!order) {
         return res.status(404).send({
           status: 404,
@@ -2394,7 +2464,7 @@ const ModelController = {
           data: {},
         });
       }
-  
+
       if (order.Status === "COMPLETED") {
         return res.status(405).send({
           status: 405,
@@ -2402,7 +2472,7 @@ const ModelController = {
           data: {},
         });
       }
-  
+
       for (let model of Models) {
         const {
           ModelNumber,
@@ -2415,10 +2485,10 @@ const ModelController = {
           scale,
           ...color
         } = model;
-  
+
         const colors = { ...color };
         console.log(colors);
-  
+
         const stageCodeToIdMap = {
           S: 2,
           C: 3,
@@ -2440,11 +2510,11 @@ const ModelController = {
           'iron': 11,
           'navyBlue': 14,
           'SilverMons': 15,
-          'feathery' : 16
+          'feathery': 16
         };
-  
+
         const stageIds = Stages.split("-").map(stage => stageCodeToIdMap[stage]);
-  
+
         const pCatalogue = await prisma.productCatalogs.findUnique({
           where: {
             Id: +ProductName,
@@ -2453,7 +2523,7 @@ const ModelController = {
             },
           },
         });
-  
+
         if (!pCatalogue) {
           return res.status(404).send({
             status: 404,
@@ -2461,7 +2531,7 @@ const ModelController = {
             data: {},
           });
         }
-  
+
         const cOne = await prisma.productCatalogCategoryOne.findUnique({
           where: {
             Id: +CategoryOne,
@@ -2470,7 +2540,7 @@ const ModelController = {
             },
           },
         });
-  
+
         if (!cOne) {
           return res.status(404).send({
             status: 404,
@@ -2478,10 +2548,10 @@ const ModelController = {
             data: {},
           });
         }
-  
+
         let modelCount = await prisma.models.count({});
         modelCount++;
-  
+
         const createdModel = await prisma.models.create({
           data: {
             ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
@@ -2526,7 +2596,7 @@ const ModelController = {
             },
           },
         });
-  
+
         for (const stageId of stageIds) {
           const stagesCount = await prisma.manufacturingStagesModel.count({
             where: {
@@ -2536,14 +2606,14 @@ const ModelController = {
               },
             },
           });
-  
+
           await prisma.manufacturingStagesModel.create({
             data: {
               Duration: 0,
               StageName: "",
 
               StageNumber: stagesCount + 1,
-              Department: { connect: { Id: stageId } }, 
+              Department: { connect: { Id: stageId } },
               Model: { connect: { Id: createdModel.Id } },
               WorkDescription: "",
               Audit: {
@@ -2555,10 +2625,10 @@ const ModelController = {
             },
           });
         }
-  
+
         for (const [colorKey, colorValue] of Object.entries(colors)) {
           const colorId = colorNameToIdMap[colorKey.trim()];
-          
+
           if (!colorId) {
             return res.status(400).send({
               status: 400,
@@ -2576,7 +2646,7 @@ const ModelController = {
               },
             },
           });
-  
+
           if (isThere) {
             return res.status(409).send({
               status: 409,
@@ -2584,7 +2654,7 @@ const ModelController = {
               data: {},
             });
           }
-  
+
           // جلب المراحل التصنيعية للموديل
           const mStages = await prisma.manufacturingStagesModel.findMany({
             where: {
@@ -2597,7 +2667,7 @@ const ModelController = {
               StageNumber: "asc",
             },
           });
-  
+
           if (mStages.length === 0) {
             return res.status(400).send({
               status: 400,
@@ -2605,7 +2675,7 @@ const ModelController = {
               data: {},
             });
           }
-  
+
           await prisma.modelVarients.create({
             data: {
               Model: {
@@ -2618,8 +2688,8 @@ const ModelController = {
                   Id: +colorId,
                 },
               },
-              Sizes: JSON.stringify(scale.split("-")), 
-              Quantity: colorValue, 
+              Sizes: JSON.stringify(scale.split("-")),
+              Quantity: colorValue,
               Audit: {
                 create: {
                   CreatedById: +userId,
@@ -2646,7 +2716,7 @@ const ModelController = {
           });
         }
       }
-  
+
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء جميع الموديلات والألوان بنجاح!",
@@ -2659,7 +2729,7 @@ const ModelController = {
         data: {},
       });
     }
-  } ,
+  },
 };
 
 
