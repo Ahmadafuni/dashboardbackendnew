@@ -827,26 +827,30 @@ const TrackingModelController = {
     const userDepartmentId = req.userDepartmentId;
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
+
+    const pages = {
+      awaiting: parseInt(req.query.awaitingPage) || 1,
+      inProgress: parseInt(req.query.inProgressPage) || 1,
+      completed: parseInt(req.query.completedPage) || 1,
+      givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
+    };
+    const sizes = {
+      awaiting: parseInt(req.query.awaitingSize) || 10,
+      inProgress: parseInt(req.query.inProgressSize) || 10,
+      completed: parseInt(req.query.completedSize) || 10,
+      givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
+    };
+
     try {
       const awaiting = await prisma.trakingModels.findMany({
         where: {
-          Audit: {
-            IsDeleted: false,
-          },
+          Audit: { IsDeleted: false },
           ModelVariant: {
             Model: {
-              Audit: {
-                IsDeleted: false,
-              },
+              Audit: { IsDeleted: false },
               Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
+                Audit: { IsDeleted: false },
+                Collection: { Audit: { IsDeleted: false } },
               },
             },
           },
@@ -857,12 +861,12 @@ const TrackingModelController = {
             },
             {
               MainStatus: "TODO",
-              CurrentStage: {
-                DepartmentId: userDepartmentId,
-              },
+              CurrentStage: { DepartmentId: userDepartmentId },
             },
           ],
         },
+        skip: (pages.awaiting - 1) * sizes.awaiting,
+        take: sizes.awaiting,
         select: {
           Id: true,
           PrevStage: true,
@@ -880,11 +884,7 @@ const TrackingModelController = {
               Id: true,
               RunningStatus: true,
               ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
+              Color: { select: { ColorName: true } },
               Model: {
                 select: {
                   ModelName: true,
@@ -899,38 +899,28 @@ const TrackingModelController = {
           },
         },
       });
+
       const inProgress = await prisma.trakingModels.findMany({
         where: {
-          Audit: {
-            IsDeleted: false,
-          },
+          Audit: { IsDeleted: false },
           ModelVariant: {
             Model: {
-              Audit: {
-                IsDeleted: false,
-              },
+              Audit: { IsDeleted: false },
               Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
+                Audit: { IsDeleted: false },
+                Collection: { Audit: { IsDeleted: false } },
               },
             },
           },
           MainStatus: "INPROGRESS",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
+          CurrentStage: { DepartmentId: userDepartmentId },
         },
+        skip: (pages.inProgress - 1) * sizes.inProgress,
+        take: sizes.inProgress,
         select: {
           Id: true,
           DamagedItem: true,
           StartTime: true,
-
           QuantityInNum: true,
           QuantityInKg: true,
           QuantityDelivered: true,
@@ -944,11 +934,7 @@ const TrackingModelController = {
               Id: true,
               RunningStatus: true,
               ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
+              Color: { select: { ColorName: true } },
               Model: {
                 select: {
                   ModelName: true,
@@ -963,36 +949,25 @@ const TrackingModelController = {
           },
         },
       });
+
       const completed = await prisma.trakingModels.findMany({
         where: {
-          Audit: {
-            IsDeleted: false,
-          },
+          Audit: { IsDeleted: false },
           ModelVariant: {
             Model: {
-              Audit: {
-                IsDeleted: false,
-              },
+              Audit: { IsDeleted: false },
               Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
+                Audit: { IsDeleted: false },
+                Collection: { Audit: { IsDeleted: false } },
               },
             },
           },
           MainStatus: "DONE",
-          EndTime: {
-            gte: twoDaysAgo,
-          },
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
+          EndTime: { gte: twoDaysAgo },
+          CurrentStage: { DepartmentId: userDepartmentId },
         },
+        skip: (pages.completed - 1) * sizes.completed,
+        take: sizes.completed,
         select: {
           Id: true,
           DamagedItem: true,
@@ -1010,11 +985,7 @@ const TrackingModelController = {
               Id: true,
               RunningStatus: true,
               ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
+              Color: { select: { ColorName: true } },
               Model: {
                 select: {
                   ModelName: true,
@@ -1029,33 +1000,24 @@ const TrackingModelController = {
           },
         },
       });
+
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
-          Audit: {
-            IsDeleted: false,
-          },
+          Audit: { IsDeleted: false },
           ModelVariant: {
             Model: {
-              Audit: {
-                IsDeleted: false,
-              },
+              Audit: { IsDeleted: false },
               Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
+                Audit: { IsDeleted: false },
+                Collection: { Audit: { IsDeleted: false } },
               },
             },
           },
           MainStatus: "CHECKING",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
+          CurrentStage: { DepartmentId: userDepartmentId },
         },
+        skip: (pages.givingConfirmation - 1) * sizes.givingConfirmation,
+        take: sizes.givingConfirmation,
         select: {
           Id: true,
           DamagedItem: true,
@@ -1071,11 +1033,7 @@ const TrackingModelController = {
               Id: true,
               RunningStatus: true,
               ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
+              Color: { select: { ColorName: true } },
               Model: {
                 select: {
                   ModelName: true,
@@ -1095,11 +1053,58 @@ const TrackingModelController = {
         status: 200,
         message: "",
         data: { awaiting, completed, inProgress, givingConfirmation },
+        totalPages: {
+          totalPagesAwaiting: Math.ceil(
+            (await prisma.trakingModels.count({
+              where: {
+                Audit: { IsDeleted: false },
+                OR: [
+                  {
+                    MainStatus: "CHECKING",
+                    NextStage: { DepartmentId: userDepartmentId },
+                  },
+                  {
+                    MainStatus: "TODO",
+                    CurrentStage: { DepartmentId: userDepartmentId },
+                  },
+                ],
+              },
+            })) / sizes.awaiting
+          ),
+          totalPagesInProgress: Math.ceil(
+            (await prisma.trakingModels.count({
+              where: {
+                Audit: { IsDeleted: false },
+                MainStatus: "INPROGRESS",
+                CurrentStage: { DepartmentId: userDepartmentId },
+              },
+            })) / sizes.inProgress
+          ),
+          totalPagesCompleted: Math.ceil(
+            (await prisma.trakingModels.count({
+              where: {
+                Audit: { IsDeleted: false },
+                MainStatus: "DONE",
+                EndTime: { gte: twoDaysAgo },
+                CurrentStage: { DepartmentId: userDepartmentId },
+              },
+            })) / sizes.completed
+          ),
+          totalPagesGivingConfirmation: Math.ceil(
+            (await prisma.trakingModels.count({
+              where: {
+                Audit: { IsDeleted: false },
+                MainStatus: "CHECKING",
+                CurrentStage: { DepartmentId: userDepartmentId },
+              },
+            })) / sizes.givingConfirmation
+          ),
+        },
       });
     } catch (error) {
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
@@ -1121,7 +1126,6 @@ const TrackingModelController = {
       completed: parseInt(req.query.completedSize) || 10,
       givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
     };
-
     const totalRecordsAwaiting = await prisma.trakingModels.count({
       where: {
         Audit: {
@@ -1200,7 +1204,6 @@ const TrackingModelController = {
         },
       },
     });
-
     const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
       where: {
         Audit: {
@@ -1226,7 +1229,6 @@ const TrackingModelController = {
         MainStatus: "CHECKING",
       },
     });
-
     const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
     const totalPagesInProgress = Math.ceil(
       totalRecordsInProgress / sizes.inProgress
