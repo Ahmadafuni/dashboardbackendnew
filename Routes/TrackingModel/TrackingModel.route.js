@@ -6,16 +6,16 @@ const router = express.Router();
 
 router.get(
   "/current/dep",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-    "DRAWING",
-    "WAREHOUSEMANAGER",
-  ]),
+  // verifyUser([
+  //   "FACTORYMANAGER",
+  //   "ENGINEERING",
+  //   "CUTTING",
+  //   "TAILORING",
+  //   "PRINTING",
+  //   "QUALITYASSURANCE",
+  //   "DRAWING",
+  //   "WAREHOUSEMANAGER",
+  // ]),
   TrackingModelController.getAllTrackingByDepartment
 );
 
@@ -122,14 +122,10 @@ router.post(
 );
 
 router.get(
-    "/alltracking",
-    verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-    ]),
-    TrackingModelController.getAllTracking
+  "/alltracking",
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  TrackingModelController.getAllTracking
 );
-
 
 const TrackingModelRoute = router;
 export { TrackingModelRoute };

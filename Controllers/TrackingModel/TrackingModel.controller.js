@@ -10,6 +10,7 @@ const safeParseJSON = (data) => {
     }
   }
   return data ? data : null;
+  return data ? data : null;
 };
 
 const TrackingModelController = {
@@ -224,6 +225,7 @@ const TrackingModelController = {
       });
     } catch (error) {
       console.error("Error in sendForCheckingOthers:", error);
+      console.error("Error in sendForCheckingOthers:", error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later!",
@@ -359,202 +361,203 @@ const TrackingModelController = {
                 Id: tracking.ModelVariantId,
               },
             },
-          },
-          Audit: {
-            IsDeleted: false,
+            Id: tracking.ModelVariantId,
           },
         },
-        orderBy: {
-          StageNumber: "asc",
+      },
+        Audit: {
+        IsDeleted: false,
+      },
         },
-      });
-
-      const currentStageIndex = mStages.findIndex(
-        (e) => e.Id === tracking.CurrentStageId
-      );
-
-      const newCurrentStageId = mStages[currentStageIndex + 1].Id;
-      const ifNewNextStage = mStages[currentStageIndex + 2]
-        ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
-        : {};
-
-      const quantityReceivedFromPreviousDep =
-        QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
-
-      console.log(
-        "quantityReceivedFromPreviousDep",
-        quantityReceivedFromPreviousDep
-      );
-
-      const newTracking = await prisma.trakingModels.create({
-        data: {
-          ModelVariant: {
-            connect: {
-              Id: tracking.ModelVariantId,
-            },
-          },
-          MainStatus: "TODO",
-          StartTime: new Date(),
-          QuantityReceived: quantityReceivedFromPreviousDep,
-          PrevStage: {
-            connect: {
-              Id: tracking.CurrentStageId,
-            },
-          },
-          CurrentStage: {
-            connect: {
-              Id: newCurrentStageId,
-            },
-          },
-          NextStage: ifNewNextStage,
-          Audit: {
-            create: {
-              UpdatedById: userId,
-              CreatedById: userId,
-            },
-          },
+    orderBy: {
+      StageNumber: "asc",
         },
-      });
+  });
 
-      await prisma.notifications.create({
-        data: {
-          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
-          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
-          ToDepartment: {
-            connect: {
-              Id: tracking.CurrentStage.DepartmentId,
-            },
-          },
-        },
-      });
+const currentStageIndex = mStages.findIndex(
+  (e) => e.Id === tracking.CurrentStageId
+);
 
-      const responseData = {
-        QuantityInNum,
-        QuantityReceived,
-        QuantityDelivered,
-        QuantityInKg,
-      };
-      return res.status(200).send({
-        status: 200,
-        message: "Variant confirmed successfully!",
-        data: responseData,
-      });
+const newCurrentStageId = mStages[currentStageIndex + 1].Id;
+const ifNewNextStage = mStages[currentStageIndex + 2]
+  ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
+  : {};
+
+const quantityReceivedFromPreviousDep =
+  QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
+
+console.log(
+  "quantityReceivedFromPreviousDep",
+  quantityReceivedFromPreviousDep
+);
+
+const newTracking = await prisma.trakingModels.create({
+  data: {
+    ModelVariant: {
+      connect: {
+        Id: tracking.ModelVariantId,
+      },
+    },
+    MainStatus: "TODO",
+    StartTime: new Date(),
+    QuantityReceived: quantityReceivedFromPreviousDep,
+    PrevStage: {
+      connect: {
+        Id: tracking.CurrentStageId,
+      },
+    },
+    CurrentStage: {
+      connect: {
+        Id: newCurrentStageId,
+      },
+    },
+    NextStage: ifNewNextStage,
+    Audit: {
+      create: {
+        UpdatedById: userId,
+        CreatedById: userId,
+      },
+    },
+  },
+});
+
+await prisma.notifications.create({
+  data: {
+    Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed!`,
+    Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} got confirmed by ${tracking.NextStage.Department.Name}`,
+    ToDepartment: {
+      connect: {
+        Id: tracking.CurrentStage.DepartmentId,
+      },
+    },
+  },
+});
+
+const responseData = {
+  QuantityInNum,
+  QuantityReceived,
+  QuantityDelivered,
+  QuantityInKg,
+};
+return res.status(200).send({
+  status: 200,
+  message: "Variant confirmed successfully!",
+  data: responseData,
+});
     } catch (error) {
-      console.error("Error updating tracking:", error);
-      return res.status(500).send({
-        status: 500,
-        message: "Internal server error",
-        data: {},
-      });
-    }
+  console.error("Error updating tracking:", error);
+  return res.status(500).send({
+    status: 500,
+    message: "Internal server error",
+    data: {},
+  });
+}
   },
 
-  //todo pause on model varinte level
-  pauseUnpause: async (req, res, next) => {
-    const userId = req.userId;
-    const userDepartmentId = req.userDepartmentId;
-    const variantId = +req.params.id;
-    const { Reasone } = req.body;
-    try {
-      const variant = await prisma.modelVarients.findFirst({
+//todo pause on model varinte level
+pauseUnpause: async (req, res, next) => {
+  const userId = req.userId;
+  const userDepartmentId = req.userDepartmentId;
+  const variantId = +req.params.id;
+  const { Reasone } = req.body;
+  try {
+    const variant = await prisma.modelVarients.findFirst({
+      where: {
+        Id: +variantId,
+        Status: "INPROGRESS",
+        Audit: {
+          IsDeleted: false,
+        },
+      },
+      include: {
+        Model: true,
+        Color: true,
+      },
+    });
+
+    const tracking = await prisma.trakingModels.findFirst({
+      where: {
+        ModelVariantId: variantId,
+        MainStatus: "INPROGRESS",
+        CurrentStage: {
+          DepartmentId: userDepartmentId,
+        },
+        Audit: {
+          IsDeleted: false,
+        },
+      },
+    });
+
+    const managerialDep = await prisma.departments.findFirst({
+      where: {
+        Category: "FACTORYMANAGER",
+        Audit: {
+          IsDeleted: false,
+        },
+      },
+    });
+
+    if (tracking.RunningStatus === "RUNNING") {
+      await prisma.trakingModels.update({
         where: {
-          Id: +variantId,
-          Status: "INPROGRESS",
-          Audit: {
-            IsDeleted: false,
-          },
+          Id: tracking.Id,
         },
-        include: {
-          Model: true,
-          Color: true,
-        },
-      });
-
-      const tracking = await prisma.trakingModels.findFirst({
-        where: {
-          ModelVariantId: variantId,
-          MainStatus: "INPROGRESS",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      const managerialDep = await prisma.departments.findFirst({
-        where: {
-          Category: "FACTORYMANAGER",
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      if (tracking.RunningStatus === "RUNNING") {
-        await prisma.trakingModels.update({
-          where: {
-            Id: tracking.Id,
-          },
-          data: {
-            RunningStatus: "PUASED",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
-          },
-        });
-      } else {
-        await prisma.trakingModels.update({
-          where: {
-            Id: tracking.Id,
-          },
-          data: {
-            RunningStatus: "RUNNING",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
-          },
-        });
-      }
-
-      await prisma.notifications.create({
         data: {
-          Description: Reasone,
-          Title: `${
-            tracking.RunningStatus === "RUNNING" ? "Pausing" : "Unpausing"
+          RunningStatus: "PUASED",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+    } else {
+      await prisma.trakingModels.update({
+        where: {
+          Id: tracking.Id,
+        },
+        data: {
+          RunningStatus: "RUNNING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    await prisma.notifications.create({
+      data: {
+        Description: Reasone,
+        Title: `${tracking.RunningStatus === "RUNNING" ? "Pausing" : "Unpausing"
           }${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
-          ToDepartment: {
-            connect: {
-              Id: managerialDep.Id,
-            },
+        ToDepartment: {
+          connect: {
+            Id: managerialDep.Id,
           },
         },
-      });
+      },
+    });
 
-      return res.status(200).send({
-        status: 200,
-        message: `Variant ${
-          tracking.RunningStatus === "RUNNING" ? "Paused" : "Unpaused"
+    return res.status(200).send({
+      status: 200,
+      message: `Variant ${tracking.RunningStatus === "RUNNING" ? "Paused" : "Unpaused"
         } successfully!`,
-        data: {},
-      });
-    } catch (error) {
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
+      data: {},
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: 500,
+      message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+      data: {},
+    });
+  }
+},
 
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
@@ -823,1022 +826,1027 @@ const TrackingModelController = {
     }
   },
 
-  getAllTrackingByDepartment: async (req, res, next) => {
-    const userDepartmentId = req.userDepartmentId;
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
-    try {
-      const awaiting = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          OR: [
-            {
-              MainStatus: "CHECKING",
-              NextStage: { DepartmentId: userDepartmentId },
-            },
-            {
-              MainStatus: "TODO",
-              CurrentStage: {
-                DepartmentId: userDepartmentId,
-              },
-            },
-          ],
-        },
-        select: {
-          Id: true,
-          PrevStage: true,
-          NextStage: true,
-          DamagedItem: true,
-          StartTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          MainStatus: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
+    getAllTrackingByDepartment: async (req, res, next) => {
+      const userDepartmentId = req.userDepartmentId;
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
+
+      const pages = {
+        awaiting: parseInt(req.query.awaitingPage) || 1,
+        inProgress: parseInt(req.query.inProgressPage) || 1,
+        completed: parseInt(req.query.completedPage) || 1,
+        givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
+      };
+      const sizes = {
+        awaiting: parseInt(req.query.awaitingSize) || 10,
+        inProgress: parseInt(req.query.inProgressSize) || 10,
+        completed: parseInt(req.query.completedSize) || 10,
+        givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
+      };
+
+      try {
+        const awaiting = await prisma.trakingModels.findMany({
+          where: {
+            Audit: { IsDeleted: false },
+            ModelVariant: {
               Model: {
-                select: {
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
+                Audit: { IsDeleted: false },
+                Order: {
+                  Audit: { IsDeleted: false },
+                  Collection: { Audit: { IsDeleted: false } },
                 },
               },
-              Sizes: true,
-              Quantity: true,
             },
-          },
-        },
-      });
-      const inProgress = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
+            OR: [
+              {
+                MainStatus: "CHECKING",
+                NextStage: { DepartmentId: userDepartmentId },
               },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
+              {
+                MainStatus: "TODO",
+                CurrentStage: { DepartmentId: userDepartmentId },
+              },
+            ],
+          },
+          skip: (pages.awaiting - 1) * sizes.awaiting,
+          take: sizes.awaiting,
+          select: {
+            Id: true,
+            PrevStage: true,
+            NextStage: true,
+            DamagedItem: true,
+            StartTime: true,
+            Notes: true,
+            QuantityInNum: true,
+            QuantityInKg: true,
+            MainStatus: true,
+            QuantityDelivered: true,
+            QuantityReceived: true,
+            ModelVariant: {
+              select: {
+                Id: true,
+                RunningStatus: true,
+                ReasonText: true,
+                Color: { select: { ColorName: true } },
+                Model: {
+                  select: {
+                    ModelName: true,
+                    ModelNumber: true,
+                    DemoModelNumber: true,
+                    Id: true,
                   },
                 },
+                Sizes: true,
+                Quantity: true,
               },
             },
           },
-          MainStatus: "INPROGRESS",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-        },
-        select: {
-          Id: true,
-          DamagedItem: true,
-          StartTime: true,
-
-          QuantityInNum: true,
-          QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          MainStatus: true,
-          PrevStage: true,
-          NextStage: true,
-          Notes: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-      const completed = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          MainStatus: "DONE",
-          EndTime: {
-            gte: twoDaysAgo,
-          },
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-        },
-        select: {
-          Id: true,
-          DamagedItem: true,
-          StartTime: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          MainStatus: true,
-          Notes: true,
-          PrevStage: true,
-          NextStage: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-      const givingConfirmation = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          MainStatus: "CHECKING",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-        },
-        select: {
-          Id: true,
-          DamagedItem: true,
-          StartTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          MainStatus: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-
-      return res.status(200).send({
-        status: 200,
-        message: "",
-        data: { awaiting, completed, inProgress, givingConfirmation },
-      });
-    } catch (error) {
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
-
-  getAllTracking: async (req, res, next) => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const pages = {
-      awaiting: parseInt(req.query.awaitingPage) || 2,
-      inProgress: parseInt(req.query.inProgressPage) || 1,
-      completed: parseInt(req.query.completedPage) || 1,
-      givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
-    };
-    const sizes = {
-      awaiting: parseInt(req.query.awaitingSize) || 10,
-      inProgress: parseInt(req.query.inProgressSize) || 10,
-      completed: parseInt(req.query.completedSize) || 10,
-      givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
-    };
-
-    const totalRecordsAwaiting = await prisma.trakingModels.count({
-      where: {
-        Audit: {
-          IsDeleted: false,
-        },
-        ModelVariant: {
-          Model: {
-            Audit: {
-              IsDeleted: false,
-            },
-            Order: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Collection: {
-                Audit: {
-                  IsDeleted: false,
-                },
-              },
-            },
-          },
-        },
-        OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
-      },
-    });
-    const totalRecordsInProgress = await prisma.trakingModels.count({
-      where: {
-        Audit: {
-          IsDeleted: false,
-        },
-        ModelVariant: {
-          Model: {
-            Audit: {
-              IsDeleted: false,
-            },
-            Order: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Collection: {
-                Audit: {
-                  IsDeleted: false,
-                },
-              },
-            },
-          },
-        },
-        MainStatus: "INPROGRESS",
-      },
-    });
-    const totalRecordsCompleted = await prisma.trakingModels.count({
-      where: {
-        Audit: {
-          IsDeleted: false,
-        },
-        ModelVariant: {
-          Model: {
-            Audit: {
-              IsDeleted: false,
-            },
-            Order: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Collection: {
-                Audit: {
-                  IsDeleted: false,
-                },
-              },
-            },
-          },
-        },
-        MainStatus: "DONE",
-        EndTime: {
-          gte: sevenDaysAgo,
-        },
-      },
-    });
-
-    const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
-      where: {
-        Audit: {
-          IsDeleted: false,
-        },
-        ModelVariant: {
-          Model: {
-            Audit: {
-              IsDeleted: false,
-            },
-            Order: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Collection: {
-                Audit: {
-                  IsDeleted: false,
-                },
-              },
-            },
-          },
-        },
-        MainStatus: "CHECKING",
-      },
-    });
-
-    const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
-    const totalPagesInProgress = Math.ceil(
-      totalRecordsInProgress / sizes.inProgress
-    );
-    const totalPagesCompleted = Math.ceil(
-      totalRecordsCompleted / sizes.completed
-    );
-    const totalPagesGivingConfirmation = Math.ceil(
-      totalRecordsGivingConfirmation / sizes.givingConfirmation
-    );
-
-    try {
-      const awaiting = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
-        },
-        skip: (pages.awaiting - 1) * sizes.awaiting,
-        take: sizes.awaiting,
-        select: {
-          Id: true,
-          PrevStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          NextStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          CurrentStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          DamagedItem: true,
-          StartTime: true,
-          EndTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          MainStatus: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  Textile: {
-                    select: {
-                      TextileName: true,
-                    },
-                  },
-                  Order: {
-                    select: {
-                      OrderNumber: true,
-                      Collection: {
-                        select: {
-                          CollectionName: true,
-                        },
-                      },
-                    },
-                  },
-                  Barcode: true,
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                  CategoryOne: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  categoryTwo: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-
-      const inProgress = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          MainStatus: "INPROGRESS",
-        },
-        skip: (pages.inProgress - 1) * sizes.inProgress,
-        take: sizes.inProgress,
-
-        select: {
-          Id: true,
-          PrevStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          NextStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          CurrentStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          DamagedItem: true,
-          StartTime: true,
-          EndTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          MainStatus: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  Textile: {
-                    select: {
-                      TextileName: true,
-                    },
-                  },
-                  Order: {
-                    select: {
-                      OrderNumber: true,
-                      Collection: {
-                        select: {
-                          CollectionName: true,
-                        },
-                      },
-                    },
-                  },
-                  Barcode: true,
-
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                  CategoryOne: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  categoryTwo: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-
-      const completed = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          MainStatus: "DONE",
-          EndTime: {
-            gte: sevenDaysAgo,
-          },
-        },
-        skip: (pages.completed - 1) * sizes.completed,
-        take: sizes.completed,
-
-        select: {
-          Id: true,
-          PrevStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          NextStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          CurrentStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          DamagedItem: true,
-          StartTime: true,
-          EndTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          MainStatus: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  Textile: {
-                    select: {
-                      TextileName: true,
-                    },
-                  },
-                  Order: {
-                    select: {
-                      OrderNumber: true,
-                      Collection: {
-                        select: {
-                          CollectionName: true,
-                        },
-                      },
-                    },
-                  },
-                  Barcode: true,
-
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                  CategoryOne: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  categoryTwo: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-
-      const givingConfirmation = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Audit: {
-                IsDeleted: false,
-              },
-              Order: {
-                Audit: {
-                  IsDeleted: false,
-                },
-                Collection: {
-                  Audit: {
-                    IsDeleted: false,
-                  },
-                },
-              },
-            },
-          },
-          MainStatus: "CHECKING",
-        },
-        skip: (pages.givingConfirmation - 1) * sizes.givingConfirmation,
-        take: sizes.givingConfirmation,
-
-        select: {
-          Id: true,
-          PrevStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          NextStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          CurrentStage: {
-            select: {
-              Id: true,
-              StageNumber: true,
-              StageName: true,
-              WorkDescription: true,
-              Duration: true,
-              ModelId: true,
-              AuditId: true,
-              Department: {
-                select: {
-                  Name: true,
-                },
-              },
-            },
-          },
-          DamagedItem: true,
-          StartTime: true,
-          Notes: true,
-          QuantityInNum: true,
-          QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
-          MainStatus: true,
-          ModelVariant: {
-            select: {
-              Id: true,
-              RunningStatus: true,
-              ReasonText: true,
-              Color: {
-                select: {
-                  ColorName: true,
-                },
-              },
-              Model: {
-                select: {
-                  Textile: {
-                    select: {
-                      TextileName: true,
-                    },
-                  },
-                  Order: {
-                    select: {
-                      OrderNumber: true,
-                      Collection: {
-                        select: {
-                          CollectionName: true,
-                        },
-                      },
-                    },
-                  },
-                  Barcode: true,
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                  CategoryOne: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  categoryTwo: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                },
-              },
-              Sizes: true,
-              Quantity: true,
-            },
-          },
-        },
-      });
-
-      const addNameField = (items, stage) =>
-        items.map((item) => {
-          const modelName = item.ModelVariant.Model.ModelName;
-          const categoryOneName =
-            item.ModelVariant.Model.CategoryOne.CategoryName;
-          const categoryTwoName =
-            item.ModelVariant.Model.categoryTwo.CategoryName;
-
-          return {
-            ...item,
-            name: `${modelName} - ${categoryOneName} - ${categoryTwoName}`,
-            Barcode: item.ModelVariant.Model.Barcode,
-            CollectionName:
-              item.ModelVariant.Model.Order.Collection.CollectionName,
-            OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
-            TextileName: item.ModelVariant.Model.Textile.TextileName,
-          };
         });
 
-      const awaitingWithNames = addNameField(awaiting, 1);
-      const inProgressWithNames = addNameField(inProgress, 2);
-      const completedWithNames = addNameField(completed, 3);
-      const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
+        const inProgress = await prisma.trakingModels.findMany({
+          where: {
+            Audit: { IsDeleted: false },
+            ModelVariant: {
+              Model: {
+                Audit: { IsDeleted: false },
+                Order: {
+                  Audit: { IsDeleted: false },
+                  Collection: { Audit: { IsDeleted: false } },
+                },
+              },
+            },
+            MainStatus: "INPROGRESS",
+            CurrentStage: { DepartmentId: userDepartmentId },
+          },
+          skip: (pages.inProgress - 1) * sizes.inProgress,
+          take: sizes.inProgress,
+          select: {
+            Id: true,
+            DamagedItem: true,
+            StartTime: true,
+            QuantityInNum: true,
+            QuantityInKg: true,
+            QuantityDelivered: true,
+            QuantityReceived: true,
+            MainStatus: true,
+            PrevStage: true,
+            NextStage: true,
+            Notes: true,
+            ModelVariant: {
+              select: {
+                Id: true,
+                RunningStatus: true,
+                ReasonText: true,
+                Color: { select: { ColorName: true } },
+                Model: {
+                  select: {
+                    ModelName: true,
+                    ModelNumber: true,
+                    DemoModelNumber: true,
+                    Id: true,
+                  },
+                },
+                Sizes: true,
+                Quantity: true,
+              },
+            },
+          },
+        });
 
-      return res.status(200).send({
-        status: 200,
-        message: "",
-        data: {
-          awaiting: awaitingWithNames,
-          completed: completedWithNames,
-          inProgress: inProgressWithNames,
-          givingConfirmation: givingConfirmationWithNames,
-        },
-        totalPages: {
-          totalPagesAwaiting,
-          totalPagesInProgress,
-          totalPagesCompleted,
-          totalPagesGivingConfirmation,
-        },
-      });
-    } catch (error) {
-      console.error("Error in getAllTracking:", error);
-      return res.status(500).send({
-        status: 500,
-        message: "Internal server error. Please try again later!",
-        data: {},
-      });
-    }
-  },
+        const completed = await prisma.trakingModels.findMany({
+          where: {
+            Audit: { IsDeleted: false },
+            ModelVariant: {
+              Model: {
+                Audit: { IsDeleted: false },
+                Order: {
+                  Audit: { IsDeleted: false },
+                  Collection: { Audit: { IsDeleted: false } },
+                },
+              },
+            },
+            MainStatus: "DONE",
+            EndTime: { gte: twoDaysAgo },
+            CurrentStage: { DepartmentId: userDepartmentId },
+          },
+          skip: (pages.completed - 1) * sizes.completed,
+          take: sizes.completed,
+          select: {
+            Id: true,
+            DamagedItem: true,
+            StartTime: true,
+            QuantityInNum: true,
+            QuantityInKg: true,
+            QuantityDelivered: true,
+            QuantityReceived: true,
+            MainStatus: true,
+            Notes: true,
+            PrevStage: true,
+            NextStage: true,
+            ModelVariant: {
+              select: {
+                Id: true,
+                RunningStatus: true,
+                ReasonText: true,
+                Color: { select: { ColorName: true } },
+                Model: {
+                  select: {
+                    ModelName: true,
+                    ModelNumber: true,
+                    DemoModelNumber: true,
+                    Id: true,
+                  },
+                },
+                Sizes: true,
+                Quantity: true,
+              },
+            },
+          },
+        });
+
+        const givingConfirmation = await prisma.trakingModels.findMany({
+          where: {
+            Audit: { IsDeleted: false },
+            ModelVariant: {
+              Model: {
+                Audit: { IsDeleted: false },
+                Order: {
+                  Audit: { IsDeleted: false },
+                  Collection: { Audit: { IsDeleted: false } },
+                },
+              },
+            },
+            MainStatus: "CHECKING",
+            CurrentStage: { DepartmentId: userDepartmentId },
+          },
+          skip: (pages.givingConfirmation - 1) * sizes.givingConfirmation,
+          take: sizes.givingConfirmation,
+          select: {
+            Id: true,
+            DamagedItem: true,
+            StartTime: true,
+            Notes: true,
+            QuantityInNum: true,
+            QuantityInKg: true,
+            QuantityDelivered: true,
+            QuantityReceived: true,
+            MainStatus: true,
+            ModelVariant: {
+              select: {
+                Id: true,
+                RunningStatus: true,
+                ReasonText: true,
+                Color: { select: { ColorName: true } },
+                Model: {
+                  select: {
+                    ModelName: true,
+                    ModelNumber: true,
+                    DemoModelNumber: true,
+                    Id: true,
+                  },
+                },
+                Sizes: true,
+                Quantity: true,
+              },
+            },
+          },
+        });
+
+        return res.status(200).send({
+          status: 200,
+          message: "",
+          data: { awaiting, completed, inProgress, givingConfirmation },
+          totalPages: {
+            totalPagesAwaiting: Math.ceil(
+              (await prisma.trakingModels.count({
+                where: {
+                  Audit: { IsDeleted: false },
+                  OR: [
+                    {
+                      MainStatus: "CHECKING",
+                      NextStage: { DepartmentId: userDepartmentId },
+                    },
+                    {
+                      MainStatus: "TODO",
+                      CurrentStage: { DepartmentId: userDepartmentId },
+                    },
+                  ],
+                },
+              })) / sizes.awaiting
+            ),
+            totalPagesInProgress: Math.ceil(
+              (await prisma.trakingModels.count({
+                where: {
+                  Audit: { IsDeleted: false },
+                  MainStatus: "INPROGRESS",
+                  CurrentStage: { DepartmentId: userDepartmentId },
+                },
+              })) / sizes.inProgress
+            ),
+            totalPagesCompleted: Math.ceil(
+              (await prisma.trakingModels.count({
+                where: {
+                  Audit: { IsDeleted: false },
+                  MainStatus: "DONE",
+                  EndTime: { gte: twoDaysAgo },
+                  CurrentStage: { DepartmentId: userDepartmentId },
+                },
+              })) / sizes.completed
+            ),
+            totalPagesGivingConfirmation: Math.ceil(
+              (await prisma.trakingModels.count({
+                where: {
+                  Audit: { IsDeleted: false },
+                  MainStatus: "CHECKING",
+                  CurrentStage: { DepartmentId: userDepartmentId },
+                },
+              })) / sizes.givingConfirmation
+            ),
+          },
+        });
+      } catch (error) {
+        return res.status(500).send({
+          status: 500,
+          message: "Internal server error. Please try again later!",
+          data: {},
+        });
+      }
+    },
+
+      getAllTracking: async (req, res, next) => {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const pages = {
+          awaiting: parseInt(req.query.awaitingPage) || 2,
+          inProgress: parseInt(req.query.inProgressPage) || 1,
+          completed: parseInt(req.query.completedPage) || 1,
+          givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
+        };
+        const sizes = {
+          awaiting: parseInt(req.query.awaitingSize) || 10,
+          inProgress: parseInt(req.query.inProgressSize) || 10,
+          completed: parseInt(req.query.completedSize) || 10,
+          givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
+        };
+
+        const totalRecordsAwaiting = await prisma.trakingModels.count({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Order: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Collection: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                  },
+                },
+              },
+            },
+            OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
+          },
+        });
+        const totalRecordsInProgress = await prisma.trakingModels.count({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Order: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Collection: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                  },
+                },
+              },
+            },
+            MainStatus: "INPROGRESS",
+          },
+        });
+        const totalRecordsCompleted = await prisma.trakingModels.count({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Order: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Collection: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                  },
+                },
+              },
+            },
+            MainStatus: "DONE",
+            EndTime: {
+              gte: sevenDaysAgo,
+            },
+          },
+        });
+
+        const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Audit: {
+                  IsDeleted: false,
+                },
+                Order: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Collection: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                  },
+                },
+              },
+            },
+            MainStatus: "CHECKING",
+          },
+        });
+
+        const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
+        const totalPagesInProgress = Math.ceil(
+          totalRecordsInProgress / sizes.inProgress
+        );
+        const totalPagesCompleted = Math.ceil(
+          totalRecordsCompleted / sizes.completed
+        );
+        const totalPagesGivingConfirmation = Math.ceil(
+          totalRecordsGivingConfirmation / sizes.givingConfirmation
+        );
+
+        try {
+          const awaiting = await prisma.trakingModels.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+              ModelVariant: {
+                Model: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Order: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                    Collection: {
+                      Audit: {
+                        IsDeleted: false,
+                      },
+                    },
+                  },
+                },
+              },
+              OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
+            },
+            skip: (pages.awaiting - 1) * sizes.awaiting,
+            take: sizes.awaiting,
+            select: {
+              Id: true,
+              PrevStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              NextStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              CurrentStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              DamagedItem: true,
+              StartTime: true,
+              EndTime: true,
+              Notes: true,
+              QuantityInNum: true,
+              QuantityInKg: true,
+              MainStatus: true,
+              QuantityDelivered: true,
+              QuantityReceived: true,
+              ModelVariant: {
+                select: {
+                  Id: true,
+                  RunningStatus: true,
+                  ReasonText: true,
+                  Color: {
+                    select: {
+                      ColorName: true,
+                    },
+                  },
+                  Model: {
+                    select: {
+                      Textile: {
+                        select: {
+                          TextileName: true,
+                        },
+                      },
+                      Order: {
+                        select: {
+                          OrderNumber: true,
+                          Collection: {
+                            select: {
+                              CollectionName: true,
+                            },
+                          },
+                        },
+                      },
+                      Barcode: true,
+                      ModelName: true,
+                      ModelNumber: true,
+                      DemoModelNumber: true,
+                      Id: true,
+                      CategoryOne: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                      categoryTwo: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                    },
+                  },
+                  Sizes: true,
+                  Quantity: true,
+                },
+              },
+            },
+          });
+
+          const inProgress = await prisma.trakingModels.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+              ModelVariant: {
+                Model: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Order: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                    Collection: {
+                      Audit: {
+                        IsDeleted: false,
+                      },
+                    },
+                  },
+                },
+              },
+              MainStatus: "INPROGRESS",
+            },
+            skip: (pages.inProgress - 1) * sizes.inProgress,
+            take: sizes.inProgress,
+
+            select: {
+              Id: true,
+              PrevStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              NextStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              CurrentStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              DamagedItem: true,
+              StartTime: true,
+              EndTime: true,
+              Notes: true,
+              QuantityInNum: true,
+              QuantityInKg: true,
+              MainStatus: true,
+              QuantityDelivered: true,
+              QuantityReceived: true,
+              ModelVariant: {
+                select: {
+                  Id: true,
+                  RunningStatus: true,
+                  ReasonText: true,
+                  Color: {
+                    select: {
+                      ColorName: true,
+                    },
+                  },
+                  Model: {
+                    select: {
+                      Textile: {
+                        select: {
+                          TextileName: true,
+                        },
+                      },
+                      Order: {
+                        select: {
+                          OrderNumber: true,
+                          Collection: {
+                            select: {
+                              CollectionName: true,
+                            },
+                          },
+                        },
+                      },
+                      Barcode: true,
+
+                      ModelName: true,
+                      ModelNumber: true,
+                      DemoModelNumber: true,
+                      Id: true,
+                      CategoryOne: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                      categoryTwo: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                    },
+                  },
+                  Sizes: true,
+                  Quantity: true,
+                },
+              },
+            },
+          });
+
+          const completed = await prisma.trakingModels.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+              ModelVariant: {
+                Model: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Order: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                    Collection: {
+                      Audit: {
+                        IsDeleted: false,
+                      },
+                    },
+                  },
+                },
+              },
+              MainStatus: "DONE",
+              EndTime: {
+                gte: sevenDaysAgo,
+              },
+            },
+            skip: (pages.completed - 1) * sizes.completed,
+            take: sizes.completed,
+
+            select: {
+              Id: true,
+              PrevStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              NextStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              CurrentStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              DamagedItem: true,
+              StartTime: true,
+              EndTime: true,
+              Notes: true,
+              QuantityInNum: true,
+              QuantityInKg: true,
+              MainStatus: true,
+              QuantityDelivered: true,
+              QuantityReceived: true,
+              ModelVariant: {
+                select: {
+                  Id: true,
+                  RunningStatus: true,
+                  ReasonText: true,
+                  Color: {
+                    select: {
+                      ColorName: true,
+                    },
+                  },
+                  Model: {
+                    select: {
+                      Textile: {
+                        select: {
+                          TextileName: true,
+                        },
+                      },
+                      Order: {
+                        select: {
+                          OrderNumber: true,
+                          Collection: {
+                            select: {
+                              CollectionName: true,
+                            },
+                          },
+                        },
+                      },
+                      Barcode: true,
+
+                      ModelName: true,
+                      ModelNumber: true,
+                      DemoModelNumber: true,
+                      Id: true,
+                      CategoryOne: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                      categoryTwo: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                    },
+                  },
+                  Sizes: true,
+                  Quantity: true,
+                },
+              },
+            },
+          });
+
+          const givingConfirmation = await prisma.trakingModels.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+              ModelVariant: {
+                Model: {
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                  Order: {
+                    Audit: {
+                      IsDeleted: false,
+                    },
+                    Collection: {
+                      Audit: {
+                        IsDeleted: false,
+                      },
+                    },
+                  },
+                },
+              },
+              MainStatus: "CHECKING",
+            },
+            skip: (pages.givingConfirmation - 1) * sizes.givingConfirmation,
+            take: sizes.givingConfirmation,
+
+            select: {
+              Id: true,
+              PrevStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              NextStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              CurrentStage: {
+                select: {
+                  Id: true,
+                  StageNumber: true,
+                  StageName: true,
+                  WorkDescription: true,
+                  Duration: true,
+                  ModelId: true,
+                  AuditId: true,
+                  Department: {
+                    select: {
+                      Name: true,
+                    },
+                  },
+                },
+              },
+              DamagedItem: true,
+              StartTime: true,
+              Notes: true,
+              QuantityInNum: true,
+              QuantityInKg: true,
+              QuantityDelivered: true,
+              QuantityReceived: true,
+              MainStatus: true,
+              ModelVariant: {
+                select: {
+                  Id: true,
+                  RunningStatus: true,
+                  ReasonText: true,
+                  Color: {
+                    select: {
+                      ColorName: true,
+                    },
+                  },
+                  Model: {
+                    select: {
+                      Textile: {
+                        select: {
+                          TextileName: true,
+                        },
+                      },
+                      Order: {
+                        select: {
+                          OrderNumber: true,
+                          Collection: {
+                            select: {
+                              CollectionName: true,
+                            },
+                          },
+                        },
+                      },
+                      Barcode: true,
+                      ModelName: true,
+                      ModelNumber: true,
+                      DemoModelNumber: true,
+                      Id: true,
+                      CategoryOne: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                      categoryTwo: {
+                        select: {
+                          CategoryName: true,
+                        },
+                      },
+                    },
+                  },
+                  Sizes: true,
+                  Quantity: true,
+                },
+              },
+            },
+          });
+
+          const addNameField = (items, stage) =>
+            items.map((item) => {
+              const modelName = item.ModelVariant.Model.ModelName;
+              const categoryOneName =
+                item.ModelVariant.Model.CategoryOne.CategoryName;
+              const categoryTwoName =
+                item.ModelVariant.Model.categoryTwo.CategoryName;
+
+              return {
+                ...item,
+                name: `${modelName} - ${categoryOneName} - ${categoryTwoName}`,
+                Barcode: item.ModelVariant.Model.Barcode,
+                CollectionName:
+                  item.ModelVariant.Model.Order.Collection.CollectionName,
+                OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+                TextileName: item.ModelVariant.Model.Textile.TextileName,
+              };
+            });
+
+          const awaitingWithNames = addNameField(awaiting, 1);
+          const inProgressWithNames = addNameField(inProgress, 2);
+          const completedWithNames = addNameField(completed, 3);
+          const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
+
+          return res.status(200).send({
+            status: 200,
+            message: "",
+            data: {
+              awaiting: awaitingWithNames,
+              completed: completedWithNames,
+              inProgress: inProgressWithNames,
+              givingConfirmation: givingConfirmationWithNames,
+            },
+            totalPages: {
+              totalPagesAwaiting,
+              totalPagesInProgress,
+              totalPagesCompleted,
+              totalPagesGivingConfirmation,
+            },
+          });
+        } catch (error) {
+          console.error("Error in getAllTracking:", error);
+          return res.status(500).send({
+            status: 500,
+            message: "Internal server error. Please try again later!",
+            data: {},
+          });
+        }
+      },
 };
 
 export default TrackingModelController;
