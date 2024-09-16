@@ -293,7 +293,7 @@ const MaterialMovementController = {
   },
   getMaterialMovementsByMovementType: async (req, res, next) => {
     const movementType = req.params.type;
-    console.log("Requested movement type:",  req.params);
+    console.log("Requested movement type:", req.params);
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
@@ -316,11 +316,11 @@ const MaterialMovementController = {
 
       const materialMovementRecord = materialMovements.map((movement) => {
         let fromLocation =
-            movement.Supplier?.Name ||
-            movement.DepartmentFrom?.Name ||
-            movement.WarehouseFrom?.WarehouseName || "";
+          movement.Supplier?.Name ||
+          movement.DepartmentFrom?.Name ||
+          movement.WarehouseFrom?.WarehouseName || "";
         let toLocation = movement.WarehouseTo?.WarehouseName ||
-            movement.Supplier?.Name || "";
+          movement.Supplier?.Name || movement.DepartmentTo?.Name || "";
         return {
           id: movement.Id,
           movedFrom: fromLocation,
@@ -382,11 +382,11 @@ const MaterialMovementController = {
 
       const materialMovementNames = materialMovements.map((movement) => {
         let fromLocation =
-            movement.Supplier?.Name ||
-            movement.DepartmentFrom?.Name ||
-            movement.WarehouseFrom?.WarehouseName;
+          movement.Supplier?.Name ||
+          movement.DepartmentFrom?.Name ||
+          movement.WarehouseFrom?.WarehouseName;
         let toLocation =
-            movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName;
+          movement.DepartmentTo?.Name || movement.WarehouseTo?.WarehouseName;
 
         return {
           id: movement.Id,
@@ -545,6 +545,6 @@ const MaterialMovementController = {
 
     }
   }
-  };
+};
 
 export default MaterialMovementController;
