@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post(
   "/search",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  // verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
   ModelController.filterModel
 );
 

@@ -1612,13 +1612,21 @@ const ModelController = {
         select: {
           Order: {
             select: {
+              OrderName: true,
               CollectionId: true,
+              Collection: {
+                select: {
+                  CollectionName: true,
+                },
+              },
             },
           },
+          Status: true,
           OrderId: true,
           DemoModelNumber: true,
           ModelName: true,
           Id: true,
+
           ProductCatalog: {
             select: {
               ProductCatalogName: true,
@@ -1668,6 +1676,7 @@ const ModelController = {
               UpdatedAt: true,
             },
           },
+          Barcode: true,
         },
       });
       console.log(models);
@@ -1697,7 +1706,6 @@ const ModelController = {
               Status: status,
             },
           });
-
           const colorIds = [...new Set(count.map((item) => item.ColorId))];
           const colors = await prisma.colors.findMany({
             where: {
@@ -1708,12 +1716,10 @@ const ModelController = {
               ColorName: true,
             },
           });
-
           const colorMap = colors.reduce((acc, color) => {
             acc[color.Id] = color;
             return acc;
           }, {});
-
           return count.map((item) => ({
             status,
             modelId: item.ModelId,
@@ -1776,9 +1782,8 @@ const ModelController = {
           const totalDuration = Math.floor(
             (new Date(model.Audit.UpdatedAt) -
               new Date(model.Audit.CreatedAt)) /
-              (1000 * 60 * 60 * 24)
+              (1000 * 60 * 60)
           );
-
           const modelProgress = modelsWithProgress.find(
             (mod) => mod.ModelId == model.Id
           ).DonePercentage;
@@ -1833,6 +1838,7 @@ const ModelController = {
             {}
           );
           return {
+            Barcode: model.Barcode,
             ModelId: model.Id,
             ModelStats: modelStats,
             ModelProgress: modelProgress,
@@ -1840,6 +1846,9 @@ const ModelController = {
             OrderStats: orderInfo.stats,
             OrderProgress: orderInfo.percentage,
             CollectionId: model.Order.CollectionId,
+            CollectionName: model.Order.Collection.CollectionName,
+            OrderName: model.Order.OrderName,
+            ModelStatus: model.Status,
             DemoModelNumber: model.DemoModelNumber,
             ModelName: model.ModelName,
             ProductCatalog: model.ProductCatalog.ProductCatalogName,
