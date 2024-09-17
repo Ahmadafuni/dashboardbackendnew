@@ -363,9 +363,9 @@ const TrackingModelController = {
             },
             Id: tracking.ModelVariantId,
           },
-        },
-        Audit: {
-          IsDeleted: false,
+          Audit: {
+            IsDeleted: false,
+          },
         },
         orderBy: {
           StageNumber: "asc",
@@ -1350,7 +1350,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
-                      OrderName: true ,
+                      OrderName: true,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1488,7 +1488,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
-                      OrderName: true ,
+                      OrderName: true,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1630,7 +1630,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
-                      OrderName: true ,
+                      OrderName: true,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1768,7 +1768,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
-                      OrderName: true ,
+                      OrderName: true,
                       Collection: {
                         select: {
                           CollectionName: true,
