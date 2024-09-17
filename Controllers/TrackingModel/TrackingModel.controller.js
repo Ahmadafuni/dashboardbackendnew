@@ -831,9 +831,11 @@ const TrackingModelController = {
   },
 
   getAllTrackingByDepartment: async (req, res, next) => {
-    const userDepartmentId = req.query.depId;
+    const userDepartmentId = parseInt(req.query.depId, 10); // Convert depId to an integer
+    if (isNaN(userDepartmentId)) {
+      return res.status(400).send({ message: 'Invalid department ID provided.' });
+    }
     console.log("userDepartmentId",userDepartmentId);
-
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
 
