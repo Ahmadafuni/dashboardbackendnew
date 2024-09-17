@@ -1350,6 +1350,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
+                      OrderName: true ,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1487,6 +1488,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
+                      OrderName: true ,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1628,6 +1630,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
+                      OrderName: true ,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1765,6 +1768,7 @@ const TrackingModelController = {
                   Order: {
                     select: {
                       OrderNumber: true,
+                      OrderName: true ,
                       Collection: {
                         select: {
                           CollectionName: true,
@@ -1811,6 +1815,7 @@ const TrackingModelController = {
             CollectionName:
               item.ModelVariant.Model.Order.Collection.CollectionName,
             OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+            OrderName: item.ModelVariant.Model.Order.OrderName,
             TextileName: item.ModelVariant.Model.Textile.TextileName,
           };
         });
