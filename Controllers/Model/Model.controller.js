@@ -146,6 +146,7 @@ const ModelController = {
           PrintLocation: PrintLocation,
           ReasonText: ReasonText,
           Images: modelImages.join(","),
+          RunningStatus: "PAUSED",
           Audit: {
             create: {
               CreatedById: userId,
@@ -861,6 +862,7 @@ const ModelController = {
           },
           Sizes: JSON.stringify(Sizes),
           Quantity: +Quantity,
+          RunningStatus: "PAUSED",
           Audit: {
             create: {
               CreatedById: +userId,
@@ -2453,7 +2455,7 @@ const ModelController = {
 
   addFileXsl: async (req, res) => {
     const orderId = req.params.id;
-    const { Models, ModelsVarients } = req.body;
+    const { Models } = req.body;
     const userId = req.userId;
 
     try {
