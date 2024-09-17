@@ -1102,7 +1102,7 @@ const TrackingModelController = {
               where: {
                 Audit: { IsDeleted: false },
                 MainStatus: "CHECKING",
-                CurrentStage: { DepartmentId: userDepartmentId },
+                NextStage: { DepartmentId: userDepartmentId },
               },
             })) / sizes.givingConfirmation
           ),
