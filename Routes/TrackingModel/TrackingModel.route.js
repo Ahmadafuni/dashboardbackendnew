@@ -4,20 +4,7 @@ import TrackingModelController from "../../Controllers/TrackingModel/TrackingMod
 
 const router = express.Router();
 
-router.get(
-  "/current/dep",
-  // verifyUser([
-  //   "FACTORYMANAGER",
-  //   "ENGINEERING",
-  //   "CUTTING",
-  //   "TAILORING",
-  //   "PRINTING",
-  //   "QUALITYASSURANCE",
-  //   "DRAWING",
-  //   "WAREHOUSEMANAGER",
-  // ]),
-  TrackingModelController.getAllTrackingByDepartment
-);
+router.get("/current/dep", TrackingModelController.getAllTrackingByDepartment);
 
 router.get(
   "/start/variant/:id",

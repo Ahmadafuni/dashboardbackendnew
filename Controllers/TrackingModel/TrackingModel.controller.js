@@ -831,8 +831,8 @@ const TrackingModelController = {
   },
 
   getAllTrackingByDepartment: async (req, res, next) => {
+    console.log("req",req);
     const userDepartmentId = req.userDepartmentId;
-    console.log("userDepartmentId",userDepartmentId);
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
 
