@@ -880,6 +880,7 @@ const TrackingModelController = {
         take: sizes.awaiting,
         select: {
           Id: true,
+          CurrentStage: true,
           PrevStage: true,
           NextStage: true,
           DamagedItem: true,
