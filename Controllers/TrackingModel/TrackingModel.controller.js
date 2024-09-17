@@ -832,6 +832,8 @@ const TrackingModelController = {
 
   getAllTrackingByDepartment: async (req, res, next) => {
     const userDepartmentId = req.query.depId;
+    console.log("userDepartmentId",userDepartmentId);
+
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
 
@@ -1109,6 +1111,7 @@ const TrackingModelController = {
         },
       });
     } catch (error) {
+      console.log("error",error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later!",
