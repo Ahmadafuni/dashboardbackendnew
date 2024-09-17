@@ -64,16 +64,6 @@ router.post(
 );
 router.get(
   "/confirm/variant/:id",
-  verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-    "DRAWING",
-    "WAREHOUSEMANAGER",
-  ]),
   TrackingModelController.confirmVariant
 );
 router.get(

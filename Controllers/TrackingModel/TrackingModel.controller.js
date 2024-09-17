@@ -375,19 +375,25 @@ const TrackingModelController = {
       const currentStageIndex = mStages.findIndex(
         (e) => e.Id === tracking.CurrentStageId
       );
+      console.log("Tracking data:", tracking);
+      console.log("Manufacturing stages:", mStages);
 
       const newCurrentStageId = mStages[currentStageIndex + 1].Id;
       const ifNewNextStage = mStages[currentStageIndex + 2]
         ? { connect: { Id: mStages[currentStageIndex + 2].Id } }
         : {};
 
+      if (!newCurrentStageId) {
+        console.log("No next stage found for the current stage");
+        return res.status(400).send({
+          status: 400,
+          message: "No next stage found for the current stage",
+          data: {},
+        });
+      }
+
       const quantityReceivedFromPreviousDep =
         QuantityInKg !== null ? QuantityInNum : QuantityDelivered;
-
-      console.log(
-        "quantityReceivedFromPreviousDep",
-        quantityReceivedFromPreviousDep
-      );
 
       const newTracking = await prisma.trakingModels.create({
         data: {
