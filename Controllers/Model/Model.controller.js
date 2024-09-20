@@ -1679,7 +1679,6 @@ const ModelController = {
           Barcode: true,
         },
       });
-      console.log(models);
       const modelsWithProgress = models.map((model) => {
         const totalVarients = model.ModelVarients.length;
         const doneVarients = model.ModelVarients.filter(
@@ -1800,24 +1799,16 @@ const ModelController = {
               sizes = [];
             }
 
+            console.log("trackingModel : ", varient.TrakingModels);
             return {
               Color: varient.Color.ColorName,
               Sizes: varient.Sizes,
-              Quantity: varient.TrakingModels.map((trackingModel) => ({
-                StageName: trackingModel.CurrentStage.StageName,
-                QuantityDelivered: trackingModel.QuantityReceived
-                  ? trackingModel.QuantityReceived.reduce(
-                      (receivedOgj, received) => {
-                        receivedOgj[received.size] = received.value;
-                        return receivedOgj;
-                      },
-                      {}
-                    )
-                  : sizes.reduce((emptyObj, size) => {
-                      emptyObj[size] = "";
-                      return emptyObj;
-                    }, {}),
-              }))[0],
+              Quantity: varient.TrakingModels.map((trackingModel) => {
+                return {
+                  StageName: trackingModel.CurrentStage.StageName,
+                  QuantityDelivered: trackingModel.QuantityReceived,
+                };
+              })[0],
             };
           });
 
@@ -1860,6 +1851,7 @@ const ModelController = {
           };
         })
       );
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",

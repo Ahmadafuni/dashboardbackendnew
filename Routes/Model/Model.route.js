@@ -52,7 +52,6 @@ router.get("/mokks", async (req, res) => {
     {}
   );
 
-  console.log(finalResult);
   res.send(finalResult);
 });
 //
