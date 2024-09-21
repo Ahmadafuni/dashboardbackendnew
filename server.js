@@ -50,6 +50,7 @@ const app = express();
 let corsOptions = {
   origin: ["https://factorydashboard.online","http://localhost:3000", "https://dashboardnew-3bgv.onrender.com"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 
