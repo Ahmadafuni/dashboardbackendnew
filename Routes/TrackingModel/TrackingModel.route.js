@@ -83,7 +83,7 @@ router.put(
 );
 
 router.post(
-  "/pauseunpause/variant/:id",
+  "/pausetracking/variant/:id",
   verifyUser([
     "FACTORYMANAGER",
     "ENGINEERING",
@@ -94,7 +94,21 @@ router.post(
     "DRAWING",
     "WAREHOUSEMANAGER",
   ]),
-  TrackingModelController.pauseUnpause
+  TrackingModelController.pauseTracking
+);
+router.post(
+    "/unpausetracking/variant/:id",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "DRAWING",
+        "WAREHOUSEMANAGER",
+    ]),
+    TrackingModelController.unpauseTracking
 );
 
 router.get(

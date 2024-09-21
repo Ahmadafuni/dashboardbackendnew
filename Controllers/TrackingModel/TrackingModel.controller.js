@@ -14,6 +14,7 @@ const safeParseJSON = (data) => {
 };
 
 const TrackingModelController = {
+
   startVariant: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
@@ -27,7 +28,8 @@ const TrackingModelController = {
           },
         },
         data: {
-          Status: "INPROGRESS",
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
           Audit: {
             update: {
               data: {
@@ -41,6 +43,7 @@ const TrackingModelController = {
         where: {
           ModelVariantId: variantId,
           MainStatus: "TODO",
+          RunningStatus: "ONGOING",
           CurrentStage: {
             DepartmentId: userDepartmentId,
           },
@@ -56,6 +59,7 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
           Audit: {
             update: {
               data: {
@@ -100,6 +104,7 @@ const TrackingModelController = {
         where: {
           ModelVariantId: variantId,
           MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
           CurrentStage: {
             DepartmentId: userDepartmentId,
           },
@@ -159,6 +164,7 @@ const TrackingModelController = {
         where: {
           ModelVariantId: variantId,
           MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
           CurrentStage: {
             DepartmentId: userDepartmentId,
           },
@@ -264,6 +270,7 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
           Audit: {
             update: {
               data: {
@@ -344,6 +351,7 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "DONE",
+          RunningStatus: "COMPLETED",
           EndTime: new Date(),
           Audit: {
             update: {
@@ -458,111 +466,6 @@ const TrackingModelController = {
     }
   },
 
-  //todo pause on model varinte level
-  pauseUnpause: async (req, res, next) => {
-    const userId = req.userId;
-    const userDepartmentId = req.userDepartmentId;
-    const variantId = +req.params.id;
-    const { Reasone } = req.body;
-    try {
-      const variant = await prisma.modelVarients.findFirst({
-        where: {
-          Id: +variantId,
-          Status: "INPROGRESS",
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        include: {
-          Model: true,
-          Color: true,
-        },
-      });
-
-      const tracking = await prisma.trakingModels.findFirst({
-        where: {
-          ModelVariantId: variantId,
-          MainStatus: "INPROGRESS",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      const managerialDep = await prisma.departments.findFirst({
-        where: {
-          Category: "FACTORYMANAGER",
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      if (tracking.RunningStatus === "RUNNING") {
-        await prisma.trakingModels.update({
-          where: {
-            Id: tracking.Id,
-          },
-          data: {
-            RunningStatus: "PUASED",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
-          },
-        });
-      } else {
-        await prisma.trakingModels.update({
-          where: {
-            Id: tracking.Id,
-          },
-          data: {
-            RunningStatus: "RUNNING",
-            Audit: {
-              update: {
-                data: {
-                  UpdatedById: userId,
-                },
-              },
-            },
-          },
-        });
-      }
-
-      await prisma.notifications.create({
-        data: {
-          Description: Reasone,
-          Title: `${tracking.RunningStatus === "RUNNING" ? "Pausing" : "Unpausing"
-            }${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
-          ToDepartment: {
-            connect: {
-              Id: managerialDep.Id,
-            },
-          },
-        },
-      });
-
-      return res.status(200).send({
-        status: 200,
-        message: `Variant ${tracking.RunningStatus === "RUNNING" ? "Paused" : "Unpaused"
-          } successfully!`,
-        data: {},
-      });
-    } catch (error) {
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
-
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
@@ -630,6 +533,7 @@ const TrackingModelController = {
         },
         data: {
           MainStatus: "DONE",
+          RunningStatus: "COMPLETED",
           EndTime: new Date(),
           QuantityReceived: parsedQuantityReceived,
           QuantityDelivered: parsedQuantityDelivered,
@@ -650,7 +554,8 @@ const TrackingModelController = {
           Id: tracking.ModelVariantId,
         },
         data: {
-          Status: "DONE",
+          MainStatus: "DONE",
+          RunningStatus: "COMPLETED",
           Audit: {
             update: {
               UpdatedById: userId,
@@ -671,21 +576,23 @@ const TrackingModelController = {
           },
         },
         select: {
-          Status: true,
+          MainStatus: true,
+          RunningStatus: true,
         },
       });
 
       const variantStatuses = remainingVariants.map(
-        (variant) => variant.Status
+        (variant) => variant.RunningStatus
       );
 
-      if (variantStatuses.every((status) => status === "DONE")) {
+      if (variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.models.update({
           where: {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            Status: "DONE",
+            MainStatus: "DONE",
+            RunningStatus: "COMPLETED",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -696,13 +603,14 @@ const TrackingModelController = {
         console.log(
           `Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`
         );
-      } else if (variantStatuses.includes("INPROGRESS")) {
+      } else if (variantStatuses.includes("ONGOING")) {
         await prisma.models.update({
           where: {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            Status: "INPROGRESS",
+            MainStatus: "INPROGRESS",
+            RunningStatus: "ONGOING",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -723,19 +631,19 @@ const TrackingModelController = {
           },
         },
         select: {
-          Status: true,
+          RunningStatus: true,
         },
       });
 
       const modelStatuses = remainingModels.map((model) => model.Status);
 
-      if (modelStatuses.every((status) => status === "DONE")) {
+      if (modelStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.orders.update({
           where: {
             Id: tracking.ModelVariant.Model.OrderId,
           },
           data: {
-            Status: "COMPLETED",
+            RunningStatus: "COMPLETED",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -746,13 +654,13 @@ const TrackingModelController = {
         console.log(
           `Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`
         );
-      } else if (modelStatuses.includes("INPROGRESS")) {
+      } else if (modelStatuses.includes("ONGOING")) {
         await prisma.orders.update({
           where: {
             Id: tracking.ModelVariant.Model.OrderId,
           },
           data: {
-            Status: "ONGOING",
+            RunningStatus: "ONGOING",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -773,19 +681,19 @@ const TrackingModelController = {
           },
         },
         select: {
-          Status: true,
+          RunningStatus: true,
         },
       });
 
       const orderStatuses = remainingOrders.map((order) => order.Status);
 
-      if (orderStatuses.every((status) => status === "COMPLETED")) {
+      if (orderStatuses.every((ruunningStatus) => ruunningStatus === "COMPLETED")) {
         await prisma.collections.update({
           where: {
             Id: tracking.ModelVariant.Model.Order.CollectionId,
           },
           data: {
-            Status: "COMPLETED",
+            RunningStatus: "COMPLETED",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -802,7 +710,7 @@ const TrackingModelController = {
             Id: tracking.ModelVariant.Model.Order.CollectionId,
           },
           data: {
-            Status: "ONGOING",
+            RunningStatus: "ONGOING",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -889,13 +797,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -938,6 +848,8 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           PrevStage: true,
           NextStage: true,
           Notes: true,
@@ -945,7 +857,7 @@ const TrackingModelController = {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -989,6 +901,8 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           Notes: true,
           PrevStage: true,
           NextStage: true,
@@ -996,7 +910,7 @@ const TrackingModelController = {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -1040,11 +954,13 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -1123,7 +1039,7 @@ const TrackingModelController = {
     }
   },
 
-    getAllTracking: async (req, res, next) => {
+  getAllTracking: async (req, res, next) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -1340,13 +1256,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1492,13 +1410,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1648,13 +1568,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1802,11 +1724,13 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -1977,13 +1901,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -2024,6 +1950,8 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           PrevStage: true,
           NextStage: true,
           Notes: true,
@@ -2031,7 +1959,7 @@ const TrackingModelController = {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -2073,6 +2001,8 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           Notes: true,
           PrevStage: true,
           NextStage: true,
@@ -2080,7 +2010,7 @@ const TrackingModelController = {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -2122,11 +2052,13 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: { select: { ColorName: true } },
               Model: {
                 select: {
@@ -2297,13 +2229,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -2432,13 +2366,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -2572,13 +2508,15 @@ const TrackingModelController = {
           QuantityInNum: true,
           QuantityInKg: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           QuantityDelivered: true,
           QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -2710,11 +2648,13 @@ const TrackingModelController = {
           QuantityDelivered: true,
           QuantityReceived: true,
           MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
-              ReasonText: true,
+              StopData: true,
               Color: {
                 select: {
                   ColorName: true,
@@ -2817,7 +2757,180 @@ const TrackingModelController = {
         data: {},
       });
     }
-  }
+  },
+
+  pauseTracking: async (req, res, next) => {
+    const userId = req.userId;
+    const userDepartmentId = req.userDepartmentId;
+    const variantId = +req.params.id;
+    const { stopData } = req.body;
+    try {
+      const variant = await prisma.modelVarients.findFirst({
+        where: {
+          Id: +variantId,
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          Model: true,
+          Color: true,
+        },
+      });
+
+      const tracking = await prisma.trakingModels.findFirst({
+        where: {
+          ModelVariantId: variantId,
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
+          CurrentStage: {
+            DepartmentId: userDepartmentId,
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      const managerialDep = await prisma.departments.findFirst({
+        where: {
+          Category: "FACTORYMANAGER",
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+        await prisma.trakingModels.update({
+          where: {
+            Id: tracking.Id,
+          },
+          data: {
+            RunningStatus: "ONHOLD",
+            StopData: stopData,
+            Audit: {
+              update: {
+                data: {
+                  UpdatedById: userId,
+                },
+              },
+            },
+          },
+        });
+      await prisma.notifications.create({
+        data: {
+          //TODO we need here only the text
+          Description: stopData.ReasonText,
+          Title: `Pausing ${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
+          ToDepartment: {
+            connect: {
+              Id: managerialDep.Id,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Variant Paused successfully!",
+        data: {},
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  unpauseTracking: async (req, res, next) => {
+    const userId = req.userId;
+    const userDepartmentId = req.userDepartmentId;
+    const variantId = +req.params.id;
+    const { stopData } = req.body;
+    try {
+      const variant = await prisma.modelVarients.findFirst({
+        where: {
+          Id: +variantId,
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONHOLD",
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          Model: true,
+          Color: true,
+        },
+      });
+
+      const tracking = await prisma.trakingModels.findFirst({
+        where: {
+          ModelVariantId: variantId,
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONHOLD",
+          CurrentStage: {
+            DepartmentId: userDepartmentId,
+          },
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+      const managerialDep = await prisma.departments.findFirst({
+        where: {
+          Category: "FACTORYMANAGER",
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      await prisma.trakingModels.update({
+        where: {
+          Id: tracking.Id,
+        },
+        data: {
+          RunningStatus: "ONGOING",
+          StopData: stopData,
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+      await prisma.notifications.create({
+        data: {
+          //TODO we need here only the text
+          Description: stopData.ReasonText,
+          Title: `Unpausing ${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
+          ToDepartment: {
+            connect: {
+              Id: managerialDep.Id,
+            },
+          },
+        },
+      });
+
+      return res.status(200).send({
+        status: 200,
+        message: "Variant Unpaused successfully!",
+        data: {},
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
   
 };
 

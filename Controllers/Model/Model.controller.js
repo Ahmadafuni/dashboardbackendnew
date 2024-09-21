@@ -15,7 +15,7 @@ const ModelController = {
       PrintLocation,
       Description,
       DemoModelNumber,
-      ReasonText,
+      StopData,
     } = req.body;
 
     const orderId = req.params.id;
@@ -144,9 +144,8 @@ const ModelController = {
           PrintName: PrintName,
           Description: Description,
           PrintLocation: PrintLocation,
-          ReasonText: ReasonText,
+          StopData: StopData,
           Images: modelImages.join(","),
-          RunningStatus: "PAUSED",
           Audit: {
             create: {
               CreatedById: userId,
@@ -189,8 +188,8 @@ const ModelController = {
           Textile: true,
           Order: {
             select: {
-              Status: true,
-              ReasonText: true,
+              RunningStatus: true,
+              StopData: true,
             },
           },
         },
@@ -711,9 +710,9 @@ const ModelController = {
             },
             Sizes: true,
             Quantity: true,
-            Status: true,
-            ReasonText: true,
+            MainStatus: true,
             RunningStatus: true,
+            StopData: true,
             Model: {
               select: {
                 ModelName: true,
@@ -728,10 +727,10 @@ const ModelController = {
             Color: e.Color.ColorName,
             Sizes: JSON.parse(e.Sizes),
             Model: e.Model.ModelName,
-            Status: e.Status,
+            MainStatus: e.MainStatus,
             Quantity: e.Quantity,
             TemplateId: e.Model.TemplateId,
-            ReasonText: e.ReasonText,
+            StopData: e.StopData,
             RunningStatus: e.RunningStatus,
           }))
         );
@@ -739,7 +738,7 @@ const ModelController = {
       // Return Response
       return res.status(200).send({
         status: 200,
-        message: "Model varients :( fetched successfully!",
+        message: "Model varients fetched successfully!",
         data: varients,
       });
     } catch (error) {
@@ -767,7 +766,7 @@ const ModelController = {
           Sizes: true,
           Quantity: true,
           RunningStatus: true,
-          ReasonText: true,
+          StopData: true,
         },
       });
 
@@ -787,7 +786,7 @@ const ModelController = {
           Sizes: JSON.parse(varient.Sizes),
           Quantity: varient.Quantity.toString(),
           RunningStatus: varient.RunningStatus.toString(),
-          ReasonText: varient.ReasonText ? varient.ReasonText.toString() : "",
+          StopData: varient.StopData,
         },
       });
     } catch (error) {
@@ -862,7 +861,6 @@ const ModelController = {
           },
           Sizes: JSON.stringify(Sizes),
           Quantity: +Quantity,
-          RunningStatus: "PAUSED",
           Audit: {
             create: {
               CreatedById: +userId,
@@ -887,60 +885,6 @@ const ModelController = {
           },
         },
       });
-
-      // Check the status of the associated order
-      const parentModel = await prisma.models.findUnique({
-        where: {
-          Id: +id,
-        },
-        include: {
-          Order: true,
-        },
-      });
-
-      const orderStatus = parentModel.Order.Status;
-      if (parentModel && orderStatus === "ONGOING" || orderStatus === "ONHOLD") {
-        const runningStatus = orderStatus === "ONGOING" ? "RUNNING" : "PAUSED";
-
-        // Update the parent model RunningStatus to "RUNNING"
-        await prisma.models.update({
-          where: {
-            Id: +id,
-          },
-          data: {
-            RunningStatus: runningStatus,
-          },
-        });
-
-        // Update only the newly created model variant's status to "TODO"
-        await prisma.modelVarients.update({
-          where: {
-            Id: newVariant.Id,
-          },
-          data: {
-            Status: "TODO",
-            RunningStatus: runningStatus,
-          },
-        });
-
-        // Update the tracking model associated with the new variant to "TODO"
-        await prisma.trakingModels.updateMany({
-          where: {
-            ModelVariantId: newVariant.Id,
-            MainStatus: "AWAITING",
-          },
-          data: {
-            MainStatus: "TODO",
-            StartTime: new Date(),
-          },
-        });
-
-        return res.status(201).send({
-          status: 201,
-          message: "Model variant created & started successfully!",
-          data: { Id: newVariant.Id },
-        });
-      }
 
       return res.status(201).send({
         status: 201,
@@ -1276,7 +1220,7 @@ const ModelController = {
   holdModel: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const { reasonText } = req.body;
+    const { stopData } = req.body;
 
     try {
       const model = await prisma.models.findUnique({
@@ -1285,7 +1229,7 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "RUNNING",
+          RunningStatus: "ONGOING",
         },
       });
 
@@ -1306,8 +1250,8 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "PAUSED",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1325,10 +1269,37 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "PAUSED",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
         },
       });
+
+
+      // Update the RunningStatus of all related model Trakinng to PAUSED
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              ModelId: +id,
+            },
+          },
+        },
+      });
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONHOLD",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
@@ -1349,7 +1320,7 @@ const ModelController = {
   restartModel: async (req, res, next) => {
     const id = req.params.id; // Model ID
     const userId = req.userId;
-    const { reasonText } = req.body;
+    const { stopData } = req.body;
 
     try {
       const model = await prisma.models.findUnique({
@@ -1358,7 +1329,7 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "PAUSED",
+          RunningStatus: "ONHOLD",
         },
       });
 
@@ -1379,8 +1350,8 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
-          ReasonText: reasonText,
+          RunningStatus: "ONGOING",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1389,7 +1360,7 @@ const ModelController = {
         },
       });
 
-      // Update the RunningStatus of all related model variants to RUNNING
+      // Update the RunningStatus of all related model variants to ONGOING
       await prisma.modelVarients.updateMany({
         where: {
           ModelId: +id,
@@ -1398,10 +1369,36 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
-          ReasonText: reasonText,
+          RunningStatus: "ONGOING",
+          StopData: stopData,
         },
       });
+
+      // Update the RunningStatus of all related model Trakinng to ONGOING
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              ModelId: +id,
+            },
+          },
+        },
+      });
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
@@ -1422,7 +1419,7 @@ const ModelController = {
   holdModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
-    const { reasonText } = req.body;
+    const { stopData } = req.body;
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1431,7 +1428,7 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "RUNNING",
+          RunningStatus: "ONGOING",
         },
       });
 
@@ -1452,8 +1449,8 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "PAUSED",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1461,6 +1458,31 @@ const ModelController = {
           },
         },
       });
+
+      // Update the RunningStatus of all related model Trakinng to PAUSED
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+              ModelVariantId: +id,
+          },
+        },
+      });
+
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONHOLD",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
@@ -1481,7 +1503,7 @@ const ModelController = {
   restartModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
-    const { reasonText } = req.body;
+    const { stopData } = req.body;
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1490,7 +1512,7 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "PAUSED",
+          RunningStatus: "ONHOLD",
         },
       });
 
@@ -1502,7 +1524,7 @@ const ModelController = {
         });
       }
 
-      // Update the model variant status to RUNNING
+      // Update the model variant status to ONGOING
       await prisma.modelVarients.update({
         where: {
           Id: +id,
@@ -1511,8 +1533,8 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
-          ReasonText: reasonText,
+          RunningStatus: "ONGOING",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1520,6 +1542,30 @@ const ModelController = {
           },
         },
       });
+      // Update the RunningStatus of all related model Trakinng to ONGOING
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            ModelVariantId: +id,
+          },
+        },
+      });
+
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
@@ -2475,7 +2521,7 @@ const ModelController = {
         });
       }
 
-      if (order.Status === "COMPLETED") {
+      if (order.RunningStatus === "COMPLETED") {
         return res.status(405).send({
           status: 405,
           message: "Order already COMPLETED. Can't add new models!",
@@ -2525,17 +2571,6 @@ const ModelController = {
         });
 
         console.log(colorNameToIdMap);
-
-        // const colorNameToIdMap = {
-        //   'White': 3,
-        //   'black': 2,
-        //   'oil': 7,
-        //   'drunken': 8,
-        //   'iron': 11,
-        //   'navyBlue': 14,
-        //   'SilverMons': 15,
-        //   'feathery': 16
-        // };
 
         const stageIds = Stages.split("-").map(stage => stageCodeToIdMap[stage]);
 

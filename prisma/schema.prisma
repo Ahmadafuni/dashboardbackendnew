@@ -35,12 +35,6 @@ enum MainStatus {
   CHECKING
 }
 
-enum RunningStatus {
-  RUNNING
-  PAUSED
-  COMPLETED
-}
-
 enum MovementType {
   INCOMING
   OUTGOING
@@ -131,7 +125,8 @@ model Collections {
   IsArchived     Boolean      @default(false)
   Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
   AuditId        Int          @unique
-  Status         Status?      @default(PENDING)
+  RunningStatus  Status?      @default(PENDING)
+  StopData       String?
   Orders         Orders[]
 }
 
@@ -144,6 +139,8 @@ model Colors {
   AuditId           Int                 @unique
   OrderDetailColors OrderDetailColors[]
   ModelVarients     ModelVarients[]
+  ParentMaterials   ParentMaterials[]
+  ChildMaterials    ChildMaterials[]
 }
 
 model Departments {
@@ -223,6 +220,8 @@ model ParentMaterials {
   AuditId                Int                @unique
   ChildMaterials         ChildMaterials[]
   MaterialMovement       MaterialMovement[]
+  Color                  Colors?            @relation(fields: [ColorId], references: [Id])
+  ColorId                Int?
 }
 
 model ChildMaterials {
@@ -239,6 +238,8 @@ model ChildMaterials {
   Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
   AuditId          Int
   MaterialMovement MaterialMovement[]
+  Color            Colors?            @relation(fields: [ColorId], references: [Id])
+  ColorId          Int?
 }
 
 model MaterialMovement {
@@ -306,9 +307,8 @@ model Models {
   PrintName                String?
   PrintLocation            String?
   Description              String?
-  Status                   MainStatus                 @default(AWAITING)
-  RunningStatus            RunningStatus              @default(RUNNING)
-  ReasonText               String?
+  RunningStatus            Status?                    @default(PENDING)
+  StopData                 String?
   Images                   String?
   Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
   AuditId                  Int                        @unique
@@ -321,9 +321,9 @@ model ModelVarients {
   Id            Int             @id @default(autoincrement())
   Model         Models          @relation(fields: [ModelId], references: [Id])
   ModelId       Int
-  Status        MainStatus      @default(AWAITING)
-  RunningStatus RunningStatus   @default(RUNNING)
-  ReasonText    String?
+  MainStatus    MainStatus      @default(AWAITING)
+  RunningStatus Status?         @default(PENDING)
+  StopData      String?
   Color         Colors          @relation(fields: [ColorId], references: [Id])
   ColorId       Int
   Sizes         String
@@ -396,20 +396,20 @@ model OrderDetailTemplateTypes {
 }
 
 model Orders {
-  Id           Int          @id @default(autoincrement())
-  OrderName    String       @db.VarChar(256)
-  OrderNumber  String       @unique @db.VarChar(20)
-  DeadlineDate DateTime
-  Collection   Collections  @relation(fields: [CollectionId], references: [Id])
-  CollectionId Int
-  Quantity     Int
-  Status       Status?      @default(PENDING)
-  ReasonText   String?
-  Description  String?
-  FilePath     String?
-  Audit        AuditRecords @relation(fields: [AuditId], references: [Id])
-  AuditId      Int          @unique
-  Models       Models[]
+  Id            Int          @id @default(autoincrement())
+  OrderName     String       @db.VarChar(256)
+  OrderNumber   String       @unique @db.VarChar(20)
+  DeadlineDate  DateTime
+  Collection    Collections  @relation(fields: [CollectionId], references: [Id])
+  CollectionId  Int
+  Quantity      Int
+  RunningStatus Status?      @default(PENDING)
+  StopData      String?
+  Description   String?
+  FilePath      String?
+  Audit         AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId       Int          @unique
+  Models        Models[]
 }
 
 model ProductCatalogCategoryOne {
@@ -586,6 +586,8 @@ model TrakingModels {
   StartTime         DateTime?
   EndTime           DateTime?
   MainStatus        MainStatus                @default(AWAITING)
+  RunningStatus     Status?                   @default(PENDING)
+  StopData          String?
   QuantityReceived  Json?
   QuantityDelivered Json?
   DamagedItem       Json?

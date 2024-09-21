@@ -8,7 +8,7 @@ const OrderController = {
       description,
       deadline,
       quantity,
-      reasonText,
+      stopData,
     } = req.body;
     const file = req.file;
     const userId = req.userId;
@@ -26,7 +26,7 @@ const OrderController = {
           },
           Quantity: +quantity,
           Description: description,
-          ReasonText: reasonText,
+          StopData: stopData,
           DeadlineDate: new Date(deadline),
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
@@ -76,9 +76,9 @@ const OrderController = {
           Description: true,
           DeadlineDate: true,
           Quantity: true,
-          ReasonText: true,
           FilePath: true,
-          Status: true,
+          RunningStatus: true,
+          StopData: true
         },
       });
       // Return response
@@ -127,7 +127,8 @@ const OrderController = {
           orderName: order.OrderName,
           quantity: order.Quantity.toString(),
           deadline: order.DeadlineDate.toISOString().split("T")[0],
-          reasonText: order.reasonText,
+          runningStatus: order.RunningStatus,
+          stopData: order.StopData,
         },
       });
     } catch (error) {
@@ -246,7 +247,7 @@ const OrderController = {
       description,
       deadline,
       quantity,
-      reasonText,
+      stopData,
     } = req.body;
     const file = req.file;
     const id = parseInt(req.params.id);
@@ -276,7 +277,7 @@ const OrderController = {
           Quantity: +quantity,
           Description: description,
           DeadlineDate: new Date(deadline),
-          ReasonText: reasonText,
+          StopData: stopData,
           FilePath: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : isThere.FilePath,
@@ -326,7 +327,8 @@ const OrderController = {
             OrderNumber: true,
             OrderDate: true,
             TotalAmount: true,
-            ReasonText: true,
+            RunningStatus: true,
+            StopData: true,
           },
         })
         .then((orders) =>
@@ -371,7 +373,7 @@ const OrderController = {
           OrderNumber: true,
           OrderDate: true,
           Status: true,
-          ReasonText: true,
+          StopData: true,
           Season: {
             select: {
               SeasonName: true,
@@ -491,8 +493,8 @@ const OrderController = {
           OrderNumber: true,
           OrderDate: true,
           TotalAmount: true,
-          MainStatus: true,
-          ReasonText: true,
+          RunningStatus: true,
+          StopData: true,
           Season: {
             select: {
               Id: true,
@@ -520,6 +522,7 @@ const OrderController = {
   startOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
+    const stopData =req.body;
     try {
       // Find the order and ensure it exists and is not started
       const order = await prisma.orders.findUnique({
@@ -528,7 +531,7 @@ const OrderController = {
           Audit: {
             IsDeleted: false,
           },
-          Status: "PENDING",
+          RunningStatus: "PENDING",
         },
       });
       if (!order) {
@@ -584,7 +587,9 @@ const OrderController = {
           Id: +id,
         },
         data: {
-          Status: "ONGOING",
+          RunningStatus: "ONGOING",
+          // To store the start time
+          StopData: stopData,
           Audit: {
             update: {
               data: {
@@ -604,7 +609,8 @@ const OrderController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
+          RunningStatus: "ONGOING",
+          StopData: stopData,
         },
       });
 
@@ -617,10 +623,11 @@ const OrderController = {
           Model: {
             OrderId: +id,
           },
-          Status: "AWAITING",
+          MainStatus: "AWAITING",
         },
         data: {
-          Status: "TODO",
+          MainStatus: "TODO",
+          RunningStatus: "ONGOING",
         },
       });
 
@@ -675,7 +682,7 @@ const OrderController = {
   holdOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const { reasonText } = req.body;
+    const { stopData } = req.body;
 
     try {
       const order = await prisma.orders.findUnique({
@@ -684,7 +691,7 @@ const OrderController = {
           Audit: {
             IsDeleted: false,
           },
-          Status: "ONGOING",
+          RunningStatus: "ONGOING",
         },
       });
 
@@ -735,8 +742,8 @@ const OrderController = {
           },
         },
         data: {
-          Status: "ONHOLD",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -754,8 +761,8 @@ const OrderController = {
           },
         },
         data: {
-          RunningStatus: "PAUSED",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
         },
       });
 
@@ -770,10 +777,35 @@ const OrderController = {
           },
         },
         data: {
-          RunningStatus: "PAUSED",
-          ReasonText: reasonText,
+          RunningStatus: "ONHOLD",
+          StopData: stopData,
         },
       });
+
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              OrderId: +id,
+            },
+          },
+        },
+      });
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONHOLD",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
@@ -794,6 +826,7 @@ const OrderController = {
   restartOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
+    const { stopData } = req.body;
     try {
       const order = await prisma.orders.findFirst({
         where: {
@@ -801,7 +834,7 @@ const OrderController = {
           Audit: {
             IsDeleted: false,
           },
-          Status: "ONHOLD",
+          RunningStatus: "ONHOLD",
         },
       });
 
@@ -852,7 +885,8 @@ const OrderController = {
           },
         },
         data: {
-          Status: "ONGOING",
+          RunningStatus: "ONGOING",
+          StopData: stopData,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -870,7 +904,8 @@ const OrderController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
+          RunningStatus: "ONGOING",
+          StopData: stopData,
         },
       });
 
@@ -885,9 +920,35 @@ const OrderController = {
           },
         },
         data: {
-          RunningStatus: "RUNNING",
+          RunningStatus: "ONGOING",
+          StopData: stopData,
         },
       });
+
+      const trackings = await prisma.trakingModels.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          ModelVariant: {
+            Model: {
+              OrderId: +id,
+            },
+          },
+        },
+      });
+      // Update trackings status
+      for (let i = 0; i < trackings.length; i++) {
+        await prisma.trakingModels.update({
+          where: {
+            Id: trackings[i].Id,
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            StopData: stopData,
+          },
+        });
+      }
 
       return res.status(200).send({
         status: 200,
