@@ -1769,7 +1769,6 @@ const ModelController = {
               Status: status,
             },
           });
-
           const colorIds = [...new Set(count.map((item) => item.ColorId))];
           const colors = await prisma.colors.findMany({
             where: {
@@ -2513,16 +2512,30 @@ const ModelController = {
           PA: 25,
         };
 
-        const colorNameToIdMap = {
-          'White': 3,
-          'black': 2,
-          'oil': 7,
-          'drunken': 8,
-          'iron': 11,
-          'navyBlue': 14,
-          'SilverMons': 15,
-          'feathery': 16
-        };
+        const colorNameToIdMap = await prisma.colors.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          select: {
+            Id: true,
+            ColorName: true,
+          },
+        });
+
+        console.log(colorNameToIdMap);
+
+        // const colorNameToIdMap = {
+        //   'White': 3,
+        //   'black': 2,
+        //   'oil': 7,
+        //   'drunken': 8,
+        //   'iron': 11,
+        //   'navyBlue': 14,
+        //   'SilverMons': 15,
+        //   'feathery': 16
+        // };
 
         const stageIds = Stages.split("-").map(stage => stageCodeToIdMap[stage]);
 
@@ -2638,15 +2651,18 @@ const ModelController = {
         }
 
         for (const [colorKey, colorValue] of Object.entries(colors)) {
-          const colorId = colorNameToIdMap[colorKey.trim()];
+          const colorIdObj = colorNameToIdMap.find(
+            (colorObj) => colorObj.ColorName.trim().toLowerCase() === colorKey.trim().toLowerCase()
+          );
 
-          if (!colorId) {
+          if (!colorIdObj) {
             return res.status(400).send({
               status: 400,
               message: `Color '${colorKey}' not recognized.`,
               data: {},
             });
           }
+          const colorId = colorIdObj.Id; 
 
           const isThere = await prisma.modelVarients.findFirst({
             where: {
@@ -2666,7 +2682,6 @@ const ModelController = {
             });
           }
 
-          // جلب المراحل التصنيعية للموديل
           const mStages = await prisma.manufacturingStagesModel.findMany({
             where: {
               ModelId: createdModel.Id,
@@ -2687,6 +2702,13 @@ const ModelController = {
             });
           }
 
+          const sizesArray = scale.split("-").map(size => {
+            const value = (colorValue / scale.split("-").length).toFixed(2); 
+            return { size: size.trim(), value: value };
+          });
+          
+          const sizes = JSON.stringify(sizesArray);
+
           await prisma.modelVarients.create({
             data: {
               Model: {
@@ -2699,7 +2721,7 @@ const ModelController = {
                   Id: +colorId,
                 },
               },
-              Sizes: JSON.stringify(scale.split("-")),
+              Sizes: sizes,
               Quantity: colorValue,
               Audit: {
                 create: {
@@ -2711,7 +2733,7 @@ const ModelController = {
                 create: {
                   CurrentStage: {
                     connect: {
-                      Id: mStages[0].Id, // ابدأ بأول مرحلة
+                      Id: mStages[0].Id,
                     },
                   },
                   NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // إذا كانت المرحلة التالية موجودة
@@ -2741,6 +2763,75 @@ const ModelController = {
       });
     }
   },
+
+  getStagesWithDetailsByModelVariantId :async (req , res) => {
+
+
+    try {
+      const { modelVariantId } = req.params;
+  
+      // التأكد من أن المعرف هو رقم صالح
+      if (!modelVariantId || isNaN(Number(modelVariantId))) {
+        return res.status(400).json({ error: 'ModelVariantId is required and must be a valid number' });
+      }
+  
+      // جلب جميع السجلات التي لها نفس ModelVariantId
+      const trackingRecords = await prisma.trakingModels.findMany({
+        where: {
+          ModelVariantId: Number(modelVariantId),
+        },
+        select: {
+          CurrentStage: {
+            select: {
+              StageName: true,
+            },
+          },
+          StartTime: true,
+          EndTime: true,
+          QuantityReceived: true,
+          QuantityDelivered: true,
+        },
+      });
+  
+      // التحقق مما إذا كانت السجلات موجودة
+      if (trackingRecords.length === 0) {
+        return res.status(404).json({ error: 'No stages found for the given ModelVariantId' });
+      }
+  
+      // استخراج تفاصيل المراحل
+      const stagesWithDetails = trackingRecords.map(record => {
+        const startTime = record.StartTime ? new Date(record.StartTime) : null;
+        const endTime = record.EndTime ? new Date(record.EndTime) : null;
+  
+        // حساب المدة الزمنية بين StartTime و EndTime
+        let duration = null;
+        if (startTime && endTime) {
+          const durationInMilliseconds = endTime.getTime() - startTime.getTime();
+          const durationInHours = durationInMilliseconds / (1000 * 60 * 60); // تحويل إلى ساعات
+          duration = durationInHours;
+        }
+  
+        return {
+          stageName: record.CurrentStage.StageName,
+          startTime: record.StartTime,
+          endTime: record.EndTime,
+          quantityReceived: record.QuantityReceived,
+          quantityDelivered: record.QuantityDelivered,
+          duration, // المدة الزمنية بالساعات
+        };
+      });
+  
+      // إعادة الرد مع تفاصيل المراحل
+      res.status(200).json({ stages: stagesWithDetails });
+  
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'An error occurred while fetching stages' });
+    }
+
+  },
+
+
 };
 
 

@@ -20,7 +20,7 @@ router.get("/mokks", async (req, res) => {
       Status: true,
     },
   });
-
+  
   const groupedModels = models.reduce((acc, model) => {
     if (!acc[model.OrderId]) {
       acc[model.OrderId] = [];
@@ -234,6 +234,12 @@ router.post(
   "/addFileXsl/:id" ,
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
    ModelController.addFileXsl
+);
+
+
+// router test
+router.get("/testModel/:modelVariantId" ,
+  ModelController.getStagesWithDetailsByModelVariantId 
 );
 
 

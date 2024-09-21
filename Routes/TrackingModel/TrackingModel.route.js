@@ -4,7 +4,6 @@ import TrackingModelController from "../../Controllers/TrackingModel/TrackingMod
 
 const router = express.Router();
 
-router.get("/current/dep", TrackingModelController.getAllTrackingByDepartment);
 
 router.get(
   "/start/variant/:id",
@@ -103,6 +102,16 @@ router.get(
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   TrackingModelController.getAllTracking
 );
+
+router.get("/current/dep", TrackingModelController.getAllTrackingByDepartment);
+
+
+router.get("/model/details/dept" , TrackingModelController.getModelDetailsDepartment);
+
+router.get("/model/details/mang" , TrackingModelController.getModelDetailsManager);
+
+
+
 
 const TrackingModelRoute = router;
 export { TrackingModelRoute };
