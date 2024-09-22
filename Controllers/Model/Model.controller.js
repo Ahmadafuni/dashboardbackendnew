@@ -1220,7 +1220,15 @@ const ModelController = {
   holdModel: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const { stopData } = req.body;
+    const stopDataFromBody = req.body.stopData;
+
+    const newStopData = {
+      ...stopDataFromBody,
+      userId: req.userId,
+      userDepartmentId: req.userDepartmentId,
+      StartStopTime: new Date(),
+      EndStopTime: null,
+    };
 
     try {
       const model = await prisma.models.findUnique({
@@ -1240,6 +1248,18 @@ const ModelController = {
           data: {},
         });
       }
+      let stopDataArray = [];
+      if (model.StopData) {
+        try {
+          stopDataArray = Array.isArray(model.StopData)
+              ? model.StopData
+              : JSON.parse(model.StopData); // Ensure it's an array
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          stopDataArray = [];
+        }
+      }
+      stopDataArray.push(newStopData);
 
       // Update the model status to PAUSED
       await prisma.models.update({
@@ -1251,7 +1271,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1270,7 +1290,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
@@ -1283,7 +1303,7 @@ const ModelController = {
           },
           ModelVariant: {
             Model: {
-              ModelId: +id,
+              Id: +id,
             },
           },
         },
@@ -1296,7 +1316,7 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONHOLD",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -1320,7 +1340,7 @@ const ModelController = {
   restartModel: async (req, res, next) => {
     const id = req.params.id; // Model ID
     const userId = req.userId;
-    const { stopData } = req.body;
+    const userDepartmentId= req.userDepartmentId;
 
     try {
       const model = await prisma.models.findUnique({
@@ -1341,6 +1361,52 @@ const ModelController = {
         });
       }
 
+      const order = await prisma.orders.findUnique({
+        where: {
+          Id: model.OrderId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if the parent order is ONHOLD (paused)
+      if (order.RunningStatus === "ONHOLD") {
+        return res.status(400).send({
+          status: 400,
+          message: "We cannot start the model; its parent order is on hold!",
+          data: {},
+        });
+      }
+
+      let stopDataArray = [];
+      if (model.StopData) {
+        try {
+          stopDataArray = typeof model.StopData === 'string'
+              ? JSON.parse(model.StopData)
+              : model.StopData;
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          return res.status(500).send({
+            status: 500,
+            message: "Invalid StopData format. Please check the data.",
+            data: {},
+          });
+        }
+      }
+      if (stopDataArray.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No stop data found to update.",
+          data: {},
+        });
+      }
+
+      const latestStopData = stopDataArray[stopDataArray.length - 1];
+      latestStopData.EndStopTime = new Date();
+      latestStopData.userId =userId;
+      latestStopData.userDepartmentId = userDepartmentId;
+
       // Update the model status to RUNNING
       await prisma.models.update({
         where: {
@@ -1351,7 +1417,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1370,7 +1436,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
@@ -1382,7 +1448,7 @@ const ModelController = {
           },
           ModelVariant: {
             Model: {
-              ModelId: +id,
+              Id: +id,
             },
           },
         },
@@ -1395,7 +1461,7 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONGOING",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -1419,7 +1485,15 @@ const ModelController = {
   holdModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
-    const { stopData } = req.body;
+    const stopDataFromBody = req.body.stopData;
+
+    const newStopData = {
+      ...stopDataFromBody,
+      userId: req.userId,
+      userDepartmentId: req.userDepartmentId,
+      StartStopTime: new Date(),
+      EndStopTime: null,
+    };
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1440,6 +1514,19 @@ const ModelController = {
         });
       }
 
+      let stopDataArray = [];
+      if (modelVariant.StopData) {
+        try {
+          stopDataArray = Array.isArray(modelVariant.StopData)
+              ? modelVariant.StopData
+              : JSON.parse(modelVariant.StopData); // Ensure it's an array
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          stopDataArray = [];
+        }
+      }
+      stopDataArray.push(newStopData);
+
       // Update the model variant status to PAUSED
       await prisma.modelVarients.update({
         where: {
@@ -1450,7 +1537,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1466,7 +1553,7 @@ const ModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
-              ModelVariantId: +id,
+            Id: +id,
           },
         },
       });
@@ -1479,7 +1566,7 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONHOLD",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -1503,7 +1590,7 @@ const ModelController = {
   restartModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
-    const { stopData } = req.body;
+    const userDepartmentId= req.userDepartmentId;
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1524,6 +1611,52 @@ const ModelController = {
         });
       }
 
+      const model = await prisma.models.findUnique({
+        where: {
+          Id: modelVariant.ModelId,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+      });
+
+      // Check if the parent order is ONHOLD (paused)
+      if (model.RunningStatus === "ONHOLD") {
+        return res.status(400).send({
+          status: 400,
+          message: "We cannot start the model Variant; its parent model is on hold!",
+          data: {},
+        });
+      }
+
+      let stopDataArray = [];
+      if (modelVariant.StopData) {
+        try {
+          stopDataArray = typeof modelVariant.StopData === 'string'
+              ? JSON.parse(modelVariant.StopData)
+              : modelVariant.StopData;
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          return res.status(500).send({
+            status: 500,
+            message: "Invalid StopData format. Please check the data.",
+            data: {},
+          });
+        }
+      }
+      if (stopDataArray.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No stop data found to update.",
+          data: {},
+        });
+      }
+
+      const latestStopData = stopDataArray[stopDataArray.length - 1];
+      latestStopData.EndStopTime = new Date();
+      latestStopData.userId =userId;
+      latestStopData.userDepartmentId = userDepartmentId;
+
       // Update the model variant status to ONGOING
       await prisma.modelVarients.update({
         where: {
@@ -1534,7 +1667,7 @@ const ModelController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -1549,7 +1682,7 @@ const ModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
-            ModelVariantId: +id,
+            Id: +id,
           },
         },
       });
@@ -1562,7 +1695,7 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONGOING",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -2800,8 +2933,6 @@ const ModelController = {
   },
 
   getStagesWithDetailsByModelVariantId :async (req , res) => {
-
-
     try {
       const { modelVariantId } = req.params;
   
@@ -2865,7 +2996,6 @@ const ModelController = {
     }
 
   },
-
 
 };
 

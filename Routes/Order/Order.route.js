@@ -43,17 +43,17 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.searchOrder
 );
 router.get(
   "/start/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.startOrder
 );
 router.put(
   "/hold/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
   OrderController.holdOrder
 );
 router.get(

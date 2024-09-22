@@ -522,7 +522,6 @@ const OrderController = {
   startOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const stopData =req.body;
     try {
       // Find the order and ensure it exists and is not started
       const order = await prisma.orders.findUnique({
@@ -588,8 +587,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          // To store the start time
-          StopData: stopData,
+          StartTime: new Date(),
           Audit: {
             update: {
               data: {
@@ -610,7 +608,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StartTime: new Date(),
         },
       });
 
@@ -682,7 +680,15 @@ const OrderController = {
   holdOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const { stopData } = req.body;
+    const stopDataFromBody = req.body.stopData;
+
+    const newStopData = {
+      ...stopDataFromBody,
+      userId: req.userId,
+      userDepartmentId: req.userDepartmentId,
+      StartStopTime: new Date(),
+      EndStopTime: null,
+    };
 
     try {
       const order = await prisma.orders.findUnique({
@@ -733,6 +739,19 @@ const OrderController = {
         }
       }
 
+      let stopDataArray = [];
+      if (order.StopData) {
+        try {
+          stopDataArray = Array.isArray(order.StopData)
+              ? order.StopData
+              : JSON.parse(order.StopData); // Ensure it's an array
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          stopDataArray = [];
+        }
+      }
+      stopDataArray.push(newStopData);
+
       // Update the order status to ONHOLD
       await prisma.orders.update({
         where: {
@@ -743,7 +762,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -762,7 +781,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
@@ -778,7 +797,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONHOLD",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
@@ -802,7 +821,7 @@ const OrderController = {
           },
           data: {
             RunningStatus: "ONHOLD",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -826,7 +845,8 @@ const OrderController = {
   restartOrder: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
-    const { stopData } = req.body;
+    const userDepartmentId= req.userDepartmentId;
+
     try {
       const order = await prisma.orders.findFirst({
         where: {
@@ -846,37 +866,35 @@ const OrderController = {
         });
       }
 
-      // Fetch all models associated with the order
-      const models = await prisma.models.findMany({
-        where: {
-          OrderId: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      // Check if every model has stages defined
-      for (const model of models) {
-        const stagesCount = await prisma.manufacturingStagesModel.count({
-          where: {
-            ModelId: model.Id,
-            Audit: {
-              IsDeleted: false,
-            },
-          },
-        });
-
-        if (stagesCount === 0) {
-          return res.status(400).send({
-            status: 400,
-            message: `Model ${model.ModelName} has no manufacturing stages defined. Please define stages before starting.`,
+      let stopDataArray = [];
+      if (order.StopData) {
+        try {
+          stopDataArray = typeof order.StopData === 'string'
+              ? JSON.parse(order.StopData)
+              : order.StopData;
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          return res.status(500).send({
+            status: 500,
+            message: "Invalid StopData format. Please check the data.",
             data: {},
           });
         }
       }
 
-      // Update the order status to ONGOING
+      if (stopDataArray.length === 0) {
+        return res.status(400).send({
+          status: 400,
+          message: "No stop data found to update.",
+          data: {},
+        });
+      }
+
+      const latestStopData = stopDataArray[stopDataArray.length - 1];
+      latestStopData.EndStopTime = new Date();
+      latestStopData.userId =userId;
+      latestStopData.userDepartmentId = userDepartmentId;
+
       await prisma.orders.update({
         where: {
           Id: +id,
@@ -886,7 +904,7 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
           Audit: {
             update: {
               UpdatedById: userId,
@@ -895,7 +913,7 @@ const OrderController = {
         },
       });
 
-      // Update the RunningStatus of all related models to RUNNING
+      // Update the RunningStatus of all related models to RUNNING and save StopData
       await prisma.models.updateMany({
         where: {
           OrderId: +id,
@@ -905,11 +923,11 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
-      // Update the RunningStatus of all related model variants to RUNNING
+      // Update the RunningStatus of all related model variants to RUNNING and save StopData
       await prisma.modelVarients.updateMany({
         where: {
           Model: {
@@ -921,10 +939,11 @@ const OrderController = {
         },
         data: {
           RunningStatus: "ONGOING",
-          StopData: stopData,
+          StopData: stopDataArray,
         },
       });
 
+      // Update tracking status to ONGOING and save StopData
       const trackings = await prisma.trakingModels.findMany({
         where: {
           Audit: {
@@ -937,7 +956,7 @@ const OrderController = {
           },
         },
       });
-      // Update trackings status
+
       for (let i = 0; i < trackings.length; i++) {
         await prisma.trakingModels.update({
           where: {
@@ -945,7 +964,7 @@ const OrderController = {
           },
           data: {
             RunningStatus: "ONGOING",
-            StopData: stopData,
+            StopData: stopDataArray,
           },
         });
       }
@@ -956,14 +975,14 @@ const OrderController = {
         data: {},
       });
     } catch (error) {
-      // Server error or unsolved error
-      console.error(error);
+      console.error("Error restarting the order:", error);
       return res.status(500).send({
         status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }
   },
+
 };
 export default OrderController;

@@ -126,7 +126,9 @@ model Collections {
   Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
   AuditId        Int          @unique
   RunningStatus  Status?      @default(PENDING)
-  StopData       String?
+  StopData       Json?
+  StartTime      DateTime?
+  EndTime        DateTime?
   Orders         Orders[]
 }
 
@@ -308,7 +310,9 @@ model Models {
   PrintLocation            String?
   Description              String?
   RunningStatus            Status?                    @default(PENDING)
-  StopData                 String?
+  StopData                 Json?
+  StartTime                DateTime?
+  EndTime                  DateTime?
   Images                   String?
   Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
   AuditId                  Int                        @unique
@@ -323,7 +327,7 @@ model ModelVarients {
   ModelId       Int
   MainStatus    MainStatus      @default(AWAITING)
   RunningStatus Status?         @default(PENDING)
-  StopData      String?
+  StopData      Json?
   Color         Colors          @relation(fields: [ColorId], references: [Id])
   ColorId       Int
   Sizes         String
@@ -404,7 +408,9 @@ model Orders {
   CollectionId  Int
   Quantity      Int
   RunningStatus Status?      @default(PENDING)
-  StopData      String?
+  StopData      Json?
+  StartTime     DateTime?
+  EndTime       DateTime?
   Description   String?
   FilePath      String?
   Audit         AuditRecords @relation(fields: [AuditId], references: [Id])
@@ -587,7 +593,7 @@ model TrakingModels {
   EndTime           DateTime?
   MainStatus        MainStatus                @default(AWAITING)
   RunningStatus     Status?                   @default(PENDING)
-  StopData          String?
+  StopData          Json?
   QuantityReceived  Json?
   QuantityDelivered Json?
   DamagedItem       Json?
