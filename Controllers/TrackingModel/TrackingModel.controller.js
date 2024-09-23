@@ -19,6 +19,7 @@ const TrackingModelController = {
     const userId = req.userId;
     const variantId = +req.params.id;
     const userDepartmentId = req.userDepartmentId;
+    console.log("variantId",variantId);
     try {
       await prisma.modelVarients.update({
         where: {
@@ -52,7 +53,6 @@ const TrackingModelController = {
           },
         },
       });
-
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
@@ -60,6 +60,7 @@ const TrackingModelController = {
         data: {
           MainStatus: "INPROGRESS",
           RunningStatus: "ONGOING",
+          StartTime: new Date(),
           Audit: {
             update: {
               data: {
@@ -76,6 +77,7 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -739,11 +741,7 @@ const TrackingModelController = {
   },
   
   getAllTrackingByDepartment: async (req, res, next) => {
-    const userDepartmentId = parseInt(req.query.depId, 10); // Convert depId to an integer
-    if (isNaN(userDepartmentId)) {
-      return res.status(400).send({ message: 'Invalid department ID provided.' });
-    }
-    console.log("userDepartmentId",userDepartmentId);
+    const userDepartmentId= req.userDepartmentId;
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
 
@@ -1847,11 +1845,8 @@ const TrackingModelController = {
   },
 
   getModelDetailsDepartment: async (req, res) => {
-    const userDepartmentId = parseInt(req.query.depId, 10);
-    if (isNaN(userDepartmentId)) {
-      return res.status(400).send({ message: 'Invalid department ID provided.' });
-    }
-    
+    const userDepartmentId= req.userDepartmentId;
+
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
   
@@ -2132,7 +2127,6 @@ const TrackingModelController = {
   },
 
   getModelDetailsManager: async (req, res) => {
-    
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     

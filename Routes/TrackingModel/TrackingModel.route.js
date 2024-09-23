@@ -117,15 +117,34 @@ router.get(
   TrackingModelController.getAllTracking
 );
 
-router.get("/current/dep", TrackingModelController.getAllTrackingByDepartment);
+router.get("/current/dep",
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "DRAWING",
+        "WAREHOUSEMANAGER",
+    ]),
+    TrackingModelController.getAllTrackingByDepartment);
 
 
-router.get("/model/details/dept" , TrackingModelController.getModelDetailsDepartment);
+router.get("/model/details/dept" ,
+    verifyUser([
+        "FACTORYMANAGER",
+        "ENGINEERING",
+        "CUTTING",
+        "TAILORING",
+        "PRINTING",
+        "QUALITYASSURANCE",
+        "DRAWING",
+        "WAREHOUSEMANAGER",
+    ]),
+    TrackingModelController.getModelDetailsDepartment);
 
 router.get("/model/details/mang" , TrackingModelController.getModelDetailsManager);
-
-
-
 
 const TrackingModelRoute = router;
 export { TrackingModelRoute };

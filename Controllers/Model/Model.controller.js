@@ -1373,7 +1373,7 @@ const ModelController = {
       });
 
       // Check if the parent order is ONHOLD (paused)
-      if (order.RunningStatus === "ONHOLD") {
+        if (order.RunningStatus === "ONHOLD" || order.RunningStatus === "PENDING") {
         return res.status(400).send({
           status: 400,
           message: "We cannot start the model; its parent order is on hold!",
@@ -1398,7 +1398,7 @@ const ModelController = {
       }
 
       // If RunningStatus is ONHOLD
-      if (model.RunningStatus === "ONHOLD") {
+        if (model.RunningStatus === "ONHOLD") {
         if (stopDataArray.length === 0) {
           return res.status(400).send({
             status: 400,
@@ -1501,6 +1501,8 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONGOING",
+            MainStatus: "TODO",
+            StartTime: new Date(),
           },
         });
 
@@ -1525,6 +1527,7 @@ const ModelController = {
             },
             data: {
               RunningStatus: "ONGOING",
+              MainStatus: "TODO",
             },
           });
         }
@@ -1671,8 +1674,6 @@ const ModelController = {
         },
       });
 
-      console.log("id", id);
-      console.log("modelVariant", modelVariant);
       if (!modelVariant) {
         return res.status(405).send({
           status: 405,
@@ -1691,7 +1692,7 @@ const ModelController = {
       });
 
       // Check if the parent model is ONHOLD
-      if (model.RunningStatus === "ONHOLD") {
+      if (model.RunningStatus === "ONHOLD" || model.RunningStatus === "PENDING") {
         return res.status(400).send({
           status: 400,
           message: "We cannot start the model variant; its parent model is on hold!",
@@ -1784,6 +1785,7 @@ const ModelController = {
           },
           data: {
             RunningStatus: "ONGOING",
+            MainStatus: "TODO",
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -1811,6 +1813,7 @@ const ModelController = {
             },
             data: {
               RunningStatus: "ONGOING",
+              MainStatus: "TODO",
             },
           });
         }

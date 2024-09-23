@@ -650,7 +650,7 @@ const OrderController = {
           },
           data: {
             MainStatus: "TODO",
-            StartTime: new Date(),
+            RunningStatus: "ONGOING",
             Audit: {
               update: {
                 data: {
