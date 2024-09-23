@@ -859,7 +859,7 @@ const ModelController = {
               Id: +Color,
             },
           },
-          Sizes: JSON.stringify(Sizes),
+          Sizes: Sizes,
           Quantity: +Quantity,
           Audit: {
             create: {
