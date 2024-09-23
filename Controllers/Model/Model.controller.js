@@ -1340,7 +1340,7 @@ const ModelController = {
   restartModel: async (req, res, next) => {
     const id = req.params.id; // Model ID
     const userId = req.userId;
-    const userDepartmentId= req.userDepartmentId;
+    const userDepartmentId = req.userDepartmentId;
 
     try {
       const model = await prisma.models.findUnique({
@@ -1349,7 +1349,9 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "ONHOLD",
+          RunningStatus: {
+            in: ["ONHOLD", "PENDING"],
+          },
         },
       });
 
@@ -1394,81 +1396,145 @@ const ModelController = {
           });
         }
       }
-      if (stopDataArray.length === 0) {
-        return res.status(400).send({
-          status: 400,
-          message: "No stop data found to update.",
-          data: {},
-        });
-      }
 
-      const latestStopData = stopDataArray[stopDataArray.length - 1];
-      latestStopData.EndStopTime = new Date();
-      latestStopData.userId =userId;
-      latestStopData.userDepartmentId = userDepartmentId;
+      // If RunningStatus is ONHOLD
+      if (model.RunningStatus === "ONHOLD") {
+        if (stopDataArray.length === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: "No stop data found to update.",
+            data: {},
+          });
+        }
 
-      // Update the model status to RUNNING
-      await prisma.models.update({
-        where: {
-          Id: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        data: {
-          RunningStatus: "ONGOING",
-          StopData: stopDataArray,
-          Audit: {
-            update: {
-              UpdatedById: userId,
-            },
-          },
-        },
-      });
+        const latestStopData = stopDataArray[stopDataArray.length - 1];
+        latestStopData.EndStopTime = new Date();
+        latestStopData.userId = userId;
+        latestStopData.userDepartmentId = userDepartmentId;
 
-      // Update the RunningStatus of all related model variants to ONGOING
-      await prisma.modelVarients.updateMany({
-        where: {
-          ModelId: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        data: {
-          RunningStatus: "ONGOING",
-          StopData: stopDataArray,
-        },
-      });
-
-      // Update the RunningStatus of all related model Trakinng to ONGOING
-      const trackings = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Model: {
-              Id: +id,
-            },
-          },
-        },
-      });
-      // Update trackings status
-      for (let i = 0; i < trackings.length; i++) {
-        await prisma.trakingModels.update({
+        // Update the model status to ONGOING with StopData
+        await prisma.models.update({
           where: {
-            Id: trackings[i].Id,
+            Id: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            StopData: stopDataArray,
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+
+        // Update the RunningStatus of all related model variants to ONGOING with StopData
+        await prisma.modelVarients.updateMany({
+          where: {
+            ModelId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
           },
           data: {
             RunningStatus: "ONGOING",
             StopData: stopDataArray,
           },
         });
+
+        // Update the RunningStatus of all related model Trakinng to ONGOING with StopData
+        const trackings = await prisma.trakingModels.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Id: +id,
+              },
+            },
+          },
+        });
+
+        for (let i = 0; i < trackings.length; i++) {
+          await prisma.trakingModels.update({
+            where: {
+              Id: trackings[i].Id,
+            },
+            data: {
+              RunningStatus: "ONGOING",
+              StopData: stopDataArray,
+            },
+          });
+        }
+
+      } else if (model.RunningStatus === "PENDING") {
+        // If RunningStatus is PENDING, just update RunningStatus to ONGOING
+        await prisma.models.update({
+          where: {
+            Id: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            StartTime: new Date(),
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+
+        // Update the RunningStatus of all related model variants to ONGOING without StopData
+        await prisma.modelVarients.updateMany({
+          where: {
+            ModelId: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          data: {
+            RunningStatus: "ONGOING",
+          },
+        });
+
+        // Update the RunningStatus of all related model Trakinng to ONGOING without StopData
+        const trackings = await prisma.trakingModels.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Model: {
+                Id: +id,
+              },
+            },
+          },
+        });
+
+        for (let i = 0; i < trackings.length; i++) {
+          await prisma.trakingModels.update({
+            where: {
+              Id: trackings[i].Id,
+            },
+            data: {
+              RunningStatus: "ONGOING",
+            },
+          });
+        }
       }
 
       return res.status(200).send({
         status: 200,
-        message: "Model and its variants restarted successfully!",
+        message: model.RunningStatus === "ONHOLD"
+            ? "Model and its variants restarted successfully!"
+            : "Model and its variants started successfully!",
         data: {},
       });
     } catch (error) {
@@ -1590,7 +1656,7 @@ const ModelController = {
   restartModelVarient: async (req, res, next) => {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
-    const userDepartmentId= req.userDepartmentId;
+    const userDepartmentId = req.userDepartmentId;
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1599,10 +1665,14 @@ const ModelController = {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "ONHOLD",
+          RunningStatus: {
+            in: ["ONHOLD", "PENDING"],
+          },
         },
       });
 
+      console.log("id", id);
+      console.log("modelVariant", modelVariant);
       if (!modelVariant) {
         return res.status(405).send({
           status: 405,
@@ -1620,11 +1690,11 @@ const ModelController = {
         },
       });
 
-      // Check if the parent order is ONHOLD (paused)
+      // Check if the parent model is ONHOLD
       if (model.RunningStatus === "ONHOLD") {
         return res.status(400).send({
           status: 400,
-          message: "We cannot start the model Variant; its parent model is on hold!",
+          message: "We cannot start the model variant; its parent model is on hold!",
           data: {},
         });
       }
@@ -1644,67 +1714,116 @@ const ModelController = {
           });
         }
       }
-      if (stopDataArray.length === 0) {
-        return res.status(400).send({
-          status: 400,
-          message: "No stop data found to update.",
-          data: {},
-        });
-      }
 
-      const latestStopData = stopDataArray[stopDataArray.length - 1];
-      latestStopData.EndStopTime = new Date();
-      latestStopData.userId =userId;
-      latestStopData.userDepartmentId = userDepartmentId;
+      // Handle restart if RunningStatus is ONHOLD
+      if (modelVariant.RunningStatus === "ONHOLD") {
+        if (stopDataArray.length === 0) {
+          return res.status(400).send({
+            status: 400,
+            message: "No stop data found to update.",
+            data: {},
+          });
+        }
 
-      // Update the model variant status to ONGOING
-      await prisma.modelVarients.update({
-        where: {
-          Id: +id,
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        data: {
-          RunningStatus: "ONGOING",
-          StopData: stopDataArray,
-          Audit: {
-            update: {
-              UpdatedById: userId,
-            },
-          },
-        },
-      });
-      // Update the RunningStatus of all related model Trakinng to ONGOING
-      const trackings = await prisma.trakingModels.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          ModelVariant: {
-            Id: +id,
-          },
-        },
-      });
+        const latestStopData = stopDataArray[stopDataArray.length - 1];
+        latestStopData.EndStopTime = new Date();
+        latestStopData.userId = userId;
+        latestStopData.userDepartmentId = userDepartmentId;
 
-      // Update trackings status
-      for (let i = 0; i < trackings.length; i++) {
-        await prisma.trakingModels.update({
+        // Update the model variant status to ONGOING and StopData
+        await prisma.modelVarients.update({
           where: {
-            Id: trackings[i].Id,
+            Id: +id,
+            Audit: {
+              IsDeleted: false,
+            },
           },
           data: {
             RunningStatus: "ONGOING",
             StopData: stopDataArray,
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
           },
         });
+
+        // Update the RunningStatus of all related tracking models to ONGOING with StopData
+        const trackings = await prisma.trakingModels.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Id: +id,
+            },
+          },
+        });
+
+        for (let i = 0; i < trackings.length; i++) {
+          await prisma.trakingModels.update({
+            where: {
+              Id: trackings[i].Id,
+            },
+            data: {
+              RunningStatus: "ONGOING",
+              StopData: stopDataArray,
+            },
+          });
+        }
+
+      } else if (modelVariant.RunningStatus === "PENDING") {
+        // Handle start if RunningStatus is PENDING (no need to handle StopData)
+        await prisma.modelVarients.update({
+          where: {
+            Id: +id,
+            Audit: {
+              IsDeleted: false,
+            },
+          },
+          data: {
+            RunningStatus: "ONGOING",
+            Audit: {
+              update: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        });
+
+        // Update the RunningStatus of all related tracking models to ONGOING (no StopData needed)
+        const trackings = await prisma.trakingModels.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+            ModelVariant: {
+              Id: +id,
+            },
+          },
+        });
+
+        for (let i = 0; i < trackings.length; i++) {
+          await prisma.trakingModels.update({
+            where: {
+              Id: trackings[i].Id,
+            },
+            data: {
+              RunningStatus: "ONGOING",
+            },
+          });
+        }
       }
 
       return res.status(200).send({
         status: 200,
-        message: "Model variant restarted successfully!",
+        message: modelVariant.RunningStatus === "ONHOLD"
+            ? "Model variant restarted successfully!"
+            : "Model variant started successfully!",
         data: {},
       });
+
     } catch (error) {
       // Server error or unsolved error
       console.error(error);
