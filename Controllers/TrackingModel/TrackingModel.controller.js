@@ -368,10 +368,14 @@ const TrackingModelController = {
           Model: {
             ModelVarients: {
               some: {
-                Id: tracking.ModelVariantId,
+                TrakingModels: {
+                  some: {
+                    Id: tracking.Id, // Assuming tracking has the Id from TrackingModel
+                  },
+                },
+                Id: tracking.ModelVariantId, // To ensure the variant matches
               },
             },
-            Id: tracking.ModelVariantId,
           },
           Audit: {
             IsDeleted: false,
@@ -385,8 +389,6 @@ const TrackingModelController = {
       const currentStageIndex = mStages.findIndex(
         (e) => e.Id === tracking.CurrentStageId
       );
-      console.log("Tracking data:", tracking);
-      console.log("Manufacturing stages:", mStages);
 
       const newCurrentStageId = mStages[currentStageIndex + 1].Id;
       const ifNewNextStage = mStages[currentStageIndex + 2]
@@ -413,6 +415,7 @@ const TrackingModelController = {
             },
           },
           MainStatus: "TODO",
+          RunningStatus: "ONGOING",
           StartTime: new Date(),
           QuantityReceived: quantityReceivedFromPreviousDep,
           PrevStage: {

@@ -330,7 +330,7 @@ model ModelVarients {
   StopData      Json?
   Color         Colors          @relation(fields: [ColorId], references: [Id])
   ColorId       Int
-  Sizes         String
+  Sizes         Json?
   Quantity      Int
   Audit         AuditRecords    @relation(fields: [AuditId], references: [Id])
   AuditId       Int             @unique
