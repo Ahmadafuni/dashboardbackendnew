@@ -725,7 +725,7 @@ const ModelController = {
           varientss.map((e) => ({
             Id: e.Id,
             Color: e.Color.ColorName,
-            Sizes: JSON.parse(e.Sizes),
+            Sizes: e.Sizes,
             Model: e.Model.ModelName,
             MainStatus: e.MainStatus,
             Quantity: e.Quantity,
@@ -742,6 +742,7 @@ const ModelController = {
         data: varients,
       });
     } catch (error) {
+      console.log(error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
@@ -783,7 +784,7 @@ const ModelController = {
         message: "Model varients :) fetched successfully!",
         data: {
           Color: varient.ColorId.toString(),
-          Sizes: JSON.parse(varient.Sizes),
+          Sizes: varient.Sizes,
           Quantity: varient.Quantity.toString(),
           RunningStatus: varient.RunningStatus.toString(),
           StopData: varient.StopData,
@@ -904,6 +905,11 @@ const ModelController = {
   updateModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
+
+    console.log(Sizes);
+   
+
+
     const userId = req.userId;
     try {
       const varient = await prisma.modelVarients.findUnique({
@@ -915,13 +921,13 @@ const ModelController = {
         },
       });
 
-      if (varient.Status !== "AWAITING") {
-        return res.status(405).send({
-          status: 405,
-          message: "Model varient already in production. Cann't update!",
-          data: {},
-        });
-      }
+      // if (varient.Status !== "AWAITING") {
+      //   return res.status(405).send({
+      //     status: 405,
+      //     message: "Model varient already in production. Cann't update!",
+      //     data: {},
+      //   });
+      // }
 
       await prisma.modelVarients.update({
         where: {
@@ -936,7 +942,7 @@ const ModelController = {
               Id: +Color,
             },
           },
-          Sizes: JSON.stringify(Sizes),
+          Sizes: Sizes,
           Quantity: +Quantity,
           Audit: {
             update: {
