@@ -287,8 +287,11 @@ const SizeController = {
           },
         },
       });
+      console.log("model" , model);
+
       const sizeNames = await prisma.sizes
-        .findMany({
+        .findMany(
+          {
           where: {
             Measurements: {
               some: {
@@ -302,13 +305,17 @@ const SizeController = {
               IsDeleted: false,
             },
           },
-        })
+        }
+      )
         .then((sizes) =>
           sizes.map((size) => ({
             value: size.Id.toString(),
             label: size.SizeName,
           }))
         );
+
+        console.log("size" , sizeNames);
+
 
       // Return response
       return res.status(200).send({

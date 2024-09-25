@@ -3000,10 +3000,9 @@ const ModelController = {
 
           const sizesArray = scale.split("-").map(size => {
             const value = (colorValue / scale.split("-").length).toFixed(2); 
-            return { size: size.trim(), value: value };
+            return { label: size.trim(), value: value };
           });
           
-          const sizes = JSON.stringify(sizesArray);
 
           await prisma.modelVarients.create({
             data: {
@@ -3017,7 +3016,7 @@ const ModelController = {
                   Id: +colorId,
                 },
               },
-              Sizes: sizes,
+              Sizes: sizesArray,
               Quantity: colorValue,
               Audit: {
                 create: {

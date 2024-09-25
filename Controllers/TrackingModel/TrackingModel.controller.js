@@ -10,7 +10,6 @@ const safeParseJSON = (data) => {
     }
   }
   return data ? data : null;
-  return data ? data : null;
 };
 
 const TrackingModelController = {
