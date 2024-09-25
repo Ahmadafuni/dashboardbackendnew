@@ -572,8 +572,7 @@ const TrackingModelController = {
         },
       });
 
-      const variantStatuses = remainingVariants.map(
-        (variant) => variant.RunningStatus);
+      const variantStatuses = remainingVariants.map((variant) => variant.RunningStatus);
 
       if (variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.models.update({
@@ -620,7 +619,7 @@ const TrackingModelController = {
         },
       });
 
-      const modelStatuses = remainingModels.map((model) => model.Status);
+      const modelStatuses = remainingModels.map((model) => model.RunningStatus);
 
       if (modelStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.orders.update({
@@ -667,7 +666,7 @@ const TrackingModelController = {
         },
       });
 
-      const orderStatuses = remainingOrders.map((order) => order.Status);
+      const orderStatuses = remainingOrders.map((order) => order.RunningStatus);
 
       if (orderStatuses.every((ruunningStatus) => ruunningStatus === "COMPLETED")) {
         await prisma.collections.update({
