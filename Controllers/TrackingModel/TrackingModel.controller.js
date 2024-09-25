@@ -473,12 +473,7 @@ const TrackingModelController = {
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
-    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } =
-      req.body;
-
-    console.log(`Received request to complete variant with ID: ${trackingId}`);
-    console.log(`User ID: ${userId}`);
-    console.log(`Payload:`, req.body);
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
 
     try {
       const tracking = await prisma.trakingModels.findUnique({
@@ -507,8 +502,6 @@ const TrackingModelController = {
         });
       }
 
-      console.log(`Tracking found:`, tracking);
-
       let parsedQuantityReceived, parsedQuantityDelivered, parsedDamagedItem;
       try {
         parsedQuantityReceived = QuantityReceived
@@ -526,10 +519,6 @@ const TrackingModelController = {
           data: {},
         });
       }
-
-      console.log(`Parsed QuantityReceived:`, parsedQuantityReceived);
-      console.log(`Parsed QuantityDelivered:`, parsedQuantityDelivered);
-      console.log(`Parsed DamagedItem:`, parsedDamagedItem);
 
       await prisma.trakingModels.update({
         where: {
@@ -568,9 +557,7 @@ const TrackingModelController = {
         },
       });
 
-      console.log(
-        `ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`
-      );
+      console.log(`ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`);
 
       const remainingVariants = await prisma.modelVarients.findMany({
         where: {
@@ -586,8 +573,7 @@ const TrackingModelController = {
       });
 
       const variantStatuses = remainingVariants.map(
-        (variant) => variant.RunningStatus
-      );
+        (variant) => variant.RunningStatus);
 
       if (variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.models.update({
@@ -595,8 +581,8 @@ const TrackingModelController = {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            MainStatus: "DONE",
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -604,16 +590,13 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`
-        );
+        console.log(`Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`);
       } else if (variantStatuses.includes("ONGOING")) {
         await prisma.models.update({
           where: {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            MainStatus: "INPROGRESS",
             RunningStatus: "ONGOING",
             Audit: {
               update: {
@@ -622,9 +605,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`
-        );
+        console.log(`Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`);
       }
 
       const remainingModels = await prisma.models.findMany({
@@ -648,6 +629,7 @@ const TrackingModelController = {
           },
           data: {
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -655,9 +637,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`
-        );
+        console.log(`Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`);
       } else if (modelStatuses.includes("ONGOING")) {
         await prisma.orders.update({
           where: {
@@ -672,9 +652,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`
-        );
+        console.log(`Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`);
       }
 
       const remainingOrders = await prisma.orders.findMany({
@@ -698,6 +676,7 @@ const TrackingModelController = {
           },
           data: {
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -705,9 +684,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
-        );
+        console.log(`Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
       } else if (orderStatuses.includes("ONGOING")) {
         await prisma.collections.update({
           where: {
@@ -722,9 +699,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
-        );
+        console.log(`Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
       }
 
       return res.status(200).send({
