@@ -1022,12 +1022,14 @@ const TrackingModelController = {
       awaiting: parseInt(req.query.awaitingPage) || 2,
       inProgress: parseInt(req.query.inProgressPage) || 1,
       completed: parseInt(req.query.completedPage) || 1,
+      finished: parseInt(req.query.finishedPage) || 1,
       givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
     };
     const sizes = {
       awaiting: parseInt(req.query.awaitingSize) || 10,
       inProgress: parseInt(req.query.inProgressSize) || 10,
       completed: parseInt(req.query.completedSize) || 10,
+      finished: parseInt(req.query.finishedSize) || 10,
       givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
     };
 
@@ -1110,6 +1112,36 @@ const TrackingModelController = {
       },
     });
 
+    const totalRecordsFinished = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            RunningStatus: "COMPLETED",
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        MainStatus: "DONE",
+        EndTime: {
+          gte: sevenDaysAgo,
+        },
+      },
+    });
+
     const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
       where: {
         Audit: {
@@ -1137,12 +1169,9 @@ const TrackingModelController = {
     });
 
     const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
-    const totalPagesInProgress = Math.ceil(
-      totalRecordsInProgress / sizes.inProgress
-    );
-    const totalPagesCompleted = Math.ceil(
-      totalRecordsCompleted / sizes.completed
-    );
+    const totalPagesInProgress = Math.ceil(totalRecordsInProgress / sizes.inProgress);
+    const totalPagesCompleted = Math.ceil(totalRecordsCompleted / sizes.completed);
+    const totalPagesFinished = Math.ceil(totalRecordsFinished / sizes.finished);
     const totalPagesGivingConfirmation = Math.ceil(
       totalRecordsGivingConfirmation / sizes.givingConfirmation
     );
@@ -1614,6 +1643,55 @@ const TrackingModelController = {
         },
       });
 
+      const finished = await prisma.models.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,  // Ensure that the model is not deleted
+          },
+          RunningStatus: "COMPLETED", // Ensure the model's status is COMPLETED
+          EndTime: {
+            gte: sevenDaysAgo, // Ensure the model's EndTime is within the last seven days
+          },
+          Order: {
+            Audit: {
+              IsDeleted: false, // Ensure the related order is not deleted
+            },
+            Collection: {
+              Audit: {
+                IsDeleted: false, // Ensure the related collection is not deleted
+              },
+            },
+          },
+        },
+        skip: (pages.finished - 1) * sizes.finished,
+        take: sizes.finished,
+
+        include: {
+          Template: true,
+          CategoryOne: true,
+          categoryTwo: true,
+          ProductCatalog: true,
+          Textile: true,
+          Audit: true,
+          Order: {
+            include: {
+              Collection: true,
+            },
+          },
+          ModelVarients: {
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            include: {
+              Color: true,
+              TrakingModels: true
+            },
+          },
+        },
+      });
+
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
           Audit: {
@@ -1800,14 +1878,16 @@ const TrackingModelController = {
         message: "",
         data: {
           awaiting: awaitingWithNames,
-          completed: completedWithNames,
           inProgress: inProgressWithNames,
           givingConfirmation: givingConfirmationWithNames,
+          completed: completedWithNames,
+          finished: finished,
         },
         totalPages: {
           totalPagesAwaiting,
           totalPagesInProgress,
           totalPagesCompleted,
+          totalPagesFinished,
           totalPagesGivingConfirmation,
         },
       });

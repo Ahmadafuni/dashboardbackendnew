@@ -905,10 +905,7 @@ const ModelController = {
   updateModelVarient: async (req, res, next) => {
     const id = req.params.id;
     const { Sizes, Color, Quantity } = req.body;
-
     console.log(Sizes);
-   
-
 
     const userId = req.userId;
     try {
