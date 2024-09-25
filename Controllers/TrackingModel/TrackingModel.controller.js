@@ -1173,7 +1173,7 @@ const TrackingModelController = {
     const totalPagesCompleted = Math.ceil(totalRecordsCompleted / sizes.completed);
     const totalPagesFinished = Math.ceil(totalRecordsFinished / sizes.finished);
     const totalPagesGivingConfirmation = Math.ceil(
-      totalRecordsGivingConfirmation / sizes.givingConfirmation
+        totalRecordsGivingConfirmation / sizes.givingConfirmation
     );
 
     try {
@@ -1646,31 +1646,34 @@ const TrackingModelController = {
       const finished = await prisma.models.findMany({
         where: {
           Audit: {
-            IsDeleted: false,  // Ensure that the model is not deleted
+            IsDeleted: false,
           },
-          RunningStatus: "COMPLETED", // Ensure the model's status is COMPLETED
+          RunningStatus: "COMPLETED",
           EndTime: {
-            gte: sevenDaysAgo, // Ensure the model's EndTime is within the last seven days
+            gte: sevenDaysAgo,
           },
           Order: {
             Audit: {
-              IsDeleted: false, // Ensure the related order is not deleted
+              IsDeleted: false,
             },
             Collection: {
               Audit: {
-                IsDeleted: false, // Ensure the related collection is not deleted
+                IsDeleted: false,
               },
             },
           },
         },
         skip: (pages.finished - 1) * sizes.finished,
         take: sizes.finished,
-
         include: {
-          Template: true,
+          ProductCatalog: true,
           CategoryOne: true,
           categoryTwo: true,
-          ProductCatalog: true,
+          Template: {
+            include: {
+              TemplatePattern: true,
+            },
+          },
           Textile: true,
           Audit: true,
           Order: {
@@ -1686,11 +1689,69 @@ const TrackingModelController = {
             },
             include: {
               Color: true,
-              TrakingModels: true
+              TrakingModels: true,
             },
           },
         },
       });
+
+      const processFinishedModel = (model) => {
+
+        const modelName = `${model.ProductCatalog?.ProductCatalogName || 'N/A'} - ${model.CategoryOne?.CategoryName || 'N/A'} - ${model.categoryTwo?.CategoryName || 'N/A'} - ${model.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
+        const collectionName = model.Order?.Collection?.CollectionName || 'N/A';
+        const orderName = model.Order?.OrderName || 'N/A';
+        const textileName = model.Textile?.TextileName || 'N/A';
+
+        const startTime = new Date(model.StartTime);
+        const endTime = new Date(model.EndTime);
+        const duration = Math.abs((endTime - startTime) / (1000 * 60 * 60)).toFixed(2) + ' hours';
+
+        const colors = model.ModelVarients.map(variant => variant.Color?.ColorName || 'N/A').join(' - ');
+        const sizes = model.ModelVarients.flatMap(variant => variant.Sizes.map(size => size.label)).join(', ');
+
+        // For each model variant, find the max stage tracking and aggregate quantities by size
+        const maxStageTrackingData = model.ModelVarients.map(variant => {
+          if (variant.TrakingModels.length > 0) {
+            const maxStageTracking = variant.TrakingModels.reduce(
+                (max, tracking) => (tracking.stageNumber > max.stageNumber ? tracking : max),
+                variant.TrakingModels[0]
+            );
+
+            // Aggregating quantities for QuantityReceived and QuantityDelivered by size
+            const totalQuantityReceived = maxStageTracking.QuantityReceived?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+            const totalQuantityDelivered = maxStageTracking.QuantityDelivered?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+
+            return {
+              QuantityReceived: totalQuantityReceived,
+              QuantityDelivered: totalQuantityDelivered,
+
+            };
+          }
+          return { QuantityReceived: 0, QuantityDelivered: 0};
+        });
+
+        // Sum up the total quantities across all variants
+        const totalQuantityReceived = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityReceived, 0);
+        const totalQuantityDelivered = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityDelivered, 0);
+
+        // Return the processed data for this model
+        return {
+          modelId: model.Id,
+          modelDemoNumber: model.DemoModelNumber,
+          modelBarcode: model.Barcode,
+          modelName,
+          collectionName,
+          orderName,
+          textileName,
+          colors,
+          sizes,
+          QuantityReceived: totalQuantityReceived,
+          QuantityDelivered: totalQuantityDelivered,
+          duration,
+        };
+      };
+
+      const processedFinished = finished.map(processFinishedModel);
 
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
@@ -1846,27 +1907,23 @@ const TrackingModelController = {
       });
 
       const addNameField = (items, stage) =>
-        items.map((item) => {
-          const modelName = item.ModelVariant.Model.ModelName;
-          // const productCatalogs = item
-          const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
-          const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
-          const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
-          const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+          items.map((item) => {
+            const modelName = item.ModelVariant.Model.ModelName;
+            const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
+            const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
+            const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+            const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
 
-          return {
-            ...item,
-            // name: `${modelName} - ${categoryOneName} - ${categoryTwoName}`,
-            name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
-
-            Barcode: item.ModelVariant.Model.Barcode,
-            CollectionName:
-              item.ModelVariant.Model.Order.Collection.CollectionName,
-            OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
-            OrderName: item.ModelVariant.Model.Order.OrderName,
-            TextileName: item.ModelVariant.Model.Textile.TextileName,
-          };
-        });
+            return {
+              ...item,
+              name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
+              Barcode: item.ModelVariant.Model.Barcode,
+              CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
+              OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+              OrderName: item.ModelVariant.Model.Order.OrderName,
+              TextileName: item.ModelVariant.Model.Textile.TextileName,
+            };
+          });
 
       const awaitingWithNames = addNameField(awaiting, 1);
       const inProgressWithNames = addNameField(inProgress, 2);
@@ -1881,7 +1938,7 @@ const TrackingModelController = {
           inProgress: inProgressWithNames,
           givingConfirmation: givingConfirmationWithNames,
           completed: completedWithNames,
-          finished: finished,
+          finished: processedFinished,
         },
         totalPages: {
           totalPagesAwaiting,
