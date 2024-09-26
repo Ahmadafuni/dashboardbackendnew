@@ -41,6 +41,7 @@ import { NoteRoute } from "./Routes/Note/Note.route.js";
 import { Server } from "socket.io";
 import { NotificationRoute } from "./Routes/Notification/Notification.route.js";
 import {ManufacturingStageModelRoute} from "./Routes/ManufacturingStageModel/ManufacturingStageModel.route.js";
+import {DataTableRoute} from "./Routes/DataTable/DataTable.route.js";
 
 // Socket User List
 export let socketUserList = [];
@@ -122,6 +123,8 @@ app.use("/measurements", MeasurementRoute);
 app.use("/collections", CollectionRoute);
 app.use("/notes", NoteRoute);
 app.use("/notification", NotificationRoute);
+app.use("/datatable", DataTableRoute);
+
 
 // 404 no route found
 app.use((req, res, next) => {
