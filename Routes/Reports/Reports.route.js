@@ -17,12 +17,12 @@ router.post("/downloadReports",
 verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
 ReportsController.downloadReports);
 
-router.get("/getAlldata",
+router.get("/getAlldata", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+ReportsController.fetchAllData);
 
-     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
-     ReportsController.fetchAllData
-    
-);
+
+router.post("/productionReport", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+ReportsController.productionReport);
 
 const ReportsRoute = router;
 export { ReportsRoute };
