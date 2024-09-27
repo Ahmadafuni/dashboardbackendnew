@@ -1,6 +1,19 @@
 import prisma from "../../client.js";
 import pdf from "html-pdf";
 
+// Calculate duration in hours
+const durationInHours = (startTime, endTime) => {
+  if (!startTime || !endTime) return null;
+
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  const differenceInMilliseconds = end - start;
+  const differenceInHours = differenceInMilliseconds / (1000 * 60 * 60); // Convert milliseconds to hours
+
+  return differenceInHours.toFixed(2); // Return the duration in hours rounded to 2 decimal places
+};
+
 const ReportsController = {
   generateReport: async (req, res) => {
     const { materialId, from, to } = req.body;
@@ -557,44 +570,45 @@ const ReportsController = {
   },
 
   productionReport: async (req, res, next) => {
+    // Extract filters from the request body
     const {
-      status, // For RunningStatus
-      productCatalogue,
-      productCategoryOne,
-      productCategoryTwo,
-      templateType,
-      templatePattern,
-      startDate,  // This will be used to filter based on StartTime
-      endDate,    // This will be used to filter based on EndTime
-      departments,
+      status, // RunningStatus filter
+      productCatalogue, // Filter for product catalog
+      productCategoryOne, // Filter for first category
+      productCategoryTwo, // Filter for second category
+      templateType, // Filter for template type
+      templatePattern, // Filter for template pattern
+      startDate,  // Date filter for StartTime
+      endDate,    // Date filter for EndTime
+      departments // Filter for departments
     } = req.body;
 
+    // Pagination setup
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     const totalRecords = await prisma.models.count({});
     const totalPages = Math.ceil(totalRecords / size);
 
+    let filter = {}; // Filter object to be applied to the query
 
-    let filter = {};
-
-    // 1. RunningStatus filter
+    // 1. Apply RunningStatus filter if present
     if (status && Array.isArray(status)) {
-      filter.RunningStatus = { in: status.map((item) => item.value) };  // Example: { in: ['COMPLETED', 'ONGOING'] }
+      filter.RunningStatus = { in: status.map((item) => item.value) };
     }
 
-    // 2. ProductCatalogId filter
+    // 2. Apply ProductCatalogId filter if present
     if (productCatalogue && Array.isArray(productCatalogue)) {
-      filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };  // Example: { in: [1, 2, 3] }
+      filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };
     }
 
-    // 3. Department filter
+    // 3. Apply Department filter if present
     if (departments && Array.isArray(departments)) {
       filter.ModelVarients = {
         some: {
           TrakingModels: {
             some: {
               CurrentStage: {
-                DepartmentId: { in: departments.map((item) => parseInt(item.value)) },
+                DepartmentId: { in: departments.map((item) => parseInt(item.value)) }
               }
             }
           }
@@ -602,17 +616,17 @@ const ReportsController = {
       };
     }
 
-    // 4. Product Category One filter
+    // 4. Apply CategoryOne filter if present
     if (productCategoryOne && Array.isArray(productCategoryOne)) {
       filter.CategoryOneId = { in: productCategoryOne.map((item) => parseInt(item.value)) };
     }
 
-    // 5. Product Category Two filter
+    // 5. Apply CategoryTwo filter if present
     if (productCategoryTwo && Array.isArray(productCategoryTwo)) {
       filter.CategoryTwoId = { in: productCategoryTwo.map((item) => parseInt(item.value)) };
     }
 
-    // 6. Template Type and Pattern filter
+    // 6. Apply Template Type and Pattern filters if present
     if (templateType || templatePattern) {
       filter.Template = { AND: [] };
 
@@ -629,33 +643,29 @@ const ReportsController = {
       }
     }
 
-    // 7. Date Range filter
+    // 7. Apply Date Range filter if present
     if (startDate || endDate) {
       filter.OR = [];
 
       if (startDate) {
         filter.OR.push({
-          StartTime: {
-            gte: new Date(startDate),  // StartTime must be greater than or equal to startDate
-          }
+          StartTime: { gte: new Date(startDate) }
         });
       }
 
       if (endDate) {
         filter.OR.push({
-          EndTime: {
-            lte: new Date(endDate),  // EndTime must be less than or equal to endDate
-          }
+          EndTime: { lte: new Date(endDate) }
         });
       }
     }
 
-    console.log("Filter: ", JSON.stringify(filter, null, 2)); // Pretty-print the filter for better readability
+    console.log("Filter: ", JSON.stringify(filter, null, 2)); // Logging the applied filter for debugging
 
     try {
-      // Fetching filtered models with pagination
+      // Fetching models based on filters and pagination
       const models = await prisma.models.findMany({
-        where: filter, // Apply the filter with DepartmentId
+        where: filter,
         orderBy: { StartTime: 'desc' },
         skip: (page - 1) * size,
         take: size,
@@ -689,160 +699,68 @@ const ReportsController = {
                   },
                   QuantityDelivered: true,
                   QuantityReceived: true,
-                },
-              },
-            },
-          },
-          Audit: { select: { CreatedAt: true, UpdatedAt: true } },
-        },
-      });
-      // Applying logic for processing progress and other fields
-      const modelsWithProgress = models.map((model) => {
-        const totalVarients = model.ModelVarients.length;
-        const doneVarients = model.ModelVarients.filter(
-            (varient) => varient.RunningStatus === "COMPLETED"
-        ).length;
-        const donePercentage =
-            totalVarients > 0 ? (doneVarients / totalVarients) * 100 : 0;
-
-        return {
-          ModelId: model.Id,
-          DonePercentage: donePercentage.toFixed(2),
-        };
-      });
-
-      // Grouping statuses
-      const statuses = ["PENDING", "COMPLETED", "ONGOING", "ONHOLD"];
-      const results = await Promise.all(
-          statuses.map(async (status) => {
-            const count = await prisma.modelVarients.groupBy({
-              by: ["ModelId", "ColorId"],
-              _count: {
-                _all: true,
-              },
-              where: {
-                RunningStatus: status,
-              },
-            });
-            const colorIds = [...new Set(count.map((item) => item.ColorId))];
-            const colors = await prisma.colors.findMany({
-              where: {
-                Id: { in: colorIds },
-              },
-              select: {
-                Id: true,
-                ColorName: true,
-              },
-            });
-
-            const colorMap = colors.reduce((acc, color) => {
-              acc[color.Id] = color;
-              return acc;
-            }, {});
-
-            return count.map((item) => ({
-              status,
-              modelId: item.ModelId,
-              color: colorMap[item.ColorId],
-            }));
-          })
-      );
-
-      // Grouping statuses by model and color
-      const finalResult = results.flat().reduce((acc, item) => {
-        if (!acc[item.modelId]) {
-          acc[item.modelId] = {};
-        }
-        acc[item.modelId][item.color.ColorName] = item.status;
-        return acc;
-      }, {});
-
-      // Final result mapping and returning response
-      const result = await Promise.all(
-          models.map(async (model) => {
-            const totalDuration = Math.floor(
-                (new Date(model.Audit.UpdatedAt) -
-                    new Date(model.Audit.CreatedAt)) /
-                (1000 * 60 * 60 * 24)
-            );
-
-            const modelProgress = modelsWithProgress.find(
-                (mod) => mod.ModelId == model.Id
-            ).DonePercentage;
-
-            const details = model.ModelVarients.flatMap((variant) => {
-              let sizes = [];
-
-              try {
-                sizes = JSON.parse(variant.Sizes);
-                if (!Array.isArray(sizes)) {
-                  sizes = [];
+                  DamagedItem: true,
                 }
-              } catch (e) {
-                sizes = [];
               }
+            }
+          },
+          Audit: { select: { CreatedAt: true, UpdatedAt: true } }
+        }
+      });
 
-              return {
-                Color: variant.Color.ColorName,
-                Sizes: variant.Sizes,
-                Quantity: variant.TrakingModels.map((trackingModel) => ({
-                  StageName: trackingModel.CurrentStage,
-                  DepartmentName: trackingModel.CurrentStage.Department.Name,  // Access the DepartmentName here
-                  QuantityDelivered: trackingModel.QuantityReceived
-                      ? trackingModel.QuantityReceived.reduce(
-                          (receivedObj, received) => {
-                            receivedObj[received.size] = received.value;
-                            return receivedObj;
-                          },
-                          {}
-                      )
-                      : sizes.reduce((emptyObj, size) => {
-                        emptyObj[size] = "";
-                        return emptyObj;
-                      }, {}),
-                  QuantityReceived: trackingModel.QuantityDelivered
-                      ? trackingModel.QuantityDelivered.reduce(
-                          (receivedObj, received) => {
-                            receivedObj[received.size] = received.value;
-                            return receivedObj;
-                          },
-                          {}
-                      )
-                      : sizes.reduce((emptyObj, size) => {
-                        emptyObj[size] = "";
-                        return emptyObj;
-                      }, {}),
-                }))[0],
-              };
-            });
+      // Map over models to calculate progress and group variants by DemoModelNumber
+      const groupedModels = models.reduce((acc, model) => {
+        const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-            const modelStats = finalResult[model.Id] || {};
+        // Build the details for the variants
+        const modelVariantDetails = model.ModelVarients.map((variant) => ({
+          Color: variant.Color.ColorName,
+          Sizes: variant.Sizes,
+          MainStatus: variant.MainStatus,
+          RunningStatus: variant.RunningStatus,
+          StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+          StartTime: variant.TrakingModels[0]?.StartTime || null,
+          EndTime: variant.TrakingModels[0]?.EndTime || null,
+          DurationInHours: durationInHours( variant.TrakingModels[0]?.StartTime,variant.TrakingModels[0]?.EndTime),
+          DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+          QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+          QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+        }));
 
-            return {
-              ModelId: model.Id,
-              ModelStats: modelStats,
-              ModelProgress: modelProgress,
-              CollectionId: model.Order.CollectionId,
-              DemoModelNumber: model.DemoModelNumber,
-              ModelName: model.ModelName,
-              ProductCatalog: model.ProductCatalog.ProductCatalogName,
-              CategoryOne: model.CategoryOne.CategoryName,
-              CategoryTwo: model.categoryTwo.CategoryName,
-              Textiles: model.Textile.TextileName,
-              TotalDurationInDays: totalDuration,
-              Details: details,
-            };
-          })
-      );
+        // If the model already exists in the accumulator, append the details to it
+        if (existingModel) {
+          existingModel.Details.push(...modelVariantDetails);
+        } else {
+          // If the model doesn't exist, add it to the accumulator with the details
+          acc.push({
+            DemoModelNumber: model.DemoModelNumber,
+            ModelId: model.Id,
+            ModelName: model.ModelName,
+            ProductCatalog: model.ProductCatalog.ProductCatalogName,
+            CategoryOne: model.CategoryOne.CategoryName,
+            CategoryTwo: model.categoryTwo.CategoryName,
+            Textiles: model.Textile.TextileName,
+            Details: modelVariantDetails,
+            Audit: {
+              CreatedAt: model.Audit.CreatedAt,
+              UpdatedAt: model.Audit.UpdatedAt,
+            },
+          });
+        }
 
+        return acc;
+      }, []);
+
+      // Sending the response with the grouped models
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
-        data: result,
+        data: groupedModels,
       });
+
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return res.status(500).send({
         status: 500,
         message: 'Internal server error. Please try again later! ' + error,
