@@ -570,38 +570,33 @@ const ReportsController = {
   },
 
   productionReport: async (req, res, next) => {
-    // Extract filters from the request body
     const {
-      status, // RunningStatus filter
-      productCatalogue, // Filter for product catalog
-      productCategoryOne, // Filter for first category
-      productCategoryTwo, // Filter for second category
-      templateType, // Filter for template type
-      templatePattern, // Filter for template pattern
-      startDate,  // Date filter for StartTime
-      endDate,    // Date filter for EndTime
-      departments // Filter for departments
+      status,
+      productCatalogue,
+      productCategoryOne,
+      productCategoryTwo,
+      templateType,
+      templatePattern,
+      startDate,
+      endDate,
+      departments,
     } = req.body;
 
-    // Pagination setup
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     const totalRecords = await prisma.models.count({});
     const totalPages = Math.ceil(totalRecords / size);
 
-    let filter = {}; // Filter object to be applied to the query
+    let filter = {};
 
-    // 1. Apply RunningStatus filter if present
     if (status && Array.isArray(status)) {
       filter.RunningStatus = { in: status.map((item) => item.value) };
     }
 
-    // 2. Apply ProductCatalogId filter if present
     if (productCatalogue && Array.isArray(productCatalogue)) {
       filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };
     }
 
-    // 3. Apply Department filter if present
     if (departments && Array.isArray(departments)) {
       filter.ModelVarients = {
         some: {
@@ -616,17 +611,14 @@ const ReportsController = {
       };
     }
 
-    // 4. Apply CategoryOne filter if present
     if (productCategoryOne && Array.isArray(productCategoryOne)) {
       filter.CategoryOneId = { in: productCategoryOne.map((item) => parseInt(item.value)) };
     }
 
-    // 5. Apply CategoryTwo filter if present
     if (productCategoryTwo && Array.isArray(productCategoryTwo)) {
       filter.CategoryTwoId = { in: productCategoryTwo.map((item) => parseInt(item.value)) };
     }
 
-    // 6. Apply Template Type and Pattern filters if present
     if (templateType || templatePattern) {
       filter.Template = { AND: [] };
 
@@ -643,7 +635,6 @@ const ReportsController = {
       }
     }
 
-    // 7. Apply Date Range filter if present
     if (startDate || endDate) {
       filter.OR = [];
 
@@ -660,10 +651,7 @@ const ReportsController = {
       }
     }
 
-    console.log("Filter: ", JSON.stringify(filter, null, 2)); // Logging the applied filter for debugging
-
     try {
-      // Fetching models based on filters and pagination
       const models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: 'desc' },
@@ -708,30 +696,28 @@ const ReportsController = {
         }
       });
 
-      // Map over models to calculate progress and group variants by DemoModelNumber
+      // Keep the existing model grouping and processing logic intact
       const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-        // Build the details for the variants
         const modelVariantDetails = model.ModelVarients.map((variant) => ({
-          Color: variant.Color.ColorName,
+          Color: variant.Color,
           Sizes: variant.Sizes,
           MainStatus: variant.MainStatus,
           RunningStatus: variant.RunningStatus,
           StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-          StartTime: variant.TrakingModels[0]?.StartTime || null,
-          EndTime: variant.TrakingModels[0]?.EndTime || null,
-          DurationInHours: durationInHours( variant.TrakingModels[0]?.StartTime,variant.TrakingModels[0]?.EndTime),
           DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
           QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
           QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+          DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+          StartTime: variant.TrakingModels[0]?.StartTime || null,
+          EndTime: variant.TrakingModels[0]?.EndTime || null,
+          DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
         }));
 
-        // If the model already exists in the accumulator, append the details to it
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
         } else {
-          // If the model doesn't exist, add it to the accumulator with the details
           acc.push({
             DemoModelNumber: model.DemoModelNumber,
             ModelId: model.Id,
@@ -751,24 +737,62 @@ const ReportsController = {
         return acc;
       }, []);
 
-      // Sending the response with the grouped models
+      // Summary logic for counting data (new logic added here)
+      const summary = {
+        totalModels: models.length, // Count of all models
+        totalVariants: models.reduce((acc, model) => acc + model.ModelVarients.length, 0), // Sum of all variants
+
+        totalQuantityDelivered: models.reduce((acc, model) => {
+          return acc + model.ModelVarients.reduce((subAcc, variant) => {
+            return subAcc + (variant.TrakingModels[0]?.QuantityDelivered
+                ? variant.TrakingModels[0].QuantityDelivered.reduce((sum, item) => {
+                  const value = parseInt(item.value); // Convert string to number
+                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+                }, 0)
+                : 0);
+          }, 0);
+        }, 0), // Sum of all delivered quantities
+
+        totalQuantityReceived: models.reduce((acc, model) => {
+          return acc + model.ModelVarients.reduce((subAcc, variant) => {
+            return subAcc + (variant.TrakingModels[0]?.QuantityReceived
+                ? variant.TrakingModels[0].QuantityReceived.reduce((sum, item) => {
+                  const value = parseInt(item.value); // Convert string to number
+                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+                }, 0)
+                : 0);
+          }, 0);
+        }, 0), // Sum of all received quantities
+
+        totalDamagedItems: models.reduce((acc, model) => {
+          return acc + model.ModelVarients.reduce((subAcc, variant) => {
+            return subAcc + (variant.TrakingModels[0]?.DamagedItem
+                ? variant.TrakingModels[0].DamagedItem.reduce((sum, item) => {
+                  const value = parseInt(item.value); // Convert string to number
+                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+                }, 0)
+                : 0);
+          }, 0);
+        }, 0) // Sum of all damaged items
+      };
+
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
+        summary, // New summary object added to response
         data: groupedModels,
       });
-
     } catch (error) {
       console.error(error);
       return res.status(500).send({
         status: 500,
-        message: 'Internal server error. Please try again later! ' + error,
+        message: 'Internal server error. Please try again later!',
         data: {},
       });
     }
   },
-
-};
+}
 
 export default ReportsController;
