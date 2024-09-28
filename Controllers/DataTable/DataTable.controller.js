@@ -30,8 +30,7 @@ const DataTableController = {
             const tableFields = await prisma.$queryRaw`
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = ${tableName} 
-                  AND data_type IN ('character varying', 'text');`;
+                WHERE table_name = ${tableName} `;
     
             const allFields = [];
     
@@ -79,7 +78,7 @@ const DataTableController = {
                     });
                 }
             }
-    
+            console.log(allFields);
             // إرجاع جميع الحقول
             res.json({ fields: allFields });
         } catch (error) {
@@ -216,7 +215,7 @@ const DataTableController = {
                 'Collections': 'Collections',
                 'ModelVarients': 'ModelVarients',
                 'Notes': 'Notes',
-                'TrakingModels': 'TrakingModels',
+                'TrakingModels': 'TrakingModels', // تمت الإضافة هنا
                 'ChildMaterials': 'ChildMaterials',
                 'MaterialMovement': 'MaterialMovement'
             },
@@ -239,6 +238,13 @@ const DataTableController = {
                 'MaterialMovement': 'MaterialMovement',
                 'ColorId': 'Colors'
             },
+            TrakingModels: { 
+                'ModelVariantId': 'ModelVarients',
+                'PrevStageId': 'ManufacturingStagesModel',
+                'CurrentStageId': 'ManufacturingStagesModel',
+                'NextStageId': 'ManufacturingStagesModel',
+                'AuditId': 'Audit'
+            },
             // Users: {
             //     'DepartmentId': 'Departments',
             //     'AuditId': 'Audit',
@@ -247,6 +253,7 @@ const DataTableController = {
             //     'AuditUpdatedBy': 'AuditRecords'
             // }
         };
+        
                
         try {
             const where = {};
