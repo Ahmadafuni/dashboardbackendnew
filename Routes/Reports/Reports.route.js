@@ -24,5 +24,8 @@ ReportsController.fetchAllData);
 router.post("/productionReport", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.productionReport);
 
+router.post("/orderReport", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+ReportsController.orderReport);
+
 const ReportsRoute = router;
 export { ReportsRoute };
