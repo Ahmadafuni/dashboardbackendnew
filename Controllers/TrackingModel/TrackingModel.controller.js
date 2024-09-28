@@ -473,12 +473,7 @@ const TrackingModelController = {
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
-    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } =
-      req.body;
-
-    console.log(`Received request to complete variant with ID: ${trackingId}`);
-    console.log(`User ID: ${userId}`);
-    console.log(`Payload:`, req.body);
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
 
     try {
       const tracking = await prisma.trakingModels.findUnique({
@@ -507,8 +502,6 @@ const TrackingModelController = {
         });
       }
 
-      console.log(`Tracking found:`, tracking);
-
       let parsedQuantityReceived, parsedQuantityDelivered, parsedDamagedItem;
       try {
         parsedQuantityReceived = QuantityReceived
@@ -526,10 +519,6 @@ const TrackingModelController = {
           data: {},
         });
       }
-
-      console.log(`Parsed QuantityReceived:`, parsedQuantityReceived);
-      console.log(`Parsed QuantityDelivered:`, parsedQuantityDelivered);
-      console.log(`Parsed DamagedItem:`, parsedDamagedItem);
 
       await prisma.trakingModels.update({
         where: {
@@ -568,9 +557,7 @@ const TrackingModelController = {
         },
       });
 
-      console.log(
-        `ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`
-      );
+      console.log(`ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`);
 
       const remainingVariants = await prisma.modelVarients.findMany({
         where: {
@@ -585,9 +572,7 @@ const TrackingModelController = {
         },
       });
 
-      const variantStatuses = remainingVariants.map(
-        (variant) => variant.RunningStatus
-      );
+      const variantStatuses = remainingVariants.map((variant) => variant.RunningStatus);
 
       if (variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.models.update({
@@ -595,8 +580,8 @@ const TrackingModelController = {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            MainStatus: "DONE",
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -604,16 +589,13 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`
-        );
+        console.log(`Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`);
       } else if (variantStatuses.includes("ONGOING")) {
         await prisma.models.update({
           where: {
             Id: tracking.ModelVariant.ModelId,
           },
           data: {
-            MainStatus: "INPROGRESS",
             RunningStatus: "ONGOING",
             Audit: {
               update: {
@@ -622,9 +604,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`
-        );
+        console.log(`Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`);
       }
 
       const remainingModels = await prisma.models.findMany({
@@ -639,7 +619,7 @@ const TrackingModelController = {
         },
       });
 
-      const modelStatuses = remainingModels.map((model) => model.Status);
+      const modelStatuses = remainingModels.map((model) => model.RunningStatus);
 
       if (modelStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
         await prisma.orders.update({
@@ -648,6 +628,7 @@ const TrackingModelController = {
           },
           data: {
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -655,9 +636,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`
-        );
+        console.log(`Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`);
       } else if (modelStatuses.includes("ONGOING")) {
         await prisma.orders.update({
           where: {
@@ -672,9 +651,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`
-        );
+        console.log(`Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`);
       }
 
       const remainingOrders = await prisma.orders.findMany({
@@ -689,7 +666,7 @@ const TrackingModelController = {
         },
       });
 
-      const orderStatuses = remainingOrders.map((order) => order.Status);
+      const orderStatuses = remainingOrders.map((order) => order.RunningStatus);
 
       if (orderStatuses.every((ruunningStatus) => ruunningStatus === "COMPLETED")) {
         await prisma.collections.update({
@@ -698,6 +675,7 @@ const TrackingModelController = {
           },
           data: {
             RunningStatus: "COMPLETED",
+            EndTime: new Date(),
             Audit: {
               update: {
                 UpdatedById: userId,
@@ -705,9 +683,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
-        );
+        console.log(`Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
       } else if (orderStatuses.includes("ONGOING")) {
         await prisma.collections.update({
           where: {
@@ -722,9 +698,7 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(
-          `Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
-        );
+        console.log(`Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
       }
 
       return res.status(200).send({
@@ -1047,12 +1021,14 @@ const TrackingModelController = {
       awaiting: parseInt(req.query.awaitingPage) || 2,
       inProgress: parseInt(req.query.inProgressPage) || 1,
       completed: parseInt(req.query.completedPage) || 1,
+      finished: parseInt(req.query.finishedPage) || 1,
       givingConfirmation: parseInt(req.query.givingConfirmationPage) || 1,
     };
     const sizes = {
       awaiting: parseInt(req.query.awaitingSize) || 10,
       inProgress: parseInt(req.query.inProgressSize) || 10,
       completed: parseInt(req.query.completedSize) || 10,
+      finished: parseInt(req.query.finishedSize) || 10,
       givingConfirmation: parseInt(req.query.givingConfirmationSize) || 10,
     };
 
@@ -1135,6 +1111,36 @@ const TrackingModelController = {
       },
     });
 
+    const totalRecordsFinished = await prisma.trakingModels.count({
+      where: {
+        Audit: {
+          IsDeleted: false,
+        },
+        ModelVariant: {
+          Model: {
+            RunningStatus: "COMPLETED",
+            Audit: {
+              IsDeleted: false,
+            },
+            Order: {
+              Audit: {
+                IsDeleted: false,
+              },
+              Collection: {
+                Audit: {
+                  IsDeleted: false,
+                },
+              },
+            },
+          },
+        },
+        MainStatus: "DONE",
+        EndTime: {
+          gte: sevenDaysAgo,
+        },
+      },
+    });
+
     const totalRecordsGivingConfirmation = await prisma.trakingModels.count({
       where: {
         Audit: {
@@ -1162,14 +1168,11 @@ const TrackingModelController = {
     });
 
     const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
-    const totalPagesInProgress = Math.ceil(
-      totalRecordsInProgress / sizes.inProgress
-    );
-    const totalPagesCompleted = Math.ceil(
-      totalRecordsCompleted / sizes.completed
-    );
+    const totalPagesInProgress = Math.ceil(totalRecordsInProgress / sizes.inProgress);
+    const totalPagesCompleted = Math.ceil(totalRecordsCompleted / sizes.completed);
+    const totalPagesFinished = Math.ceil(totalRecordsFinished / sizes.finished);
     const totalPagesGivingConfirmation = Math.ceil(
-      totalRecordsGivingConfirmation / sizes.givingConfirmation
+        totalRecordsGivingConfirmation / sizes.givingConfirmation
     );
 
     try {
@@ -1639,6 +1642,116 @@ const TrackingModelController = {
         },
       });
 
+      const finished = await prisma.models.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          RunningStatus: "COMPLETED",
+          EndTime: {
+            gte: sevenDaysAgo,
+          },
+          Order: {
+            Audit: {
+              IsDeleted: false,
+            },
+            Collection: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+          },
+        },
+        skip: (pages.finished - 1) * sizes.finished,
+        take: sizes.finished,
+        include: {
+          ProductCatalog: true,
+          CategoryOne: true,
+          categoryTwo: true,
+          Template: {
+            include: {
+              TemplatePattern: true,
+            },
+          },
+          Textile: true,
+          Audit: true,
+          Order: {
+            include: {
+              Collection: true,
+            },
+          },
+          ModelVarients: {
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
+            include: {
+              Color: true,
+              TrakingModels: true,
+            },
+          },
+        },
+      });
+
+      const processFinishedModel = (model) => {
+
+        const modelName = `${model.ProductCatalog?.ProductCatalogName || 'N/A'} - ${model.CategoryOne?.CategoryName || 'N/A'} - ${model.categoryTwo?.CategoryName || 'N/A'} - ${model.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
+        const collectionName = model.Order?.Collection?.CollectionName || 'N/A';
+        const orderName = model.Order?.OrderName || 'N/A';
+        const textileName = model.Textile?.TextileName || 'N/A';
+
+        const startTime = new Date(model.StartTime);
+        const endTime = new Date(model.EndTime);
+        const duration = Math.abs((endTime - startTime) / (1000 * 60 * 60)).toFixed(2) + ' hours';
+
+        const colors = model.ModelVarients.map(variant => variant.Color?.ColorName || 'N/A').join(' - ');
+        const sizes = model.ModelVarients.flatMap(variant => variant.Sizes.map(size => size.label)).join(', ');
+
+        // For each model variant, find the max stage tracking and aggregate quantities by size
+        const maxStageTrackingData = model.ModelVarients.map(variant => {
+          if (variant.TrakingModels.length > 0) {
+            const maxStageTracking = variant.TrakingModels.reduce(
+                (max, tracking) => (tracking.stageNumber > max.stageNumber ? tracking : max),
+                variant.TrakingModels[0]
+            );
+
+            // Aggregating quantities for QuantityReceived and QuantityDelivered by size
+            const totalQuantityReceived = maxStageTracking.QuantityReceived?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+            const totalQuantityDelivered = maxStageTracking.QuantityDelivered?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+
+            return {
+              QuantityReceived: totalQuantityReceived,
+              QuantityDelivered: totalQuantityDelivered,
+
+            };
+          }
+          return { QuantityReceived: 0, QuantityDelivered: 0};
+        });
+
+        // Sum up the total quantities across all variants
+        const totalQuantityReceived = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityReceived, 0);
+        const totalQuantityDelivered = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityDelivered, 0);
+
+        // Return the processed data for this model
+        return {
+          modelId: model.Id,
+          modelDemoNumber: model.DemoModelNumber,
+          modelBarcode: model.Barcode,
+          modelName,
+          collectionName,
+          orderName,
+          textileName,
+          colors,
+          sizes,
+          QuantityReceived: totalQuantityReceived,
+          QuantityDelivered: totalQuantityDelivered,
+          duration,
+        };
+      };
+
+      const processedFinished = finished.map(processFinishedModel);
+
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
           Audit: {
@@ -1793,27 +1906,23 @@ const TrackingModelController = {
       });
 
       const addNameField = (items, stage) =>
-        items.map((item) => {
-          const modelName = item.ModelVariant.Model.ModelName;
-          // const productCatalogs = item
-          const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
-          const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
-          const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
-          const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+          items.map((item) => {
+            const modelName = item.ModelVariant.Model.ModelName;
+            const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
+            const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
+            const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+            const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
 
-          return {
-            ...item,
-            // name: `${modelName} - ${categoryOneName} - ${categoryTwoName}`,
-            name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
-
-            Barcode: item.ModelVariant.Model.Barcode,
-            CollectionName:
-              item.ModelVariant.Model.Order.Collection.CollectionName,
-            OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
-            OrderName: item.ModelVariant.Model.Order.OrderName,
-            TextileName: item.ModelVariant.Model.Textile.TextileName,
-          };
-        });
+            return {
+              ...item,
+              name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
+              Barcode: item.ModelVariant.Model.Barcode,
+              CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
+              OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+              OrderName: item.ModelVariant.Model.Order.OrderName,
+              TextileName: item.ModelVariant.Model.Textile.TextileName,
+            };
+          });
 
       const awaitingWithNames = addNameField(awaiting, 1);
       const inProgressWithNames = addNameField(inProgress, 2);
@@ -1825,14 +1934,16 @@ const TrackingModelController = {
         message: "",
         data: {
           awaiting: awaitingWithNames,
-          completed: completedWithNames,
           inProgress: inProgressWithNames,
           givingConfirmation: givingConfirmationWithNames,
+          completed: completedWithNames,
+          finished: processedFinished,
         },
         totalPages: {
           totalPagesAwaiting,
           totalPagesInProgress,
           totalPagesCompleted,
+          totalPagesFinished,
           totalPagesGivingConfirmation,
         },
       });

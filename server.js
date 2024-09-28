@@ -40,6 +40,7 @@ import { CollectionRoute } from "./Routes/Collection/Collection.route.js";
 import { NoteRoute } from "./Routes/Note/Note.route.js";
 import { Server } from "socket.io";
 import { NotificationRoute } from "./Routes/Notification/Notification.route.js";
+import { ChartRoute } from "./Routes/Chart/Chart.route.js";
 import {ManufacturingStageModelRoute} from "./Routes/ManufacturingStageModel/ManufacturingStageModel.route.js";
 import {DataTableRoute} from "./Routes/DataTable/DataTable.route.js";
 
@@ -125,6 +126,7 @@ app.use("/notes", NoteRoute);
 app.use("/notification", NotificationRoute);
 app.use("/datatable", DataTableRoute);
 
+app.use("/chart", ChartRoute);
 
 // 404 no route found
 app.use((req, res, next) => {
