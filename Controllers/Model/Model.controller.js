@@ -918,13 +918,13 @@ const ModelController = {
         },
       });
 
-      // if (varient.Status !== "AWAITING") {
-      //   return res.status(405).send({
-      //     status: 405,
-      //     message: "Model varient already in production. Cann't update!",
-      //     data: {},
-      //   });
-      // }
+      if (varient.Status !== "AWAITING") {
+        return res.status(405).send({
+          status: 405,
+          message: "Model varient already in production. Cann't update!",
+          data: {},
+        });
+      }
 
       await prisma.modelVarients.update({
         where: {
@@ -1003,7 +1003,7 @@ const ModelController = {
     const id = req.params.id;
     try {
       const modelSummary = {};
-
+  
       const model = await prisma.models.findUnique({
         where: {
           Id: +id,
@@ -1027,28 +1027,34 @@ const ModelController = {
             },
             include: {
               Color: true,
+              TrakingModels: {
+                include: {
+                  CurrentStage: {
+                    include: {
+                      Department: true, // تضمين جدول Departments لجلب اسم القسم
+                    },
+                  },
+                },
+              },
             },
           },
         },
       });
-
+  
       const sizes = [];
       model.ModelVarients.forEach((e) => {
         let sizeArray;
-
+  
         try {
           // Attempt to parse Sizes as JSON
           sizeArray = JSON.parse(e.Sizes);
-          // Ensure that sizeArray is an array
           if (!Array.isArray(sizeArray)) {
             sizeArray = [sizeArray];
           }
         } catch (err) {
-          // If parsing fails, treat Sizes as a plain string
           sizeArray = [e.Sizes];
         }
-
-        // Iterate over the size array and collect unique sizes
+  
         sizeArray.forEach((f) => {
           const sizeLabel = typeof f === "string" ? f : f.label;
           if (!sizes.includes(sizeLabel)) {
@@ -1056,7 +1062,7 @@ const ModelController = {
           }
         });
       });
-
+  
       modelSummary.modelInfo = {
         ModelDate: model.Audit.CreatedAt.toDateString(),
         ModelName: model.ModelName,
@@ -1080,7 +1086,23 @@ const ModelController = {
         Sizes: sizes.join("-"),
         Images: model.Images,
       };
-
+  
+      // Fetch model stages for each ModelVarient
+      const stages = model.ModelVarients.flatMap((variant) =>
+        variant.TrakingModels.map((tracking) => ({
+          StageNumber: tracking.CurrentStage.StageNumber,
+          StageName: tracking.CurrentStage.StageName,
+          WorkDescription: tracking.CurrentStage.WorkDescription,
+          DepartmentName: tracking.CurrentStage.Department.Name, // جلب اسم القسم المرتبط مع المرحلة
+        }))
+      );
+      
+      const uniqueStages = Array.from(
+        new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
+      );
+      
+      modelSummary.stages = uniqueStages;
+  
       const cutting = await prisma.measurements.findMany({
         where: {
           TemplateSize: {
@@ -1106,22 +1128,22 @@ const ModelController = {
           },
         },
       });
-
+  
       const cuttingSizes = [];
       cutting.forEach((m) => {
         if (!cuttingSizes.includes(m.Size.SizeName)) {
           cuttingSizes.push(m.Size.SizeName);
         }
       });
-
+  
       const formatedCutting = [];
       cutting.forEach((measurement) => {
         const size = measurement.Size.SizeName;
-
+  
         const isThere = formatedCutting.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-
+  
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1133,7 +1155,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-
+  
       formatedCutting.forEach((m) => {
         cuttingSizes.forEach((s) => {
           if (!m[s]) {
@@ -1141,6 +1163,7 @@ const ModelController = {
           }
         });
       });
+  
       const dressup = await prisma.measurements.findMany({
         where: {
           TemplateSize: {
@@ -1166,22 +1189,22 @@ const ModelController = {
           },
         },
       });
-
+  
       const dressupSizes = [];
       dressup.forEach((m) => {
         if (!dressupSizes.includes(m.Size.SizeName)) {
           dressupSizes.push(m.Size.SizeName);
         }
       });
-
+  
       const formatedDressup = [];
       dressup.forEach((measurement) => {
         const size = measurement.Size.SizeName;
-
+  
         const isThere = formatedDressup.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-
+  
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1193,7 +1216,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-
+  
       formatedDressup.forEach((m) => {
         dressupSizes.forEach((s) => {
           if (!m[s]) {
@@ -1201,9 +1224,10 @@ const ModelController = {
           }
         });
       });
-
+  
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
+      
 
       return res.status(200).send({
         status: 200,
@@ -1211,7 +1235,7 @@ const ModelController = {
         data: modelSummary,
       });
     } catch (error) {
-      // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -1219,6 +1243,7 @@ const ModelController = {
       });
     }
   },
+  
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;

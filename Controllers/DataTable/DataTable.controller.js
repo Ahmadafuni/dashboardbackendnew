@@ -78,7 +78,6 @@ const DataTableController = {
                     });
                 }
             }
-            console.log(allFields);
             // إرجاع جميع الحقول
             res.json({ fields: allFields });
         } catch (error) {
@@ -259,7 +258,6 @@ const DataTableController = {
             const where = {};
             const include = {};
     
-            // خريطة العلاقات الخاصة بالجدول الحالي
             const relationshipMap = relationshipMaps[tableName];
     
             // if (!relationshipMap) {
@@ -287,7 +285,7 @@ const DataTableController = {
                                     },
                                 };
                             }
-                            include[prismaRelationship] = true; // تأكد من تضمين الجدول المرتبط
+                            include[prismaRelationship] = true; 
                         }
                     } else {
                         where[filter.column] = {
@@ -298,19 +296,18 @@ const DataTableController = {
                 }
             });
     
-            // التأكد من تضمين جميع العلاقات الخاصة بالجدول حتى لو لم يتم فلترتها
             if (relationshipMap){
             Object.keys(relationshipMap).forEach(key => {
                 const prismaRelationship = relationshipMap[key];
                 if (!include[prismaRelationship]) {
-                    include[prismaRelationship] = true; // تضمين العلاقة في النتيجة
+                    include[prismaRelationship] = true;
                 }
             });
         }
     
             const results = await prisma[tableName].findMany({
                 where: where,
-                include: include, // تضمين كل الجداول المرتبطة
+                include: include, 
             });
     
             res.json(results);
@@ -319,8 +316,6 @@ const DataTableController = {
             res.status(500).json({ error: 'Internal server error' });
         }
     },
-
-
 
 };
 

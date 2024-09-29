@@ -19,6 +19,7 @@ const TrackingModelController = {
     const variantId = +req.params.id;
     const userDepartmentId = req.userDepartmentId;
     console.log("variantId",variantId);
+    
     try {
       await prisma.modelVarients.update({
         where: {
@@ -1013,6 +1014,9 @@ const TrackingModelController = {
     }
   },
 
+
+
+
   getAllTracking: async (req, res, next) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -1723,7 +1727,6 @@ const TrackingModelController = {
             return {
               QuantityReceived: totalQuantityReceived,
               QuantityDelivered: totalQuantityDelivered,
-
             };
           }
           return { QuantityReceived: 0, QuantityDelivered: 0};
