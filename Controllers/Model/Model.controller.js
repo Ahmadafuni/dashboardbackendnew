@@ -2512,7 +2512,8 @@ const ModelController = {
             },
               Template: {
                 connect: {
-                  Id: templateId ? +Number(templateId) : 16,
+                  // 26 is undefined Template in Production
+                  Id: templateId ? +Number(templateId) : 26,
                 },
               },
 
