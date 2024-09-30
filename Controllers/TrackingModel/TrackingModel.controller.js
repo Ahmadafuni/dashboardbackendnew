@@ -763,11 +763,57 @@ const TrackingModelController = {
         take: sizes.awaiting,
         select: {
           Id: true,
-          CurrentStage: true,
-          PrevStage: true,
-          NextStage: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
+          EndTime: true,
           Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
@@ -781,13 +827,58 @@ const TrackingModelController = {
               Id: true,
               RunningStatus: true,
               StopData: true,
-              Color: { select: { ColorName: true } },
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
               Model: {
                 select: {
+                  Textile: {
+                    select: {
+                      TextileName: true,
+                    },
+                  },
+                  Order: {
+                    select: {
+                      OrderNumber: true,
+                      OrderName: true,
+                      Collection: {
+                        select: {
+                          CollectionName: true,
+                        },
+                      },
+                    },
+                  },
+                  Barcode: true,
                   ModelName: true,
                   ModelNumber: true,
                   DemoModelNumber: true,
                   Id: true,
+                  CategoryOne: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  categoryTwo: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  Template: {
+                    select: {
+                     TemplatePattern:{
+                       select: {
+                         TemplatePatternName: true,
+                       }
+                     }
+                    }
+                 },
+                 ProductCatalog: {
+                  select: {
+                    ProductCatalogName: true
+                  }
+                }
                 },
               },
               Sizes: true,
@@ -816,30 +907,122 @@ const TrackingModelController = {
         take: sizes.inProgress,
         select: {
           Id: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
+          EndTime: true,
+          Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
           MainStatus: true,
           RunningStatus: true,
           StopData: true,
-          PrevStage: true,
-          NextStage: true,
-          Notes: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
               StopData: true,
-              Color: { select: { ColorName: true } },
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
               Model: {
                 select: {
+                  Textile: {
+                    select: {
+                      TextileName: true,
+                    },
+                  },
+                  Order: {
+                    select: {
+                      OrderNumber: true,
+                      OrderName: true,
+                      Collection: {
+                        select: {
+                          CollectionName: true,
+                        },
+                      },
+                    },
+                  },
+                  Barcode: true,
                   ModelName: true,
                   ModelNumber: true,
                   DemoModelNumber: true,
                   Id: true,
+                  CategoryOne: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  categoryTwo: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  Template: {
+                    select: {
+                     TemplatePattern:{
+                       select: {
+                         TemplatePatternName: true,
+                       }
+                     }
+                    }
+                 },
+                 ProductCatalog: {
+                  select: {
+                    ProductCatalogName: true
+                  }
+                }
                 },
               },
               Sizes: true,
@@ -869,30 +1052,122 @@ const TrackingModelController = {
         take: sizes.completed,
         select: {
           Id: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
+          EndTime: true,
+          Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
           MainStatus: true,
           RunningStatus: true,
           StopData: true,
-          Notes: true,
-          PrevStage: true,
-          NextStage: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
               StopData: true,
-              Color: { select: { ColorName: true } },
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
               Model: {
                 select: {
+                  Textile: {
+                    select: {
+                      TextileName: true,
+                    },
+                  },
+                  Order: {
+                    select: {
+                      OrderNumber: true,
+                      OrderName: true,
+                      Collection: {
+                        select: {
+                          CollectionName: true,
+                        },
+                      },
+                    },
+                  },
+                  Barcode: true,
                   ModelName: true,
                   ModelNumber: true,
                   DemoModelNumber: true,
                   Id: true,
+                  CategoryOne: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  categoryTwo: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  Template: {
+                    select: {
+                     TemplatePattern:{
+                       select: {
+                         TemplatePatternName: true,
+                       }
+                     }
+                    }
+                 },
+                 ProductCatalog: {
+                  select: {
+                    ProductCatalogName: true
+                  }
+                }
                 },
               },
               Sizes: true,
@@ -921,28 +1196,122 @@ const TrackingModelController = {
         take: sizes.givingConfirmation,
         select: {
           Id: true,
+          PrevStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          NextStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
+          CurrentStage: {
+            select: {
+              Id: true,
+              StageNumber: true,
+              StageName: true,
+              WorkDescription: true,
+              Duration: true,
+              ModelId: true,
+              AuditId: true,
+              Department: {
+                select: {
+                  Name: true,
+                },
+              },
+            },
+          },
           DamagedItem: true,
           StartTime: true,
+          EndTime: true,
           Notes: true,
           QuantityInNum: true,
           QuantityInKg: true,
-          QuantityDelivered: true,
-          QuantityReceived: true,
           MainStatus: true,
           RunningStatus: true,
           StopData: true,
+          QuantityDelivered: true,
+          QuantityReceived: true,
           ModelVariant: {
             select: {
               Id: true,
               RunningStatus: true,
               StopData: true,
-              Color: { select: { ColorName: true } },
+              Color: {
+                select: {
+                  ColorName: true,
+                },
+              },
               Model: {
                 select: {
+                  Textile: {
+                    select: {
+                      TextileName: true,
+                    },
+                  },
+                  Order: {
+                    select: {
+                      OrderNumber: true,
+                      OrderName: true,
+                      Collection: {
+                        select: {
+                          CollectionName: true,
+                        },
+                      },
+                    },
+                  },
+                  Barcode: true,
                   ModelName: true,
                   ModelNumber: true,
                   DemoModelNumber: true,
                   Id: true,
+                  CategoryOne: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  categoryTwo: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  Template: {
+                    select: {
+                     TemplatePattern:{
+                       select: {
+                         TemplatePatternName: true,
+                       }
+                     }
+                    }
+                 },
+                 ProductCatalog: {
+                  select: {
+                    ProductCatalogName: true
+                  }
+                }
                 },
               },
               Sizes: true,
@@ -952,10 +1321,42 @@ const TrackingModelController = {
         },
       });
 
+
+      const addNameField = (items, stage) =>
+        items.map((item) => {
+          const modelName = item.ModelVariant.Model.ModelName;
+          const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
+          const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
+          const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+          const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+
+          return {
+            ...item,
+            name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
+            Barcode: item.ModelVariant.Model.Barcode,
+            CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
+            OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+            OrderName: item.ModelVariant.Model.Order.OrderName,
+            TextileName: item.ModelVariant.Model.Textile.TextileName,
+          };
+        });
+
+    const awaitingWithNames = addNameField(awaiting, 1);
+    const inProgressWithNames = addNameField(inProgress, 2);
+    const completedWithNames = addNameField(completed, 3);
+    const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
+
+
+
       return res.status(200).send({
         status: 200,
         message: "",
-        data: { awaiting, completed, inProgress, givingConfirmation },
+        data: {
+          awaiting: awaitingWithNames,
+          inProgress: inProgressWithNames,
+          givingConfirmation: givingConfirmationWithNames,
+          completed: completedWithNames,
+        },
         totalPages: {
           totalPagesAwaiting: Math.ceil(
             (await prisma.trakingModels.count({
@@ -1013,9 +1414,6 @@ const TrackingModelController = {
       });
     }
   },
-
-
-
 
   getAllTracking: async (req, res, next) => {
     const sevenDaysAgo = new Date();

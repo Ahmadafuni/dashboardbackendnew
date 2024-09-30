@@ -33,6 +33,12 @@ const TemplateTypeController = {
     }
   },
   getTypes: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.templateTypes.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+    
     try {
       const types = await prisma.templateTypes.findMany({
         where: {
@@ -40,6 +46,8 @@ const TemplateTypeController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           TemplateTypeName: true,
@@ -51,6 +59,7 @@ const TemplateTypeController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب أنواع القوالب بنجاح!",
+        totalPages,
         data: types,
       });
     } catch (error) {

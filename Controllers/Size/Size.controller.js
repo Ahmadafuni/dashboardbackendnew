@@ -33,6 +33,12 @@ const SizeController = {
     }
   },
   getSizes: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.sizes.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+    
     try {
       const sizes = await prisma.sizes.findMany({
         where: {
@@ -40,6 +46,8 @@ const SizeController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           SizeName: true,
@@ -50,6 +58,7 @@ const SizeController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الأحجام بنجاح!",
         data: sizes,
       });
@@ -325,6 +334,7 @@ const SizeController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

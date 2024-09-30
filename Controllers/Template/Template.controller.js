@@ -56,6 +56,14 @@ const TemplateController = {
     }
   },
   getTemplates: async (req, res, next) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+
+    const totalRecords = await prisma.templates.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     try {
       const templates = await prisma.templates.findMany({
         where: {
@@ -63,6 +71,8 @@ const TemplateController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           TemplateName: true,
@@ -100,6 +110,7 @@ const TemplateController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب القوالب بنجاح!",
+        totalPages,
         data: templates,
       });
     } catch (error) {

@@ -33,6 +33,11 @@ const MaterialCategoryController = {
     }
   },
   getAllMaterialCategories: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.materialCategories.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const materialCategories = await prisma.materialCategories.findMany({
         where: {
@@ -40,10 +45,13 @@ const MaterialCategoryController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
       });
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب فئات المواد بنجاح!",
         data: materialCategories,
       });

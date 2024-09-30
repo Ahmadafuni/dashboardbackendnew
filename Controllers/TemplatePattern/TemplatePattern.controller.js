@@ -33,6 +33,11 @@ const TemplatePatterController = {
     }
   },
   getPatterns: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.templatePatterns.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const templates = await prisma.templatePatterns.findMany({
         where: {
@@ -40,6 +45,8 @@ const TemplatePatterController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           TemplatePatternName: true,
@@ -49,6 +56,7 @@ const TemplatePatterController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب أنماط القوالب بنجاح!",
         data: templates,
       });

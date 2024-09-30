@@ -2258,6 +2258,7 @@ const ModelController = {
         data: result,
       });
     } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message:
@@ -2812,7 +2813,33 @@ const ModelController = {
         });
       }
 
+      const renameFields = (data) => {
+        const fieldNamesMap = {
+          "رقم الموديل": "ModelNumber",
+          "الصنف": "CategoryOne",
+          "الفئة": "CategoryTwo",
+          "الزمرة": "ProductName",
+          "القماش": "Textiles",
+          "القالب": "templateId",
+          "المراحل": "Stages",
+          "القياس": "scale",
+        };
+      
+        let renamedRecord = {};
+      
+        Object.keys(data).forEach((key) => {
+          const trimmedKey = key.trim();
+          const newKey = fieldNamesMap[trimmedKey] || trimmedKey;
+          renamedRecord[newKey] = data[key];
+        });
+      
+        return renamedRecord;
+      };
+
+      
       for (let model of Models) {
+        const renamedData = renameFields(model);
+
         const {
           ModelNumber,
           CategoryOne,
@@ -2823,7 +2850,9 @@ const ModelController = {
           Stages,
           scale,
           ...color
-        } = model;
+        } = renamedData;
+
+
 
         const colors = { ...color };
         console.log(colors);
@@ -2894,6 +2923,7 @@ const ModelController = {
         let modelCount = await prisma.models.count({});
         modelCount++;
 
+
         const createdModel = await prisma.models.create({
           data: {
             ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
@@ -2917,17 +2947,12 @@ const ModelController = {
             },
             Textile: {
               connect: {
-                Id: 4,
+                Id: +Textiles,
               },
             },
             ProductCatalog: {
               connect: {
                 Id: +ProductName,
-              },
-            },
-            Template: {
-              connect: {
-                Id: +Textiles,
               },
             },
             Audit: {
@@ -2936,8 +2961,15 @@ const ModelController = {
                 UpdatedById: +userId,
               },
             },
+              Template: {
+                connect: {
+                  Id: templateId ? +Number(templateId) : 16,
+                },
+              },
+          
           },
         });
+        
 
         for (const stageId of stageIds) {
           const stagesCount = await prisma.manufacturingStagesModel.count({
