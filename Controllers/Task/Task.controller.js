@@ -73,6 +73,12 @@ const TaskController = {
     }
   },
   getAllTasks: async (req, res, next) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.tasks.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     const userDepartmentId = req.userDepartmentId;
     try {
       const tasks = await prisma.tasks.findMany({
@@ -80,6 +86,8 @@ const TaskController = {
           Audit: { IsDeleted: false },
           CreatedByDepartmentId: userDepartmentId,
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           TaskName: true,
@@ -100,6 +108,7 @@ const TaskController = {
       // Return response with formatted tasks
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم استرجاع المهام بنجاح!",
         data: tasks,
       });

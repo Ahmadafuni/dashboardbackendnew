@@ -34,6 +34,12 @@ const SupplierController = {
     }
   },
   getAllSuppliers: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.suppliers.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     try {
       const suppliers = await prisma.suppliers.findMany({
         where: {
@@ -41,10 +47,13 @@ const SupplierController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
       });
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الموردين بنجاح!",
         data: suppliers,
       });

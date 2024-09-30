@@ -34,6 +34,13 @@ const ProductCatalogController = {
     }
   },
   getAllProductCatalogs: async (req, res, next) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.productCatalogs.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+    
     try {
       const productCatalogs = await prisma.productCatalogs.findMany({
         where: {
@@ -41,15 +48,18 @@ const ProductCatalogController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
       });
-
       // Return response
       return res.status(200).send({
         status: 200,
         message: "تم جلب كتالوجات المنتجات بنجاح!",
+        totalPages,
         data: productCatalogs,
       });
     } catch (error) {
+      console.log(error)
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,

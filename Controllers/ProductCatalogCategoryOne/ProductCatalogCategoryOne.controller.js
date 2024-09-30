@@ -2,6 +2,8 @@ import prisma from "../../client.js";
 
 const ProductCatalogCategoryOneController = {
   createCategory: async (req, res, next) => {
+
+
     const { name, description } = req.body;
     const userId = req.userId;
     try {
@@ -34,6 +36,11 @@ const ProductCatalogCategoryOneController = {
     }
   },
   getAllCategories: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.productCatalogCategoryOne.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const categories = await prisma.productCatalogCategoryOne.findMany({
         where: {
@@ -41,6 +48,8 @@ const ProductCatalogCategoryOneController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           CategoryName: true,
@@ -51,6 +60,7 @@ const ProductCatalogCategoryOneController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الفئات بنجاح!",
         data: categories,
       });

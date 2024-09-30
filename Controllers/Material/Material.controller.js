@@ -100,6 +100,12 @@ const MaterialController = {
     }
   },
   getAllParentMaterials: async (req, res, next) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.parentMaterials.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const materials = await prisma.parentMaterials.findMany({
         where: {
@@ -107,6 +113,8 @@ const MaterialController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         include: {
           Category: {
             select: {
@@ -119,6 +127,7 @@ const MaterialController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب المواد بنجاح!",
         data: materials,
       });

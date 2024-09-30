@@ -91,6 +91,11 @@ const DepartmentController = {
     }
   },
   getAllDepartments: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.departments.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       // Get all departments
       const departments = await prisma.departments.findMany({
@@ -99,6 +104,8 @@ const DepartmentController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           Name: true,
@@ -111,6 +118,7 @@ const DepartmentController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الأقسام بنجاح!",
         data: departments,
       });

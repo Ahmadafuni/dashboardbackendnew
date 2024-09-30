@@ -36,6 +36,13 @@ const CollectionController = {
   getCollections: async (req, res, next) => {
     //const { isArchived } = req.query;
     //const isArchivedTrue = isArchived == "true";
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.collections.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+    
     try {
       const collections = await prisma.collections.findMany({
         where: {
@@ -44,6 +51,9 @@ const CollectionController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
+
         select: {
           Id: true,
           CollectionName: true,
@@ -54,6 +64,7 @@ const CollectionController = {
       return res.status(200).send({
         status: 200,
         message: "Collections fetched successfully!",
+        totalPages,
         data: collections,
         //isArchivedTrue,
       });

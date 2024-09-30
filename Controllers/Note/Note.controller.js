@@ -67,6 +67,11 @@ const NoteController = {
     }
   },
   getAllCreatedNotes: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.notes.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     const userDepartmentId = req.userDepartmentId;
     try {
       const notes = await prisma.notes.findMany({
@@ -76,6 +81,8 @@ const NoteController = {
           },
           CreatedDepartmentId: +userDepartmentId,
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           NoteType: true,
@@ -90,6 +97,7 @@ const NoteController = {
       });
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "Notes fetched successfully!",
         data: notes,
       });

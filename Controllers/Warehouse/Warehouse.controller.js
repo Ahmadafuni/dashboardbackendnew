@@ -37,16 +37,25 @@ const WarehouseController = {
     }
   },
   getAllWarehouses: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.warehouses.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     try {
       const warehouses = await prisma.warehouses.findMany({
         where: {
           Audit: { IsDeleted: false },
         },
+        skip: (page - 1) * size,
+        take: size ,
       });
 
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب جميع المستودعات بنجاح!",
         data: warehouses,
       });
