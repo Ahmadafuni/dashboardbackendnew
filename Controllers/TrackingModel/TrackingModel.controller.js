@@ -1415,9 +1415,6 @@ const TrackingModelController = {
     }
   },
 
-
-
-
   getAllTracking: async (req, res, next) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -3270,7 +3267,8 @@ const TrackingModelController = {
     }
   },
 
-  pauseTracking: async (req, res, next) => {
+  // we dont use this: we use the modelvarinte one
+  pauseUnpause: async (req, res, next) => {
     const userId = req.userId;
     const userDepartmentId = req.userDepartmentId;
     const variantId = +req.params.id;
@@ -3280,7 +3278,6 @@ const TrackingModelController = {
         where: {
           Id: +variantId,
           MainStatus: "INPROGRESS",
-          RunningStatus: "ONGOING",
           Audit: {
             IsDeleted: false,
           },
@@ -3295,7 +3292,6 @@ const TrackingModelController = {
         where: {
           ModelVariantId: variantId,
           MainStatus: "INPROGRESS",
-          RunningStatus: "ONGOING",
           CurrentStage: {
             DepartmentId: userDepartmentId,
           },
@@ -3314,6 +3310,7 @@ const TrackingModelController = {
         },
       });
 
+      if (tracking.RunningStatus === "ONGOING") {
         await prisma.trakingModels.update({
           where: {
             Id: tracking.Id,
@@ -3330,97 +3327,31 @@ const TrackingModelController = {
             },
           },
         });
-      await prisma.notifications.create({
-        data: {
-          //TODO we need here only the text
-          Description: stopData.ReasonText,
-          Title: `Pausing ${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
-          ToDepartment: {
-            connect: {
-              Id: managerialDep.Id,
-            },
+      } else {
+        await prisma.trakingModels.update({
+          where: {
+            Id: tracking.Id,
           },
-        },
-      });
-
-      return res.status(200).send({
-        status: 200,
-        message: "Variant Paused successfully!",
-        data: {},
-      });
-    } catch (error) {
-      return res.status(500).send({
-        status: 500,
-        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
-        data: {},
-      });
-    }
-  },
-
-  unpauseTracking: async (req, res, next) => {
-    const userId = req.userId;
-    const userDepartmentId = req.userDepartmentId;
-    const variantId = +req.params.id;
-    const { stopData } = req.body;
-    try {
-      const variant = await prisma.modelVarients.findFirst({
-        where: {
-          Id: +variantId,
-          MainStatus: "INPROGRESS",
-          RunningStatus: "ONHOLD",
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-        include: {
-          Model: true,
-          Color: true,
-        },
-      });
-
-      const tracking = await prisma.trakingModels.findFirst({
-        where: {
-          ModelVariantId: variantId,
-          MainStatus: "INPROGRESS",
-          RunningStatus: "ONHOLD",
-          CurrentStage: {
-            DepartmentId: userDepartmentId,
-          },
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-      const managerialDep = await prisma.departments.findFirst({
-        where: {
-          Category: "FACTORYMANAGER",
-          Audit: {
-            IsDeleted: false,
-          },
-        },
-      });
-
-      await prisma.trakingModels.update({
-        where: {
-          Id: tracking.Id,
-        },
-        data: {
-          RunningStatus: "ONGOING",
-          StopData: stopData,
-          Audit: {
-            update: {
-              data: {
-                UpdatedById: userId,
+          data: {
+            RunningStatus: "ONGOING",
+            StopData: stopData,
+            Audit: {
+              update: {
+                data: {
+                  UpdatedById: userId,
+                },
               },
             },
           },
-        },
-      });
+        });
+      }
+
       await prisma.notifications.create({
         data: {
-          //TODO we need here only the text
-          Description: stopData.ReasonText,
-          Title: `Unpausing ${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
+          Description: Reasone,
+          Title: `${
+              tracking.RunningStatus === "ONGOING" ? "Pausing" : "Unpausing"
+          }${variant.Model.DemoModelNumber} Variant ${variant.Color.ColorName}`,
           ToDepartment: {
             connect: {
               Id: managerialDep.Id,
@@ -3431,7 +3362,9 @@ const TrackingModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: "Variant Unpaused successfully!",
+        message: `Variant ${
+            tracking.RunningStatus === "ONGOING" ? "Paused" : "Unpaused"
+        } successfully!`,
         data: {},
       });
     } catch (error) {
@@ -3442,7 +3375,7 @@ const TrackingModelController = {
       });
     }
   },
-  
+
 };
 
 export default TrackingModelController;

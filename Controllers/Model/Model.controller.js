@@ -1585,12 +1585,14 @@ const ModelController = {
     const stopDataFromBody = req.body.stopData;
 
     const newStopData = {
-      ...stopDataFromBody,
       userId: req.userId,
       userDepartmentId: req.userDepartmentId,
       StartStopTime: new Date(),
       EndStopTime: null,
+      ReasonText: stopDataFromBody
     };
+
+    console.log("newStopData",newStopData);
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -2314,6 +2316,7 @@ const ModelController = {
       res.status(500).json({ error: error.message });
     }
   },
+
   getOrdersStats : async (req, res) => {
     const now = new Date();
     const type = req.query.type || "monthly";
@@ -2784,7 +2787,6 @@ const calculateStats = (items, statusField = 'RunningStatus') => {
   return stats;
 };
 
-
 // Helper function to fetch data for the given date ranges
 const fetchStatsForRanges = async (model, dateRanges) => {
   const promises = dateRanges.map(({ start, end }) =>
@@ -2805,10 +2807,5 @@ const fetchStatsForRanges = async (model, dateRanges) => {
   console.log("Fetched models:", results.flat());
   return results.flat();
 };
-
-
-
-
-
 
 export default ModelController;
