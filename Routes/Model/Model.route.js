@@ -58,25 +58,25 @@ router.get("/mokks", async (req, res) => {
 //
 router.get(
   "/tasks-stats",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.getTasksStats
 );
 
 router.get(
   "/collections-stats",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.getCollectionStats
 );
 
 router.get(
   "/model-stats",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.getModelStats
 );
 
 router.get(
   "/orders-stats",
-  verifyUser(["FACTORYMANAGER", "STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   ModelController.getOrdersStats
 );
 

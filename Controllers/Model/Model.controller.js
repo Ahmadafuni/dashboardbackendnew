@@ -2437,22 +2437,22 @@ const ModelController = {
         const modelsStats = Array(7)
           .fill()
           .map(() => ({
-            awaiting: 0,
-            inprogress: 0,
-            done: 0,
+            pending: 0,
+            ongoing: 0,
+            completed: 0,
           }));
 
         models.forEach((model) => {
           const day = model.Audit.CreatedAt.getDay();
-          switch (model.Status) {
-            case "AWAITING":
-              modelsStats[day].awaiting += 1;
+          switch (model.RunningStatus) {
+            case "PENDING":
+              modelsStats[day].pending += 1;
               break;
-            case "INPROGRESS":
-              modelsStats[day].inprogress += 1;
+            case "ONGOING":
+              modelsStats[day].ongoing += 1;
               break;
-            case "DONE":
-              modelsStats[day].done += 1;
+            case "COMPLETED":
+              modelsStats[day].completed += 1;
               break;
           }
         });
@@ -2489,9 +2489,9 @@ const ModelController = {
 
       try {
         const modelsStats = weeks.map(() => ({
-          awaiting: 0,
-          inprogress: 0,
-          done: 0,
+          pending: 0,
+          ongoing: 0,
+          completed: 0,
         }));
 
         for (let i = 0; i < weeks.length; i++) {
@@ -2510,15 +2510,15 @@ const ModelController = {
           });
 
           models.forEach((model) => {
-            switch (model.Status) {
-              case "AWAITING":
-                modelsStats[i].awaiting += 1;
+            switch (model.RunningStatus) {
+              case "PENDING":
+                modelsStats[i].pending += 1;
                 break;
-              case "INPROGRESS":
-                modelsStats[i].inprogress += 1;
+              case "ONGOING":
+                modelsStats[i].ongoing += 1;
                 break;
-              case "DONE":
-                modelsStats[i].done += 1;
+              case "COMPLETED":
+                modelsStats[i].completed += 1;
                 break;
             }
           });
@@ -2543,9 +2543,9 @@ const ModelController = {
 
       try {
         const modelsStats = months.map(() => ({
-          awaiting: 0,
-          inprogress: 0,
-          done: 0,
+          pending: 0,
+          ongoing: 0,
+          completed: 0,
         }));
 
         for (let i = 0; i < months.length; i++) {
@@ -2564,15 +2564,15 @@ const ModelController = {
           });
 
           models.forEach((model) => {
-            switch (model.Status) {
-              case "AWAITING":
-                modelsStats[i].awaiting += 1;
+            switch (model.RunningStatus) {
+              case "PENDING":
+                modelsStats[i].pending += 1;
                 break;
-              case "INPROGRESS":
-                modelsStats[i].inprogress += 1;
+              case "ONGOING":
+                modelsStats[i].ongoing += 1;
                 break;
-              case "DONE":
-                modelsStats[i].done += 1;
+              case "COMPLETED":
+                modelsStats[i].completed += 1;
                 break;
             }
           });
