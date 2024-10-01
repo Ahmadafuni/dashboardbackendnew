@@ -172,6 +172,12 @@ const ModelController = {
 
   getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.models.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const models = await prisma.models.findMany({
         where: {
@@ -180,6 +186,8 @@ const ModelController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         include: {
           CategoryOne: true,
           categoryTwo: true,
@@ -197,6 +205,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
@@ -1048,10 +1057,12 @@ const ModelController = {
         try {
           // Attempt to parse Sizes as JSON
           sizeArray = JSON.parse(e.Sizes);
+          // Ensure that sizeArray is an array
           if (!Array.isArray(sizeArray)) {
             sizeArray = [sizeArray];
           }
         } catch (err) {
+          // If parsing fails, treat Sizes as a plain string
           sizeArray = [e.Sizes];
         }
 
@@ -1228,7 +1239,6 @@ const ModelController = {
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
 
-
       return res.status(200).send({
         status: 200,
         message: "Model summary fetched successfully!",
@@ -1243,7 +1253,6 @@ const ModelController = {
       });
     }
   },
-
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;
@@ -2504,18 +2513,19 @@ const ModelController = {
                 Id: +ProductName,
               },
             },
+              Template: {
+                  connect: {
+                      // 26 is undefined Template in Production
+                      Id: templateId ? +Number(templateId) : 26,
+                  },
+              },
             Audit: {
               create: {
                 CreatedById: +userId,
                 UpdatedById: +userId,
               },
             },
-              Template: {
-                connect: {
-                  // 26 is undefined Template in Production
-                  Id: templateId ? +Number(templateId) : 26,
-                },
-              },
+
 
           },
         });
@@ -2689,17 +2699,17 @@ const ModelController = {
           QuantityDelivered: true,
         },
       });
-
+  
       // التحقق مما إذا كانت السجلات موجودة
       if (trackingRecords.length === 0) {
         return res.status(404).json({ error: 'No stages found for the given ModelVariantId' });
       }
-
+  
       // استخراج تفاصيل المراحل
       const stagesWithDetails = trackingRecords.map(record => {
         const startTime = record.StartTime ? new Date(record.StartTime) : null;
         const endTime = record.EndTime ? new Date(record.EndTime) : null;
-
+  
         // حساب المدة الزمنية بين StartTime و EndTime
         let duration = null;
         if (startTime && endTime) {
@@ -2707,7 +2717,7 @@ const ModelController = {
           const durationInHours = durationInMilliseconds / (1000 * 60 * 60); // تحويل إلى ساعات
           duration = durationInHours;
         }
-
+  
         return {
           stageName: record.CurrentStage.StageName,
           startTime: record.StartTime,
@@ -2717,10 +2727,10 @@ const ModelController = {
           duration, // المدة الزمنية بالساعات
         };
       });
-
+  
       // إعادة الرد مع تفاصيل المراحل
       res.status(200).json({ stages: stagesWithDetails });
-
+  
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred while fetching stages' });

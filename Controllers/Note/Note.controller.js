@@ -67,6 +67,11 @@ const NoteController = {
     }
   },
   getAllCreatedNotes: async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.notes.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     const userDepartmentId = req.userDepartmentId;
 
     const page = parseInt(req.query.page) || 1;
