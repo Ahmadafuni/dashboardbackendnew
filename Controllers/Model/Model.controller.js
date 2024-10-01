@@ -2415,8 +2415,8 @@ const ModelController = {
           T4: 7,
           T5: 8,
           A: 9,
-          PM: 24,
-          PA: 25,
+          PM: 10,
+          PA: 11,
         };
 
         const colorNameToIdMap = await prisma.colors.findMany({
