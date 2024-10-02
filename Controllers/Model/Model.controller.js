@@ -172,6 +172,12 @@ const ModelController = {
 
   getModelsByOrderId: async (req, res, next) => {
     const orderId = req.params.id;
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+    const totalRecords = await prisma.models.count({});
+
+    const totalPages = Math.ceil(totalRecords / size);
     try {
       const models = await prisma.models.findMany({
         where: {
@@ -180,6 +186,8 @@ const ModelController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         include: {
           CategoryOne: true,
           categoryTwo: true,
@@ -197,6 +205,7 @@ const ModelController = {
       // Return response
       return res.status(200).send({
         status: 200,
+        totalPages,
         message: "تم جلب الموديلات بنجاح!",
         data: models,
       });
@@ -2824,7 +2833,6 @@ const ModelController = {
           "المراحل": "Stages",
           "القياس": "scale",
         };
-      
         let renamedRecord = {};
       
         Object.keys(data).forEach((key) => {
@@ -2832,11 +2840,9 @@ const ModelController = {
           const newKey = fieldNamesMap[trimmedKey] || trimmedKey;
           renamedRecord[newKey] = data[key];
         });
-      
         return renamedRecord;
       };
 
-      
       for (let model of Models) {
         const renamedData = renameFields(model);
 
@@ -2851,8 +2857,6 @@ const ModelController = {
           scale,
           ...color
         } = renamedData;
-
-
 
         const colors = { ...color };
         console.log(colors);
@@ -3098,7 +3102,6 @@ const ModelController = {
           });
         }
       }
-
       return res.status(201).send({
         status: 201,
         message: "تم إنشاء جميع الموديلات والألوان بنجاح!",

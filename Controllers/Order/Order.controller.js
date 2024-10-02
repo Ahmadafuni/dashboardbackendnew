@@ -60,7 +60,7 @@ const OrderController = {
 
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
-    const totalRecords = await prisma.productCatalogs.count({});
+    const totalRecords = await prisma.orders.count({});
 
     const totalPages = Math.ceil(totalRecords / size);
     
