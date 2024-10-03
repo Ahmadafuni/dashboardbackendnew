@@ -253,7 +253,6 @@ const DataTableController = {
             // }
         };
         
-               
         try {
             const where = {};
             const include = {};
@@ -317,6 +316,226 @@ const DataTableController = {
         }
     },
 
+    filterDashboard: async (req, res) => {
+        const { demoModelNumber , stage } = req.params;  
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        try {
+            // التحقق مما إذا كان demoModelNumber متاحًا
+            if (!demoModelNumber) {
+                return res.status(400).json({ error: 'DemoModelNumber is required' });
+            }
+    
+            // إنشاء الاستعلام للبحث عن البيانات في TrakingModels بناءً على DemoModelNumber
+            const results = await prisma.trakingModels.findMany({
+                where: {
+                    ModelVariant: {
+                        Model: {
+                            DemoModelNumber: {
+                                contains: demoModelNumber,
+                                mode: 'insensitive'  // البحث غير حساس لحالة الأحرف
+                            }
+                        }
+                    },
+                    
+                    ...(stage === '1'
+                        ? {
+                            OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
+
+                        }
+                        : stage === '2'
+                        ? {
+                            MainStatus: "INPROGRESS",
+                        }
+                        : stage === '3'
+                        ? {
+                            MainStatus: "DONE",
+                            EndTime: {
+                                gte: sevenDaysAgo,
+                            },
+                        }
+                        : stage === '4'
+                        ? {
+                         MainStatus: "CHECKING",
+
+                        }
+                        : {
+                            RunningStatus: "COMPLETED",
+                            EndTime: {
+                                gte: sevenDaysAgo,
+                            },
+                        }
+                    ),
+                    
+                },
+                select: {
+                    Id: true,
+                    PrevStage: {
+                      select: {
+                        Id: true,
+                        StageNumber: true,
+                        StageName: true,
+                        WorkDescription: true,
+                        Duration: true,
+                        ModelId: true,
+                        AuditId: true,
+                        Department: {
+                          select: {
+                            Name: true,
+                          },
+                        },
+                      },
+                    },
+                    NextStage: {
+                      select: {
+                        Id: true,
+                        StageNumber: true,
+                        StageName: true,
+                        WorkDescription: true,
+                        Duration: true,
+                        ModelId: true,
+                        AuditId: true,
+                        Department: {
+                          select: {
+                            Name: true,
+                          },
+                        },
+                      },
+                    },
+                    CurrentStage: {
+                      select: {
+                        Id: true,
+                        StageNumber: true,
+                        StageName: true,
+                        WorkDescription: true,
+                        Duration: true,
+                        ModelId: true,
+                        AuditId: true,
+                        Department: {
+                          select: {
+                            Name: true,
+                          },
+                        },
+                      },
+                    },
+                    DamagedItem: true,
+                    StartTime: true,
+                    EndTime: true,
+                    Notes: true,
+                    QuantityInNum: true,
+                    QuantityInKg: true,
+                    MainStatus: true,
+                    RunningStatus: true,
+                    StopData: true,
+                    QuantityDelivered: true,
+                    QuantityReceived: true,
+                    ModelVariant: {
+                      select: {
+                        Id: true,
+                        RunningStatus: true,
+                        StopData: true,
+                        Color: {
+                          select: {
+                            ColorName: true,
+                          },
+                        },
+                        Model: {
+                          select: {
+                            Textile: {
+                              select: {
+                                TextileName: true,
+                              },
+                            },
+                            Order: {
+                              select: {
+                                OrderNumber: true,
+                                OrderName: true,
+                                Collection: {
+                                  select: {
+                                    CollectionName: true,
+                                  },
+                                },
+                              },
+                            },
+                            Barcode: true,
+                            ModelName: true,
+                            ModelNumber: true,
+                            DemoModelNumber: true,
+                            Id: true,
+                            CategoryOne: {
+                              select: {
+                                CategoryName: true,
+                              },
+                            },
+                            categoryTwo: {
+                              select: {
+                                CategoryName: true,
+                              },
+                            },
+                            Template: {
+                              select: {
+                               TemplatePattern:{
+                                 select: {
+                                   TemplatePatternName: true,
+                                 }
+                               }
+                              }
+                           },
+                           ProductCatalog: {
+                            select: {
+                              ProductCatalogName: true
+                            }
+                          }
+                          },
+                        },
+                        Sizes: true,
+                        Quantity: true,
+                      },
+                    },
+                  },
+            });
+    
+
+            const addNameField = (items, stage) =>
+                items.map((item) => {
+                  const modelName = item.ModelVariant.Model.ModelName;
+                  const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
+                  const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
+                  const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+                  const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+      
+                  return {
+                    ...item,
+                    name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
+                    Barcode: item.ModelVariant.Model.Barcode,
+                    CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
+                    OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+                    OrderName: item.ModelVariant.Model.Order.OrderName,
+                    TextileName: item.ModelVariant.Model.Textile.TextileName,
+                  };
+                });
+
+            const finalResults = addNameField(results, 1);
+
+            // التحقق مما إذا كانت النتائج فارغة
+            if (results.length === 0) {
+                return res.status(404).json({ message: 'No data found' });
+            }
+    
+            return res.status(200).send({
+                status: 200,
+                message: "",
+                data: finalResults
+              });
+    
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    
 };
 
 export default DataTableController ;
