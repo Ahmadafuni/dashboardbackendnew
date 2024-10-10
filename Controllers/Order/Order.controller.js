@@ -609,6 +609,7 @@ const OrderController = {
         },
       });
 
+      /* Modify the start Order Logic
       // Update models to RUNNING status
       await prisma.models.updateMany({
         where: {
@@ -672,6 +673,7 @@ const OrderController = {
           },
         });
       }
+       */
 
       return res.status(200).send({
         status: 200,

@@ -1418,24 +1418,23 @@ const ModelController = {
         });
       }
 
-      let stopDataArray = [];
-      if (model.StopData) {
-        try {
-          stopDataArray = typeof model.StopData === 'string'
-              ? JSON.parse(model.StopData)
-              : model.StopData;
-        } catch (error) {
-          console.error("Error parsing StopData:", error);
-          return res.status(500).send({
-            status: 500,
-            message: "Invalid StopData format. Please check the data.",
-            data: {},
-          });
-        }
-      }
-
       // If RunningStatus is ONHOLD
         if (model.RunningStatus === "ONHOLD") {
+          let stopDataArray = [];
+          if (model.StopData) {
+            try {
+              stopDataArray = typeof model.StopData === 'string'
+                  ? JSON.parse(model.StopData)
+                  : model.StopData;
+            } catch (error) {
+              console.error("Error parsing StopData:", error);
+              return res.status(500).send({
+                status: 500,
+                message: "Invalid StopData format. Please check the data.",
+                data: {},
+              });
+            }
+          }
         if (stopDataArray.length === 0) {
           return res.status(400).send({
             status: 400,
@@ -1535,6 +1534,7 @@ const ModelController = {
             Audit: {
               IsDeleted: false,
             },
+            MainStatus: "AWAITING",
           },
           data: {
             RunningStatus: "ONGOING",
@@ -1553,6 +1553,7 @@ const ModelController = {
                 Id: +id,
               },
             },
+            MainStatus: "AWAITING",
           },
         });
 
