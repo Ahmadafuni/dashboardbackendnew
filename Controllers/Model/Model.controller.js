@@ -1539,7 +1539,6 @@ const ModelController = {
           data: {
             RunningStatus: "ONGOING",
             MainStatus: "TODO",
-            StartTime: new Date(),
           },
         });
 
@@ -1565,6 +1564,7 @@ const ModelController = {
             data: {
               RunningStatus: "ONGOING",
               MainStatus: "TODO",
+              StartTime: new Date(),
             },
           });
         }
