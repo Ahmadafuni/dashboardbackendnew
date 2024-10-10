@@ -491,7 +491,13 @@ const ReportsController = {
         models,
       ] = await Promise.all([
 
+
         prisma.collections.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CollectionName: true,
@@ -499,6 +505,11 @@ const ReportsController = {
         }),
 
           prisma.departments.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
           select: {
             Id: true,
             Name: true,
@@ -506,42 +517,77 @@ const ReportsController = {
         }),
 
         prisma.productCatalogs.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             ProductCatalogName: true,
           },
         }),
         prisma.productCatalogCategoryOne.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
         prisma.productCatalogCategoryTwo.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
         prisma.productCatalogTextiles.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TextileName: true,
           },
         }),
         prisma.templateTypes.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TemplateTypeName: true,
           },
         }),
         prisma.templatePatterns.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TemplatePatternName: true,
           },
         }),
         prisma.orders.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             OrderNumber: true,
@@ -549,6 +595,11 @@ const ReportsController = {
           },
         }),
         prisma.models.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             Barcode: true,
