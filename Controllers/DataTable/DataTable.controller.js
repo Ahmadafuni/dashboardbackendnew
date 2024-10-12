@@ -2,10 +2,6 @@ import prisma from "../../client.js";
 
 
 const DataTableController = {
- 
-
-    
-    
     getAllFields: async (req, res) => {
         const { tableName } = req.params;
     
@@ -89,8 +85,6 @@ const DataTableController = {
             });
         }
     },
-    
-
 
     filterTable: async (req, res) => {
         const { tableName } = req.params;
@@ -318,8 +312,6 @@ const DataTableController = {
 
     filterDashboard: async (req, res) => {
         const { demoModelNumber , stage } = req.params;  
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         try {
             // التحقق مما إذا كان demoModelNumber متاحًا
@@ -330,12 +322,19 @@ const DataTableController = {
             // إنشاء الاستعلام للبحث عن البيانات في TrakingModels بناءً على DemoModelNumber
             const results = await prisma.trakingModels.findMany({
                 where: {
+                    Audit: { IsDeleted: false },
                     ModelVariant: {
+                        Audit: { IsDeleted: false },
                         Model: {
+                            Audit: {IsDeleted: false},
                             DemoModelNumber: {
                                 contains: demoModelNumber,
                                 mode: 'insensitive'  // البحث غير حساس لحالة الأحرف
-                            }
+                            },
+                            Order: {
+                                Audit: { IsDeleted: false },
+                                Collection: { Audit: { IsDeleted: false } },
+                            },
                         }
                     },
                     
@@ -351,9 +350,6 @@ const DataTableController = {
                         : stage === '3'
                         ? {
                             MainStatus: "DONE",
-                            EndTime: {
-                                gte: sevenDaysAgo,
-                            },
                         }
                         : stage === '4'
                         ? {
@@ -362,9 +358,6 @@ const DataTableController = {
                         }
                         : {
                             RunningStatus: "COMPLETED",
-                            EndTime: {
-                                gte: sevenDaysAgo,
-                            },
                         }
                     ),
                     
@@ -535,7 +528,6 @@ const DataTableController = {
         }
     },
 
-    
 };
 
 export default DataTableController ;
