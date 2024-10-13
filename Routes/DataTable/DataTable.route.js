@@ -13,10 +13,12 @@ router.get(
 
 router.post(
     "/filter/:tableName" ,
-
     DataTableController.filterTable
 );
 
-
+router.get(
+    "/filter/dashboard/:demoModelNumber/:stage" ,
+    DataTableController.filterDashboard
+);
 
 export { router as DataTableRoute };

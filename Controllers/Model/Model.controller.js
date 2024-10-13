@@ -1012,7 +1012,7 @@ const ModelController = {
     const id = req.params.id;
     try {
       const modelSummary = {};
-
+  
       const model = await prisma.models.findUnique({
         where: {
           Id: +id,
@@ -1040,7 +1040,7 @@ const ModelController = {
                 include: {
                   CurrentStage: {
                     include: {
-                      Department: true, // تضمين جدول Departments لجلب اسم القسم
+                      Department: true,
                     },
                   },
                 },
@@ -1049,23 +1049,20 @@ const ModelController = {
           },
         },
       });
-
+  
       const sizes = [];
       model.ModelVarients.forEach((e) => {
         let sizeArray;
-
+  
         try {
-          // Attempt to parse Sizes as JSON
           sizeArray = JSON.parse(e.Sizes);
-          // Ensure that sizeArray is an array
           if (!Array.isArray(sizeArray)) {
             sizeArray = [sizeArray];
           }
         } catch (err) {
-          // If parsing fails, treat Sizes as a plain string
           sizeArray = [e.Sizes];
         }
-
+  
         sizeArray.forEach((f) => {
           const sizeLabel = typeof f === "string" ? f : f.label;
           if (!sizes.includes(sizeLabel)) {
@@ -1073,7 +1070,8 @@ const ModelController = {
           }
         });
       });
-
+  
+      // Summarize model information
       modelSummary.modelInfo = {
         ModelDate: model.Audit.CreatedAt.toDateString(),
         ModelName: model.ModelName,
@@ -1097,7 +1095,7 @@ const ModelController = {
         Sizes: sizes.join("-"),
         Images: model.Images,
       };
-
+  
       // Fetch model stages for each ModelVarient
       const stages = model.ModelVarients.flatMap((variant) =>
         variant.TrakingModels.map((tracking) => ({
@@ -1107,13 +1105,84 @@ const ModelController = {
           DepartmentName: tracking.CurrentStage.Department.Name, // جلب اسم القسم المرتبط مع المرحلة
         }))
       );
-
+  
       const uniqueStages = Array.from(
         new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
       );
-
+  
       modelSummary.stages = uniqueStages;
+  
 
+
+
+      const cuttingDepartmentVariants = [];
+      const printingDepartmentVariants = [];
+      const sewingDepartmentVariants = [];
+      const emballageDepartmentVariants = [];
+      const otherDepartmentVariants = [];
+      
+      // Filter ModelVarients based on DepartmentId in TrakingModels
+      model.ModelVarients.forEach((variant) => {
+        let belongsToCutting = false;
+        let belongsToPrinting = false;
+        let belongsToSewing = false;
+        let belongsToEmballage = false;
+      
+        variant.TrakingModels.forEach((tracking) => {
+          switch (tracking.CurrentStage.Department.Id) {
+            case 3:
+              belongsToCutting = true;
+              break;
+            case 10:
+              belongsToPrinting = true;
+              break;
+            case 4:
+              belongsToSewing = true;
+              break;
+            case 9:
+              belongsToEmballage = true;
+              break;
+          }
+        });
+      
+        const variantData = {
+          Id: variant.Id,
+          MainStatus: variant.MainStatus,
+          RunningStatus: variant.RunningStatus,
+          StopData: variant.StopData,
+          ColorName: variant.Color.ColorName,
+          Sizes: variant.Sizes,
+          Quantity: variant.Quantity,
+          TrakingModels: variant.TrakingModels,
+        };
+      
+        // Add the variant to the appropriate department array
+        if (belongsToCutting) {
+          cuttingDepartmentVariants.push(variantData);
+        } else if (belongsToPrinting) {
+          printingDepartmentVariants.push(variantData);
+        } else if (belongsToSewing) {
+          sewingDepartmentVariants.push(variantData);
+        } else if (belongsToEmballage) {
+          emballageDepartmentVariants.push(variantData);
+        } else {
+          otherDepartmentVariants.push(variantData);
+        }
+      });
+      
+      // Summarize model variants based on the department
+      modelSummary.modelVarients = {
+        cuttingDepartment: cuttingDepartmentVariants,
+        printingDepartment: printingDepartmentVariants,
+        sewingDepartment: sewingDepartmentVariants,
+        emballageDepartment: emballageDepartmentVariants,
+        otherDepartments: otherDepartmentVariants,
+      };
+      
+
+
+  
+      // Fetch cutting and dressup measurements (already exists in your code)
       const cutting = await prisma.measurements.findMany({
         where: {
           TemplateSize: {
@@ -1139,22 +1208,22 @@ const ModelController = {
           },
         },
       });
-
+  
+      // Format cutting sizes and measurements
       const cuttingSizes = [];
       cutting.forEach((m) => {
         if (!cuttingSizes.includes(m.Size.SizeName)) {
           cuttingSizes.push(m.Size.SizeName);
         }
       });
-
+  
       const formatedCutting = [];
       cutting.forEach((measurement) => {
         const size = measurement.Size.SizeName;
-
         const isThere = formatedCutting.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-
+  
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1166,7 +1235,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-
+  
       formatedCutting.forEach((m) => {
         cuttingSizes.forEach((s) => {
           if (!m[s]) {
@@ -1174,7 +1243,8 @@ const ModelController = {
           }
         });
       });
-
+  
+      // Same logic for dressup
       const dressup = await prisma.measurements.findMany({
         where: {
           TemplateSize: {
@@ -1200,22 +1270,21 @@ const ModelController = {
           },
         },
       });
-
+  
       const dressupSizes = [];
       dressup.forEach((m) => {
         if (!dressupSizes.includes(m.Size.SizeName)) {
           dressupSizes.push(m.Size.SizeName);
         }
       });
-
+  
       const formatedDressup = [];
       dressup.forEach((measurement) => {
         const size = measurement.Size.SizeName;
-
         const isThere = formatedDressup.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-
+  
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1227,7 +1296,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-
+  
       formatedDressup.forEach((m) => {
         dressupSizes.forEach((s) => {
           if (!m[s]) {
@@ -1235,10 +1304,10 @@ const ModelController = {
           }
         });
       });
-
+  
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
-
+  
       return res.status(200).send({
         status: 200,
         message: "Model summary fetched successfully!",
@@ -1253,6 +1322,7 @@ const ModelController = {
       });
     }
   },
+  
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;
@@ -1418,24 +1488,23 @@ const ModelController = {
         });
       }
 
-      let stopDataArray = [];
-      if (model.StopData) {
-        try {
-          stopDataArray = typeof model.StopData === 'string'
-              ? JSON.parse(model.StopData)
-              : model.StopData;
-        } catch (error) {
-          console.error("Error parsing StopData:", error);
-          return res.status(500).send({
-            status: 500,
-            message: "Invalid StopData format. Please check the data.",
-            data: {},
-          });
-        }
-      }
-
       // If RunningStatus is ONHOLD
         if (model.RunningStatus === "ONHOLD") {
+          let stopDataArray = [];
+          if (model.StopData) {
+            try {
+              stopDataArray = typeof model.StopData === 'string'
+                  ? JSON.parse(model.StopData)
+                  : model.StopData;
+            } catch (error) {
+              console.error("Error parsing StopData:", error);
+              return res.status(500).send({
+                status: 500,
+                message: "Invalid StopData format. Please check the data.",
+                data: {},
+              });
+            }
+          }
         if (stopDataArray.length === 0) {
           return res.status(400).send({
             status: 400,
@@ -1535,11 +1604,11 @@ const ModelController = {
             Audit: {
               IsDeleted: false,
             },
+            MainStatus: "AWAITING",
           },
           data: {
             RunningStatus: "ONGOING",
             MainStatus: "TODO",
-            StartTime: new Date(),
           },
         });
 
@@ -1554,6 +1623,7 @@ const ModelController = {
                 Id: +id,
               },
             },
+            MainStatus: "AWAITING",
           },
         });
 
@@ -1565,6 +1635,7 @@ const ModelController = {
             data: {
               RunningStatus: "ONGOING",
               MainStatus: "TODO",
+              StartTime: new Date(),
             },
           });
         }

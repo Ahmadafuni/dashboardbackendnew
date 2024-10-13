@@ -740,6 +740,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -892,6 +893,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -1036,6 +1038,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -1181,6 +1184,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -1440,6 +1444,7 @@ const TrackingModelController = {
           IsDeleted: false,
         },
         ModelVariant: {
+          Audit: { IsDeleted: false },
           Model: {
             Audit: {
               IsDeleted: false,
@@ -1465,6 +1470,7 @@ const TrackingModelController = {
           IsDeleted: false,
         },
         ModelVariant: {
+          Audit: { IsDeleted: false },
           Model: {
             Audit: {
               IsDeleted: false,
@@ -1490,6 +1496,7 @@ const TrackingModelController = {
           IsDeleted: false,
         },
         ModelVariant: {
+          Audit: { IsDeleted: false },
           Model: {
             Audit: {
               IsDeleted: false,
@@ -1519,6 +1526,7 @@ const TrackingModelController = {
           IsDeleted: false,
         },
         ModelVariant: {
+          Audit: { IsDeleted: false },
           Model: {
             RunningStatus: "COMPLETED",
             Audit: {
@@ -1549,6 +1557,7 @@ const TrackingModelController = {
           IsDeleted: false,
         },
         ModelVariant: {
+          Audit: { IsDeleted: false },
           Model: {
             Audit: {
               IsDeleted: false,
@@ -1584,6 +1593,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -1737,6 +1747,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -1892,6 +1903,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -2159,6 +2171,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -2380,6 +2393,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -2439,6 +2453,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -2489,6 +2504,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -2540,6 +2556,7 @@ const TrackingModelController = {
         where: {
           Audit: { IsDeleted: false },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: { IsDeleted: false },
               Order: {
@@ -2661,6 +2678,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -2799,6 +2817,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -2937,6 +2956,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
@@ -3079,6 +3099,7 @@ const TrackingModelController = {
             IsDeleted: false,
           },
           ModelVariant: {
+            Audit: { IsDeleted: false },
             Model: {
               Audit: {
                 IsDeleted: false,
