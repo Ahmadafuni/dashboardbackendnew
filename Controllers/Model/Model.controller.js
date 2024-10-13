@@ -1944,18 +1944,20 @@ const ModelController = {
         });
       }
     }
-
+    
     if (startDate || endDate) {
-      filter.Audit = {
-        CreatedAt: {},
-      };
+      filter.StartTime = {}; 
+      filter.EndTime = {};
+    
       if (startDate) {
-        filter.Audit.CreatedAt.gte = new Date(startDate);
+        filter.StartTime.gte = new Date(startDate); 
       }
+    
       if (endDate) {
-        filter.Audit.CreatedAt.lte = new Date(endDate);
+        filter.EndTime.lte = new Date(endDate); 
       }
     }
+
 
     if (orderNumber) {
       filter.OrderNumber = orderNumber;

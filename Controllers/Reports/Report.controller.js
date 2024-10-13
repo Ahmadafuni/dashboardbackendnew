@@ -492,6 +492,11 @@ const ReportsController = {
       ] = await Promise.all([
 
         prisma.collections.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CollectionName: true,
@@ -499,6 +504,11 @@ const ReportsController = {
         }),
 
           prisma.departments.findMany({
+            where: {
+              Audit: {
+                IsDeleted: false,
+              },
+            },
           select: {
             Id: true,
             Name: true,
@@ -506,42 +516,77 @@ const ReportsController = {
         }),
 
         prisma.productCatalogs.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             ProductCatalogName: true,
           },
         }),
         prisma.productCatalogCategoryOne.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
         prisma.productCatalogCategoryTwo.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             CategoryName: true,
           },
         }),
         prisma.productCatalogTextiles.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TextileName: true,
           },
         }),
         prisma.templateTypes.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TemplateTypeName: true,
           },
         }),
         prisma.templatePatterns.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             TemplatePatternName: true,
           },
         }),
         prisma.orders.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             OrderNumber: true,
@@ -549,6 +594,11 @@ const ReportsController = {
           },
         }),
         prisma.models.findMany({
+          where: {
+            Audit: {
+              IsDeleted: false,
+            },
+          },
           select: {
             Id: true,
             Barcode: true,
@@ -793,8 +843,10 @@ const ReportsController = {
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
-        summary, // New summary object added to response
-        data: groupedModels,
+        data: {
+          data: groupedModels ,
+          summary: summary
+        },
       });
     } catch (error) {
       console.error(error);
@@ -949,6 +1001,49 @@ const ReportsController = {
         },
       });
 
+      const AllModels = await prisma.models.findMany({
+        where: filter,
+        orderBy: { StartTime: "desc" },
+        select: {
+          //Order: { select: { CollectionId: true, Collection: { select: { Name: true } } } },
+          OrderId: true,
+          DemoModelNumber: true,
+          ModelName: true,
+          Id: true,
+          ProductCatalog: { select: { ProductCatalogName: true } },
+          CategoryOne: { select: { CategoryName: true } },
+          categoryTwo: { select: { CategoryName: true } },
+          Textile: { select: { TextileName: true } },
+          ModelVarients: {
+            select: {
+              Color: true,
+              Sizes: true,
+              RunningStatus: true,
+              MainStatus: true,
+              TrakingModels: {
+                orderBy: { Id: "desc" },
+                take: 1,
+                select: {
+                  Id: true,
+                  CurrentStage: {
+                    select: {
+                      StageName: true,
+                      Department: { select: { Name: true } },
+                      DepartmentId: true,
+                    },
+                  },
+                  QuantityDelivered: true,
+                  QuantityReceived: true,
+                  DamagedItem: true,
+                },
+              },
+            },
+          },
+          Audit: { select: { CreatedAt: true, UpdatedAt: true } },
+        },
+      });
+
+
       // Keep the existing model grouping and processing logic intact
       const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
@@ -982,7 +1077,7 @@ const ReportsController = {
             Details: modelVariantDetails,
             Audit: {
               CreatedAt: model.Audit.CreatedAt,
-              UpdatedAt: model.Audit.UpdatedAt,
+              UpdatedAt: model.Audit.UpdatedAt,            
             },
           });
         }
@@ -990,51 +1085,96 @@ const ReportsController = {
         return acc;
       }, []);
 
-      // Summary logic for counting data (new logic added here)
-      const summary = {
-        totalModels: models.length, // Count of all models
-        totalVariants: models.reduce((acc, model) => acc + model.ModelVarients.length, 0), // Sum of all variants
+      const groupedAllModels = AllModels.reduce((acc, model) => {
+        const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-        totalQuantityDelivered: models.reduce((acc, model) => {
-          return acc + model.ModelVarients.reduce((subAcc, variant) => {
-            return subAcc + (variant.TrakingModels[0]?.QuantityDelivered
-                ? variant.TrakingModels[0].QuantityDelivered.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
-                }, 0)
-                : 0);
-          }, 0);
-        }, 0), // Sum of all delivered quantities
+        const modelVariantDetails = model.ModelVarients.map((variant) => ({
+          Color: variant.Color,
+          Sizes: variant.Sizes,
+          MainStatus: variant.MainStatus,
+          RunningStatus: variant.RunningStatus,
+          StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+          DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+          QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+          QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+          DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+          StartTime: variant.TrakingModels[0]?.StartTime || null,
+          EndTime: variant.TrakingModels[0]?.EndTime || null,
+          DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+        }));
 
-        totalQuantityReceived: models.reduce((acc, model) => {
-          return acc + model.ModelVarients.reduce((subAcc, variant) => {
-            return subAcc + (variant.TrakingModels[0]?.QuantityReceived
-                ? variant.TrakingModels[0].QuantityReceived.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
-                }, 0)
-                : 0);
-          }, 0);
-        }, 0), // Sum of all received quantities
+        if (existingModel) {
+          existingModel.Details.push(...modelVariantDetails);
+        } else {
+          acc.push({
+            DemoModelNumber: model.DemoModelNumber,
+            ModelId: model.Id,
+            ModelName: model.ModelName,
+            ProductCatalog: model.ProductCatalog.ProductCatalogName,
+            CategoryOne: model.CategoryOne.CategoryName,
+            CategoryTwo: model.categoryTwo.CategoryName,
+            Textiles: model.Textile.TextileName,
+            Details: modelVariantDetails,
+            Audit: {
+              CreatedAt: model.Audit.CreatedAt,
+              UpdatedAt: model.Audit.UpdatedAt,            
+            },
+          });
+        }
 
-        totalDamagedItems: models.reduce((acc, model) => {
-          return acc + model.ModelVarients.reduce((subAcc, variant) => {
-            return subAcc + (variant.TrakingModels[0]?.DamagedItem
-                ? variant.TrakingModels[0].DamagedItem.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
-                }, 0)
-                : 0);
-          }, 0);
-        }, 0), // Sum of all damaged items
-      };
+        return acc;
+      }, []);
+
+       // Calculate summary
+       const totalModels = groupedAllModels.length;
+       const modelsInProgress = groupedAllModels.filter((model) =>
+         model.Details.some((variant) => variant.RunningStatus === 'ONGOING')).length;
+       const completedModels = groupedAllModels.filter((model) =>
+         model.Details.some((variant) => variant.RunningStatus === 'COMPLETED')).length;
+
+       const totalRequiredQuantity = groupedAllModels.reduce((acc, model) => {
+         return acc + model.Details.reduce((variantAcc, variant) => {
+           return variantAcc + (variant.QuantityReceived
+               ? variant.QuantityReceived.reduce((sum, item) => {
+                 const value = parseInt(item.value);
+                 return sum + (isNaN(value) ? 0 : value);
+               }, 0)
+               : 0);
+         }, 0);
+       }, 0);
+ 
+       const totalDeliveredQuantity = groupedAllModels.reduce((acc, model) => {
+         return acc + model.Details.reduce((variantAcc, variant) => {
+           return variantAcc + (variant.QuantityDelivered
+               ? variant.QuantityDelivered.reduce((sum, item) => {
+                 const value = parseInt(item.value);
+                 return sum + (isNaN(value) ? 0 : value);
+               }, 0)
+               : 0);
+         }, 0);
+       }, 0);
+ 
+       const completionPercentage = totalRequiredQuantity > 0
+         ? ((totalDeliveredQuantity / totalRequiredQuantity) * 100).toFixed(2)
+         : 0;
+ 
+       const summary = {
+         totalModels,
+         modelsInProgress,
+         completedModels,
+         totalRequiredQuantity,
+         totalDeliveredQuantity,
+         completionPercentage: `${completionPercentage}%`,
+       };
 
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
-        summary, // New summary object added to response
-        data: groupedModels,
+        data: {
+          data : groupedModels ,
+          summary : summary,
+        },
       });
     } catch (error) {
       console.error(error);
