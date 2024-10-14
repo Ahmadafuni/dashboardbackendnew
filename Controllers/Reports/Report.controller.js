@@ -647,7 +647,6 @@ const ReportsController = {
 
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
-    // const totalRecords = await prisma.models.count({});
     
     let filter = {};
 
@@ -717,8 +716,8 @@ const ReportsController = {
       const models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: 'desc' },
-        skip: (page - 1) * size,
-        take: size,
+        // skip: (page - 1) * size,
+        // take: size,
         select: {
           Order: { select: { CollectionId: true } },
           OrderId: true,
@@ -758,8 +757,6 @@ const ReportsController = {
         }
       });
 
-      let totalRecords = 0;
-
       // Keep the existing model grouping and processing logic intact
       const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
@@ -778,8 +775,6 @@ const ReportsController = {
           EndTime: variant.TrakingModels[0]?.EndTime || null,
           DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
         }));
-        totalRecords += model.ModelVarients.length;
-
 
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
@@ -842,7 +837,52 @@ const ReportsController = {
         }, 0) // Sum of all damaged items
       };
 
-      const totalPages = Math.ceil(totalRecords / size);
+      const reports = Array.isArray(groupedModels)
+        ? groupedModels.flatMap((item) => {
+          const demoModelNumber = item.DemoModelNumber;
+          const modelName = item.ModelName;
+
+          // Map over each variant, making sure the first variant has the model info,
+          // but subsequent variants have empty values for the model fields.
+          return item.Details.map((detail, index) => ({
+            modelNumber: index === 0 ? demoModelNumber : "", // Only the first row has the model number
+            name: index === 0 ? modelName : "", // Only the first row has the model name
+            barcode: index === 0 ? item.Barcode : "", // Example: if you have barcode data
+            textile: index === 0 ? item.Textiles : "", // Only the first row has textile
+            colors:  detail.Color ? detail.Color.ColorName :"",
+            sizes: detail.Sizes.map(
+                (size) =>
+                    `${size.label} : ${size.value}`
+            ).join(", "),
+            currentStage: detail.DepartmentName || "N/A",
+            QuantityDelivered: detail.QuantityDelivered
+                ? Object.entries(detail.QuantityDelivered)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            QuantityReceived: detail.QuantityReceived
+                ? Object.entries(detail.QuantityReceived)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            DamagedItem: detail.DamagedItem
+                ? Object.entries(detail.DamagedItem)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            duration: detail.DurationInHours || "N/A",
+          }));
+        })
+        : [];
+
+
+        const totalRecords = reports.length;
+        const totalPages = Math.ceil(totalRecords / size);
+
+        const startIndex = (page - 1) * size;
+        const endIndex = page * size;
+
+        const paginatedReport = reports.slice(startIndex, endIndex);
 
 
       return res.status(200).send({
@@ -850,7 +890,7 @@ const ReportsController = {
         message: "Models fetched successfully!",
         totalPages,
         data: {
-          data: groupedModels ,
+          data: paginatedReport,
           summary: summary
         },
       });
@@ -879,7 +919,6 @@ const ReportsController = {
 
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
-    // const totalRecords = await prisma.models.count({});
 
     let filter = {};
 
@@ -962,8 +1001,8 @@ const ReportsController = {
       const models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: "desc" },
-        skip: (page - 1) * size,
-        take: size,
+        // skip: (page - 1) * size,
+        // take: size,
         select: {
           //Order: { select: { CollectionId: true, Collection: { select: { Name: true } } } },
           OrderId: true,
@@ -1002,96 +1041,10 @@ const ReportsController = {
           Audit: { select: { CreatedAt: true, UpdatedAt: true } },
         },
       });
-
-      const AllModels = await prisma.models.findMany({
-        where: filter,
-        orderBy: { StartTime: "desc" },
-        select: {
-          //Order: { select: { CollectionId: true, Collection: { select: { Name: true } } } },
-          OrderId: true,
-          DemoModelNumber: true,
-          ModelName: true,
-          Id: true,
-          ProductCatalog: { select: { ProductCatalogName: true } },
-          CategoryOne: { select: { CategoryName: true } },
-          categoryTwo: { select: { CategoryName: true } },
-          Textile: { select: { TextileName: true } },
-          ModelVarients: {
-            select: {
-              Color: true,
-              Sizes: true,
-              RunningStatus: true,
-              MainStatus: true,
-              TrakingModels: {
-                orderBy: { Id: "desc" },
-                take: 1,
-                select: {
-                  Id: true,
-                  CurrentStage: {
-                    select: {
-                      StageName: true,
-                      Department: { select: { Name: true } },
-                      DepartmentId: true,
-                    },
-                  },
-                  QuantityDelivered: true,
-                  QuantityReceived: true,
-                  DamagedItem: true,
-                },
-              },
-            },
-          },
-          Audit: { select: { CreatedAt: true, UpdatedAt: true } },
-        },
-      });
-
-      let totalRecords = 0;
 
         // Keep the existing model grouping and processing logic intact
         const groupedModels = models.reduce((acc, model) => {
-        const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-        const modelVariantDetails = model.ModelVarients.map((variant) => ({
-          Color: variant.Color,
-          Sizes: variant.Sizes,
-          MainStatus: variant.MainStatus,
-          RunningStatus: variant.RunningStatus,
-          StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-          DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
-          QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
-          QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
-          DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
-          StartTime: variant.TrakingModels[0]?.StartTime || null,
-          EndTime: variant.TrakingModels[0]?.EndTime || null,
-          DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
-        }));
-
-        totalRecords += model.ModelVarients.length;
-
-
-        if (existingModel) {
-          existingModel.Details.push(...modelVariantDetails);
-        } else {
-          acc.push({
-            DemoModelNumber: model.DemoModelNumber,
-            ModelId: model.Id,
-            ModelName: model.ModelName,
-            ProductCatalog: model.ProductCatalog.ProductCatalogName,
-            CategoryOne: model.CategoryOne.CategoryName,
-            CategoryTwo: model.categoryTwo.CategoryName,
-            Textiles: model.Textile.TextileName,
-            Details: modelVariantDetails,
-            Audit: {
-              CreatedAt: model.Audit.CreatedAt,
-              UpdatedAt: model.Audit.UpdatedAt,            
-            },
-          });
-        }
-
-        return acc;
-      }, []);
-
-      const groupedAllModels = AllModels.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
         const modelVariantDetails = model.ModelVarients.map((variant) => ({
@@ -1132,13 +1085,13 @@ const ReportsController = {
       }, []);
 
        // Calculate summary
-       const totalModels = groupedAllModels.length;
-       const modelsInProgress = groupedAllModels.filter((model) =>
+       const totalModels = groupedModels.length;
+       const modelsInProgress = groupedModels.filter((model) =>
          model.Details.some((variant) => variant.RunningStatus === 'ONGOING')).length;
-       const completedModels = groupedAllModels.filter((model) =>
+       const completedModels = groupedModels.filter((model) =>
          model.Details.some((variant) => variant.RunningStatus === 'COMPLETED')).length;
 
-       const totalRequiredQuantity = groupedAllModels.reduce((acc, model) => {
+       const totalRequiredQuantity = groupedModels.reduce((acc, model) => {
          return acc + model.Details.reduce((variantAcc, variant) => {
            return variantAcc + (variant.QuantityReceived
                ? variant.QuantityReceived.reduce((sum, item) => {
@@ -1149,7 +1102,7 @@ const ReportsController = {
          }, 0);
        }, 0);
  
-       const totalDeliveredQuantity = groupedAllModels.reduce((acc, model) => {
+       const totalDeliveredQuantity = groupedModels.reduce((acc, model) => {
          return acc + model.Details.reduce((variantAcc, variant) => {
            return variantAcc + (variant.QuantityDelivered
                ? variant.QuantityDelivered.reduce((sum, item) => {
@@ -1173,20 +1126,61 @@ const ReportsController = {
          completionPercentage: `${completionPercentage}%`,
        };
 
+       const reports = Array.isArray(groupedModels)
+        ? groupedModels.flatMap((item) => {
+          const demoModelNumber = item.DemoModelNumber;
+          const modelName = item.ModelName;
 
-       const totalPages = Math.ceil(totalRecords / size);
+          // Map over each variant, ensuring the first variant has model info
+          return item.Details.map((detail , index) => ({
+            modelNumber: index === 0 ? demoModelNumber : "", // First row gets the model number
+            name: index === 0 ? modelName : "", // First row gets the model name
+            barcode: index === 0 ? item.Barcode : "", // Example: barcode data if present
+            textile: index === 0 ? item.Textiles : "", // Only the first row has textile
+            colors:  detail.Color ? detail.Color.ColorName :"",
+            sizes: detail.Sizes.map(
+                (size) =>
+                    `${size.label} : ${size.value}`
+            ).join(", "),
+            currentStage: detail.DepartmentName || "N/A",
+            QuantityDelivered: detail.QuantityDelivered
+                ? Object.entries(detail.QuantityDelivered)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            QuantityReceived: detail.QuantityReceived
+                ? Object.entries(detail.QuantityReceived)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            DamagedItem: detail.DamagedItem
+                ? Object.entries(detail.DamagedItem)
+                    .map(([size, value]) => `${size} : ${value}`)
+                    .join(" , ")
+                : "N/A",
+            duration: detail.DurationInHours || "N/A",
+          }));
+        })
+        : [];
+        const totalRecords = reports.length;
+        const totalPages = Math.ceil(totalRecords / size);
+
+        const startIndex = (page - 1) * size;
+        const endIndex = page * size;
+
+        const paginatedReport = reports.slice(startIndex, endIndex);
 
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
         data: {
-          data : groupedModels,
+          data : paginatedReport,
           summary : summary,
         },
       });
     } catch (error) {
-      console.error(error);
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later!",
