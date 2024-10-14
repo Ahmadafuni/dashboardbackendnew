@@ -60,7 +60,13 @@ const TemplateController = {
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
 
-    const totalRecords = await prisma.templates.count({});
+    const totalRecords = await prisma.templates.count({
+      where: {
+        Audit: {
+          IsDeleted: false
+        }
+      }
+    });
 
     const totalPages = Math.ceil(totalRecords / size);
 

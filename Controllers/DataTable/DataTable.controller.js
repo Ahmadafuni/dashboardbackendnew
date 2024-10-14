@@ -1,5 +1,18 @@
 import prisma from "../../client.js";
 
+// Calculate duration in hours
+const durationInHours = (startTime, endTime) => {
+    if (!startTime || !endTime) return null;
+  
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+  
+    const differenceInMilliseconds = end - start;
+    const differenceInHours = differenceInMilliseconds / (1000 * 60 * 60); // Convert milliseconds to hours
+  
+    return differenceInHours.toFixed(2); // Return the duration in hours rounded to 2 decimal places
+  };
+
 
 const DataTableController = {
     getAllFields: async (req, res) => {
@@ -526,6 +539,116 @@ const DataTableController = {
             console.error('Error fetching data:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
+    },
+
+    filterReport: async (req , res) => {
+
+     const { demoModelNumber } = req.params;  
+
+
+     try{
+
+        const models = await prisma.models.findMany({
+            where: {
+                DemoModelNumber: demoModelNumber
+            },
+            orderBy: { StartTime: "desc" },
+            // skip: (page - 1) * size,
+            // take: size,
+            select: {
+              //Order: { select: { CollectionId: true, Collection: { select: { Name: true } } } },
+              OrderId: true,
+              DemoModelNumber: true,
+              ModelName: true,
+              Id: true,
+              ProductCatalog: { select: { ProductCatalogName: true } },
+              CategoryOne: { select: { CategoryName: true } },
+              categoryTwo: { select: { CategoryName: true } },
+              Textile: { select: { TextileName: true } },
+              ModelVarients: {
+                select: {
+                  Color: true,
+                  Sizes: true,
+                  RunningStatus: true,
+                  MainStatus: true,
+                  TrakingModels: {
+                    orderBy: { Id: "desc" },
+                    take: 1,
+                    select: {
+                      Id: true,
+                      CurrentStage: {
+                        select: {
+                          StageName: true,
+                          Department: { select: { Name: true } },
+                          DepartmentId: true,
+                        },
+                      },
+                      QuantityDelivered: true,
+                      QuantityReceived: true,
+                      DamagedItem: true,
+                    },
+                  },
+                },
+              },
+              Audit: { select: { CreatedAt: true, UpdatedAt: true } },
+            },
+          });
+
+          const groupedModels = models.reduce((acc, model) => {
+            const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
+    
+            const modelVariantDetails = model.ModelVarients.map((variant) => ({
+              Color: variant.Color,
+              Sizes: variant.Sizes,
+              MainStatus: variant.MainStatus,
+              RunningStatus: variant.RunningStatus,
+              StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+              DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+              QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+              QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+              DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+              StartTime: variant.TrakingModels[0]?.StartTime || null,
+              EndTime: variant.TrakingModels[0]?.EndTime || null,
+              DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+            }));
+    
+            if (existingModel) {
+              existingModel.Details.push(...modelVariantDetails);
+            } else {
+              acc.push({
+                DemoModelNumber: model.DemoModelNumber,
+                ModelId: model.Id,
+                ModelName: model.ModelName,
+                ProductCatalog: model.ProductCatalog.ProductCatalogName,
+                CategoryOne: model.CategoryOne.CategoryName,
+                CategoryTwo: model.categoryTwo.CategoryName,
+                Textiles: model.Textile.TextileName,
+                Details: modelVariantDetails,
+                Audit: {
+                  CreatedAt: model.Audit.CreatedAt,
+                  UpdatedAt: model.Audit.UpdatedAt,            
+                },
+              });
+            }
+
+            return acc;
+          }, []);
+
+          return res.status(200).send({
+            status: 200,
+            message: "Models fetched successfully!",
+            data : groupedModels ,
+          });
+
+
+     }catch (error) {
+        console.error(error);
+        return res.status(500).send({
+          status: 500,
+          message: "Internal server error. Please try again later!",
+          data: {},
+        });
+     }
     },
 
 };

@@ -21,4 +21,9 @@ router.get(
     DataTableController.filterDashboard
 );
 
+router.get(
+    "/filter/report/:demoModelNumber" ,
+    DataTableController.filterReport
+);
+
 export { router as DataTableRoute };

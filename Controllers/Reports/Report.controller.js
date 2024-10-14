@@ -647,9 +647,8 @@ const ReportsController = {
 
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
-    const totalRecords = await prisma.models.count({});
-    const totalPages = Math.ceil(totalRecords / size);
-
+    // const totalRecords = await prisma.models.count({});
+    
     let filter = {};
 
     if (status && Array.isArray(status)) {
@@ -759,6 +758,8 @@ const ReportsController = {
         }
       });
 
+      let totalRecords = 0;
+
       // Keep the existing model grouping and processing logic intact
       const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
@@ -777,6 +778,8 @@ const ReportsController = {
           EndTime: variant.TrakingModels[0]?.EndTime || null,
           DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
         }));
+        totalRecords += model.ModelVarients.length;
+
 
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
@@ -839,6 +842,8 @@ const ReportsController = {
         }, 0) // Sum of all damaged items
       };
 
+      const totalPages = Math.ceil(totalRecords / size);
+
 
       return res.status(200).send({
         status: 200,
@@ -874,18 +879,14 @@ const ReportsController = {
 
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
-    const totalRecords = await prisma.models.count({});
-    const totalPages = Math.ceil(totalRecords / size);
+    // const totalRecords = await prisma.models.count({});
 
     let filter = {};
-
-
 
     // 2. Apply Orders filter if present
     if (orders && Array.isArray(orders)) {
       filter.OrderId = { in: orders.map((item) => parseInt(item.value)) };
     }
-
 
     // 3. Apply Running Status filter if present
     if (status && Array.isArray(status)) {
@@ -1044,9 +1045,10 @@ const ReportsController = {
         },
       });
 
+      let totalRecords = 0;
 
-      // Keep the existing model grouping and processing logic intact
-      const groupedModels = models.reduce((acc, model) => {
+        // Keep the existing model grouping and processing logic intact
+        const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
         const modelVariantDetails = model.ModelVarients.map((variant) => ({
@@ -1063,6 +1065,9 @@ const ReportsController = {
           EndTime: variant.TrakingModels[0]?.EndTime || null,
           DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
         }));
+
+        totalRecords += model.ModelVarients.length;
+
 
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
@@ -1168,12 +1173,15 @@ const ReportsController = {
          completionPercentage: `${completionPercentage}%`,
        };
 
+
+       const totalPages = Math.ceil(totalRecords / size);
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",
         totalPages,
         data: {
-          data : groupedModels ,
+          data : groupedModels,
           summary : summary,
         },
       });
