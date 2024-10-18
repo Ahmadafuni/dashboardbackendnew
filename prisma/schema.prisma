@@ -516,6 +516,8 @@ model Tasks {
   Feedback               String?
   AssignedFile           String?
   FeedbackFile           String?
+  StartTime              DateTime?
+  EndTime                DateTime?
   AssignedToDepartment   Departments? @relation(name: "AssignedTo", fields: [AssignedToDepartmentId], references: [Id])
   AssignedToDepartmentId Int?
   CreatedByDepartment    Departments? @relation(name: "CreatedBy", fields: [CreatedByDepartmentId], references: [Id])
