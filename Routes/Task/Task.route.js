@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING",  "HumanResource", "MotherCompany"]),
   uploadTask.single("task"),
   TaskController.createTask
 );
@@ -21,6 +21,8 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.getAllTasks
 );
@@ -33,6 +35,8 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.getTaskById
 );
@@ -45,12 +49,14 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.startTask
 );
 router.get(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING", "HumanResource", "MotherCompany"]),
   TaskController.getTaskNames
 );
 
@@ -63,7 +69,9 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
-     "WAREHOUSEMANAGER"
+    "WAREHOUSEMANAGER",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.getCurrentTasks
 );
@@ -77,7 +85,9 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
-    "WAREHOUSEMANAGER"
+    "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
   ]),
   TaskController.searchTasks
 );
@@ -96,7 +106,9 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
-    "WAREHOUSEMANAGER"
+    "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
   ]),
   uploadTask.single("task"),
   TaskController.updateTask
@@ -110,7 +122,9 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
-    "WAREHOUSEMANAGER"
+    "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
   ]),
   TaskController.getSubmitFeedback
 );
@@ -123,7 +137,9 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
-    "WAREHOUSEMANAGER"
+    "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
   ]),
   uploadTask.single("task"),
   TaskController.submitFeedback

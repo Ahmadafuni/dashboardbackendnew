@@ -6,19 +6,19 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.createDepartment
 );
 router.get("/create-central", DepartmentController.centralDepartment);
 router.put(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.updateDepartment
 );
 
 router.get(
   "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.getAllDepartments
 );
 
@@ -26,25 +26,25 @@ router.get("/", DepartmentController.getDepartmentNames);
 
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.getDepartmentById
 );
 
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.searchDepartments
 );
 
 router.delete(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.deleteDepartment
 );
 
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["HumanResource", "ENGINEERING", "FACTORYMANAGER"]),
   DepartmentController.searchDepartments
 );
 

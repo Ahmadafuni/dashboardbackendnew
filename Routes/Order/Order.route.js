@@ -12,22 +12,22 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
   OrderController.getOrders
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
   OrderController.getOrderNames
 );
 router.get(
   "/ordersForDash",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
   OrderController.getOrdersForDash
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
   OrderController.getOrderById
 );
 router.delete(
@@ -43,7 +43,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
   OrderController.searchOrder
 );
 router.get(
