@@ -52,7 +52,22 @@ const TrackingModelController = {
             IsDeleted: false,
           },
         },
+        include: {
+          CurrentStage: {
+            include: {
+              Department: true,
+            },
+          },
+          NextStage: true,
+          ModelVariant: {
+            include: {
+              Model: true,
+              Color: true,
+            },
+          },
+        },
       });
+      console.log("tracking",tracking)
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
@@ -71,6 +86,17 @@ const TrackingModelController = {
         },
       });
 
+      await prisma.notifications.create({
+        data: {
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} بدء `,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName}  البدء من ${tracking.CurrentStage.Department.Name}`,
+          ToDepartment: {
+            connect: {
+              Id: tracking.NextStage?.DepartmentId || tracking.CurrentStage.DepartmentId,
+            },
+          },
+        },
+      });
       return res.status(200).send({
         status: 200,
         message: "Variant started successfully!",
@@ -507,8 +533,17 @@ const TrackingModelController = {
       const tracking = await prisma.trakingModels.findUnique({
         where: {
           Id: trackingId,
+          Audit: {
+            IsDeleted: false,
+          },
         },
         include: {
+          CurrentStage: {
+            include: {
+              Department: true,
+            },
+          },
+          NextStage: true,
           ModelVariant: {
             include: {
               Model: {
@@ -516,6 +551,7 @@ const TrackingModelController = {
                   Order: true,
                 },
               },
+              Color: true,
             },
           },
         },
@@ -728,6 +764,17 @@ const TrackingModelController = {
         });
         console.log(`Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
       }
+
+      await prisma.notifications.create({
+        data: {
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} انتهاء ` ,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName}  الانتهاء صدر من ${tracking.CurrentStage.Department.Name}`,
+          ToDepartment: {
+            connect: {
+              Id: tracking.CurrentStage.DepartmentId,
+            },
+          },        },
+      });
 
       return res.status(200).send({
         status: 200,
