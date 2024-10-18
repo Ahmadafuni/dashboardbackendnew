@@ -96,6 +96,8 @@ const TaskController = {
           AssignedFile: true,
           Status: true,
           Feedback: true,
+          StartTime: true,
+          EndTime: true,
           AssignedToDepartment: {
             select: {
               Id: true,
@@ -146,6 +148,8 @@ const TaskController = {
           AssignedFile: true,
           Status: true,
           Feedback: true,
+          StartTime: true,
+          EndTime: true,
           CreatedByDepartment: {
             select: {
               Id: true,
@@ -198,6 +202,8 @@ const TaskController = {
         data: {
           TaskName: task.TaskName,
           DueDate: task.DueAt,
+          StartTime: task.StartTime,
+          EndTime: task.EndTime,
           AssignedToDepartmentId: task.AssignedToDepartmentId.toString(),
           Description: task.Description,
         },
@@ -518,6 +524,7 @@ const TaskController = {
         },
         data: {
           Status: "ONGOING",
+          StartTime: new Date(),
         },
       });
 
@@ -594,6 +601,14 @@ const TaskController = {
         });
       }
 
+      if (task.Status !== "ONGOING") {
+        return res.status(409).send({
+          status: 409,
+          message: "The task must first be set to 'On Going'!",
+          data: {},
+        });
+      }
+
       await prisma.tasks.update({
         where: {
           Id: +id,
@@ -601,6 +616,7 @@ const TaskController = {
         data: {
           Feedback: Feedback,
           Status: "COMPLETED",
+          EndTime: new Date(),
           FeedbackFile: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : !task.FeedbackFile
@@ -611,7 +627,7 @@ const TaskController = {
 
       return res.status(200).send({
         status: 200,
-        message: "Task submited successfully!",
+        message: "Task submitted successfully!",
         data: {},
       });
     } catch (error) {
