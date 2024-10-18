@@ -86,6 +86,7 @@ const TaskController = {
           Audit: { IsDeleted: false },
           CreatedByDepartmentId: userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {
@@ -138,6 +139,7 @@ const TaskController = {
           Audit: { IsDeleted: false },
           AssignedToDepartmentId: userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {

@@ -83,6 +83,7 @@ const NoteController = {
           },
           CreatedDepartmentId: +userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {
@@ -234,6 +235,7 @@ const NoteController = {
             IsDeleted: false,
           },
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {

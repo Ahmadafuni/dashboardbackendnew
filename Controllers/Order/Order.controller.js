@@ -72,6 +72,7 @@ const OrderController = {
             IsDeleted: false,
           },
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {
