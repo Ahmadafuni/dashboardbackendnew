@@ -2056,114 +2056,239 @@ const TrackingModelController = {
         },
       });
 
-      const finished = await prisma.models.findMany({
+
+      const modelVariantsFinished = await prisma.modelVarients.findMany({
         where: {
           Audit: {
             IsDeleted: false,
           },
-          RunningStatus: "COMPLETED",
-          EndTime: {
-            gte: sevenDaysAgo,
-          },
-          Order: {
-            Audit: {
-              IsDeleted: false,
+          Model:{
+            Audit:{
+              IsDeleted: false
             },
-            Collection: {
+            Order: {
               Audit: {
-                IsDeleted: false,
+                IsDeleted: false
               },
-            },
+              Collection: {
+                Audit: {
+                  IsDeleted: false
+                }
+              }
+            }
           },
+          MainStatus: "DONE" ,
+          RunningStatus: "COMPLETED"
         },
         skip: (pages.finished - 1) * sizes.finished,
         take: sizes.finished,
-        include: {
-          ProductCatalog: true,
-          CategoryOne: true,
-          categoryTwo: true,
-          Template: {
-            include: {
-              TemplatePattern: true,
-            },
-          },
-          Textile: true,
-          Audit: true,
-          Order: {
-            include: {
-              Collection: true,
-            },
-          },
-          ModelVarients: {
-            where: {
-              Audit: {
-                IsDeleted: false,
+
+        select: {
+          Id: true,
+              RunningStatus: true,
+              StopData: true,
+              Color: {
+                select: {
+                  ColorName: true,
+                },
               },
-            },
-            include: {
-              Color: true,
-              TrakingModels: true,
-            },
-          },
-        },
+              Model: {
+                select: {
+                  Textile: {
+                    select: {
+                      TextileName: true,
+                    },
+                  },
+                  Order: {
+                    select: {
+                      OrderNumber: true,
+                      OrderName: true,
+                      Collection: {
+                        select: {
+                          CollectionName: true,
+                        },
+                      },
+                    },
+                  },
+                  Barcode: true,
+
+                  ModelName: true,
+                  ModelNumber: true,
+                  DemoModelNumber: true,
+                  Id: true,
+                  CategoryOne: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  categoryTwo: {
+                    select: {
+                      CategoryName: true,
+                    },
+                  },
+                  Template: {
+                    select: {
+                     TemplatePattern:{
+                       select: {
+                         TemplatePatternName: true,
+                       }
+                     }
+                    }
+                 },
+                 ProductCatalog: {
+                  select: {
+                    ProductCatalogName: true
+                  }
+                }
+                },
+              },
+              Sizes: true,
+              Quantity: true,
+        }
+
       });
 
-      const processFinishedModel = (model) => {
 
-        const modelName = `${model.ProductCatalog?.ProductCatalogName || 'N/A'} - ${model.CategoryOne?.CategoryName || 'N/A'} - ${model.categoryTwo?.CategoryName || 'N/A'} - ${model.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
-        const collectionName = model.Order?.Collection?.CollectionName || 'N/A';
-        const orderName = model.Order?.OrderName || 'N/A';
-        const textileName = model.Textile?.TextileName || 'N/A';
-
-        const startTime = new Date(model.StartTime);
-        const endTime = new Date(model.EndTime);
-        const duration = Math.abs((endTime - startTime) / (1000 * 60 * 60)).toFixed(2) + ' hours';
-
-        const colors = model.ModelVarients.map(variant => variant.Color?.ColorName || 'N/A').join(' - ');
-        const sizes = model.ModelVarients.flatMap(variant => variant.Sizes.map(size => size.label)).join(', ');
-
-        // For each model variant, find the max stage tracking and aggregate quantities by size
-        const maxStageTrackingData = model.ModelVarients.map(variant => {
-          if (variant.TrakingModels.length > 0) {
-            const maxStageTracking = variant.TrakingModels.reduce(
-                (max, tracking) => (tracking.stageNumber > max.stageNumber ? tracking : max),
-                variant.TrakingModels[0]
-            );
-
-            // Aggregating quantities for QuantityReceived and QuantityDelivered by size
-            const totalQuantityReceived = maxStageTracking.QuantityReceived?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
-            const totalQuantityDelivered = maxStageTracking.QuantityDelivered?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
-
-            return {
-              QuantityReceived: totalQuantityReceived,
-              QuantityDelivered: totalQuantityDelivered,
-            };
-          }
-          return { QuantityReceived: 0, QuantityDelivered: 0};
-        });
-
-        // Sum up the total quantities across all variants
-        const totalQuantityReceived = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityReceived, 0);
-        const totalQuantityDelivered = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityDelivered, 0);
-
-        // Return the processed data for this model
+      const processFinishedModelVariants = (modelvarinte) => {
+        const modelName = `${modelvarinte?.Model?.ProductCatalog?.ProductCatalogName || 'N/A'} - 
+                          ${modelvarinte?.Model?.CategoryOne?.CategoryName || 'N/A'} - 
+                          ${modelvarinte?.Model?.categoryTwo?.CategoryName || 'N/A'} - 
+                          ${modelvarinte?.Model?.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
+        
+        const collectionName = modelvarinte?.Model?.Order?.Collection?.CollectionName || 'N/A';
+        const orderName = modelvarinte?.Model?.Order?.OrderName || 'N/A';
+        const textileName = modelvarinte?.Model?.Textile?.TextileName || 'N/A';
+        const colors = modelvarinte?.Color?.ColorName || 'N/A';
+        
+        // إذا كان 'Sizes' غير موجودة
+        const sizes = modelvarinte?.Sizes?.map(size => size.label) || [];
+      
         return {
-          modelId: model.Id,
-          modelDemoNumber: model.DemoModelNumber,
-          modelBarcode: model.Barcode,
+          modelId: modelvarinte?.Model?.Id,
+          modelDemoNumber: modelvarinte?.Model?.DemoModelNumber || 'N/A',
+          modelBarcode: modelvarinte?.Model?.Barcode || 'N/A',
           modelName,
           collectionName,
           orderName,
           textileName,
           colors,
           sizes,
-          QuantityReceived: totalQuantityReceived,
-          QuantityDelivered: totalQuantityDelivered,
-          duration,
         };
       };
+    
+      const processedFinished = modelVariantsFinished.map(processFinishedModelVariants);
 
-      const processedFinished = finished.map(processFinishedModel);
+      console.log("processedFinished" , processedFinished)
+
+
+      // const finished = await prisma.models.findMany({
+      //   where: {
+      //     Audit: {
+      //       IsDeleted: false,
+      //     },
+      //     RunningStatus: "COMPLETED",
+      //     EndTime: {
+      //       gte: sevenDaysAgo,
+      //     },
+      //     Order: {
+      //       Audit: {
+      //         IsDeleted: false,
+      //       },
+      //       Collection: {
+      //         Audit: {
+      //           IsDeleted: false,
+      //         },
+      //       },
+      //     },
+      //   },
+      //   skip: (pages.finished - 1) * sizes.finished,
+      //   take: sizes.finished,
+      //   include: {
+      //     ProductCatalog: true,
+      //     CategoryOne: true,
+      //     categoryTwo: true,
+      //     Template: {
+      //       include: {
+      //         TemplatePattern: true,
+      //       },
+      //     },
+      //     Textile: true,
+      //     Audit: true,
+      //     Order: {
+      //       include: {
+      //         Collection: true,
+      //       },
+      //     },
+      //     ModelVarients: {
+      //       where: {
+      //         Audit: {
+      //           IsDeleted: false,
+      //         },
+      //       },
+      //       include: {
+      //         Color: true,
+      //         TrakingModels: true,
+      //       },
+      //     },
+      //   },
+      // });
+
+      // const processFinishedModel = (model) => {
+
+      //   const modelName = `${model.ProductCatalog?.ProductCatalogName || 'N/A'} - ${model.CategoryOne?.CategoryName || 'N/A'} - ${model.categoryTwo?.CategoryName || 'N/A'} - ${model.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
+      //   const collectionName = model.Order?.Collection?.CollectionName || 'N/A';
+      //   const orderName = model.Order?.OrderName || 'N/A';
+      //   const textileName = model.Textile?.TextileName || 'N/A';
+
+      //   const startTime = new Date(model.StartTime);
+      //   const endTime = new Date(model.EndTime);
+      //   const duration = Math.abs((endTime - startTime) / (1000 * 60 * 60)).toFixed(2) + ' hours';
+
+      //   const colors = model.ModelVarients.map(variant => variant.Color?.ColorName || 'N/A').join(' - ');
+      //   const sizes = model.ModelVarients.flatMap(variant => variant.Sizes.map(size => size.label)).join(', ');
+
+      //   // For each model variant, find the max stage tracking and aggregate quantities by size
+      //   const maxStageTrackingData = model.ModelVarients.map(variant => {
+      //     if (variant.TrakingModels.length > 0) {
+      //       const maxStageTracking = variant.TrakingModels.reduce(
+      //           (max, tracking) => (tracking.stageNumber > max.stageNumber ? tracking : max),
+      //           variant.TrakingModels[0]
+      //       );
+
+      //       // Aggregating quantities for QuantityReceived and QuantityDelivered by size
+      //       const totalQuantityReceived = maxStageTracking.QuantityReceived?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+      //       const totalQuantityDelivered = maxStageTracking.QuantityDelivered?.reduce((sum, qty) => sum + parseInt(qty.value || 0), 0) || 0;
+
+      //       return {
+      //         QuantityReceived: totalQuantityReceived,
+      //         QuantityDelivered: totalQuantityDelivered,
+      //       };
+      //     }
+      //     return { QuantityReceived: 0, QuantityDelivered: 0};
+      //   });
+
+      //   // Sum up the total quantities across all variants
+      //   const totalQuantityReceived = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityReceived, 0);
+      //   const totalQuantityDelivered = maxStageTrackingData.reduce((sum, data) => sum + data.QuantityDelivered, 0);
+
+      //   // Return the processed data for this model
+      //   return {
+      //     modelId: model.Id,
+      //     modelDemoNumber: model.DemoModelNumber,
+      //     modelBarcode: model.Barcode,
+      //     modelName,
+      //     collectionName,
+      //     orderName,
+      //     textileName,
+      //     colors,
+      //     sizes,
+      //     QuantityReceived: totalQuantityReceived,
+      //     QuantityDelivered: totalQuantityDelivered,
+      //     duration,
+      //   };
+      // };
+
+      // const processedFinished = finished.map(processFinishedModel);
 
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
