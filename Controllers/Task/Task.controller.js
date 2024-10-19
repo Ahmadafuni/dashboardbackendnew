@@ -105,6 +105,11 @@ const TaskController = {
               Name: true,
             },
           },
+          Audit: {
+            select: {
+              CreatedAt: true, // Fetch createdAt timestamp
+            },
+          },
         },
       });
 
@@ -156,6 +161,11 @@ const TaskController = {
             select: {
               Id: true,
               Name: true,
+            },
+          },
+          Audit: {
+            select: {
+              CreatedAt: true, // Fetch createdAt timestamp
             },
           },
         },
