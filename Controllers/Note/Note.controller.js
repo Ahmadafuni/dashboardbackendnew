@@ -233,7 +233,6 @@ const NoteController = {
   },
   getCurrentDepartmentNotes: async (req, res, next) => {
     const userDepartmentId = req.userDepartmentId;
-
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     const totalRecords = await prisma.notes.count({});
@@ -245,7 +244,7 @@ const NoteController = {
           Audit: {
             IsDeleted: false,
           },
-          CreatedDepartmentId: +userDepartmentId,
+          AssignedToDepartmentId: +userDepartmentId,
         },
         orderBy: { Id: "desc" },
         skip: (page - 1) * size,
