@@ -1,3 +1,4 @@
+import { MainStatus } from "@prisma/client";
 import prisma from "../../client.js";
 import pdf from "html-pdf";
 
@@ -633,7 +634,7 @@ const ReportsController = {
   },
 
   productionReport: async (req, res, next) => {
-    const {
+    let {
       status,
       productCatalogue,
       productCategoryOne,
@@ -645,13 +646,26 @@ const ReportsController = {
       departments,
     } = req.body;
 
+    // status = status ? status.filter(item => item.label !== 'DONE'): status;
+
+
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     
     let filter = {};
+    
+    
+    const isDoneIncluded = Array.isArray(status) ?  status.some((item) => item.label === 'DONE') : false ;
 
-    if (status && Array.isArray(status)) {
+
+    status = Array.isArray(status) ? status.filter(item => item.label !== 'DONE') : status;
+  
+
+    if (status && Array.isArray(status) && status.length != 0) {
+
       filter.RunningStatus = { in: status.map((item) => item.value) };
+
+
     }
 
     if (productCatalogue && Array.isArray(productCatalogue)) {
@@ -713,7 +727,7 @@ const ReportsController = {
     }
 
     try {
-      const models = await prisma.models.findMany({
+      let models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: 'desc' },
         // skip: (page - 1) * size,
@@ -757,25 +771,58 @@ const ReportsController = {
         }
       });
 
+      if(isDoneIncluded){
+        models = models.filter((model) => {
+          // تحقق من وجود ModelVarients والتأكد من أن الشرط ينطبق على جميع الـ ModelVarients
+          return model.ModelVarients.some((variant) => {
+            return variant.RunningStatus == "COMPLETED" && variant.MainStatus == "DONE";
+          });
+        });
+        
+      }
+      
       // Keep the existing model grouping and processing logic intact
       const groupedModels = models.reduce((acc, model) => {
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-        const modelVariantDetails = model.ModelVarients.map((variant) => ({
-          Color: variant.Color,
-          Sizes: variant.Sizes,
-          MainStatus: variant.MainStatus,
-          RunningStatus: variant.RunningStatus,
-          StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-          DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
-          QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
-          QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
-          DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
-          StartTime: variant.TrakingModels[0]?.StartTime || null,
-          EndTime: variant.TrakingModels[0]?.EndTime || null,
-          DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
-        }));
-
+        let modelVariantDetails ;
+        if(isDoneIncluded){
+           modelVariantDetails = model.ModelVarients
+          .filter((variant) => 
+            variant.MainStatus === "DONE" && variant.RunningStatus === "COMPLETED"
+          )
+          .map((variant) => ({
+            Color: variant.Color,
+            Sizes: variant.Sizes,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+            StartTime: variant.TrakingModels[0]?.StartTime || null,
+            EndTime: variant.TrakingModels[0]?.EndTime || null,
+            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+          }));
+        }else {
+           modelVariantDetails = model.ModelVarients
+          .map((variant) => ({
+            Color: variant.Color,
+            Sizes: variant.Sizes,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+            StartTime: variant.TrakingModels[0]?.StartTime || null,
+            EndTime: variant.TrakingModels[0]?.EndTime || null,
+            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+          }));
+        }
+        
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
         } else {
@@ -856,19 +903,25 @@ const ReportsController = {
             ).join(", "),
             currentStage: detail.DepartmentName || "N/A",
             QuantityDelivered: detail.QuantityDelivered
-                ? Object.entries(detail.QuantityDelivered)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.QuantityDelivered
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             QuantityReceived: detail.QuantityReceived
-                ? Object.entries(detail.QuantityReceived)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.QuantityReceived
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             DamagedItem: detail.DamagedItem
-                ? Object.entries(detail.DamagedItem)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.DamagedItem
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             duration: detail.DurationInHours || "N/A",
           }));
@@ -905,7 +958,7 @@ const ReportsController = {
   },
 
   orderReport : async (req, res, next) => {
-    const {
+    let {
       orders,
       status,
       productCatalogue,
@@ -926,6 +979,12 @@ const ReportsController = {
     if (orders && Array.isArray(orders)) {
       filter.OrderId = { in: orders.map((item) => parseInt(item.value)) };
     }
+
+
+    const isDoneIncluded = Array.isArray(status) ?  status.some((item) => item.label === 'DONE') : false ;
+
+
+    status = Array.isArray(status) ? status.filter(item => item.label !== 'DONE') : status;
 
     // 3. Apply Running Status filter if present
     if (status && Array.isArray(status)) {
@@ -998,7 +1057,7 @@ const ReportsController = {
     }
 
     try {
-      const models = await prisma.models.findMany({
+      let models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: "desc" },
         // skip: (page - 1) * size,
@@ -1042,25 +1101,61 @@ const ReportsController = {
         },
       });
 
+
+      if(isDoneIncluded){
+        models = models.filter((model) => {
+          // تحقق من وجود ModelVarients والتأكد من أن الشرط ينطبق على جميع الـ ModelVarients
+          return model.ModelVarients.some((variant) => {
+            return variant.RunningStatus == "COMPLETED" && variant.MainStatus == "DONE";
+          });
+        });
+        
+      }
+
         // Keep the existing model grouping and processing logic intact
         const groupedModels = models.reduce((acc, model) => {
 
         const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
 
-        const modelVariantDetails = model.ModelVarients.map((variant) => ({
-          Color: variant.Color,
-          Sizes: variant.Sizes,
-          MainStatus: variant.MainStatus,
-          RunningStatus: variant.RunningStatus,
-          StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-          DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
-          QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
-          QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
-          DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
-          StartTime: variant.TrakingModels[0]?.StartTime || null,
-          EndTime: variant.TrakingModels[0]?.EndTime || null,
-          DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
-        }));
+
+        let modelVariantDetails ;
+        if(isDoneIncluded){
+           modelVariantDetails = model.ModelVarients
+          .filter((variant) => 
+            variant.MainStatus === "DONE" && variant.RunningStatus === "COMPLETED"
+          )
+          .map((variant) => ({
+            Color: variant.Color,
+            Sizes: variant.Sizes,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+            StartTime: variant.TrakingModels[0]?.StartTime || null,
+            EndTime: variant.TrakingModels[0]?.EndTime || null,
+            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+          }));
+        }else {
+           modelVariantDetails = model.ModelVarients
+          .map((variant) => ({
+            Color: variant.Color,
+            Sizes: variant.Sizes,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+            StartTime: variant.TrakingModels[0]?.StartTime || null,
+            EndTime: variant.TrakingModels[0]?.EndTime || null,
+            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+          }));
+        }
+      
 
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
@@ -1144,19 +1239,25 @@ const ReportsController = {
             ).join(", "),
             currentStage: detail.DepartmentName || "N/A",
             QuantityDelivered: detail.QuantityDelivered
-                ? Object.entries(detail.QuantityDelivered)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.QuantityDelivered
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             QuantityReceived: detail.QuantityReceived
-                ? Object.entries(detail.QuantityReceived)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.QuantityReceived
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             DamagedItem: detail.DamagedItem
-                ? Object.entries(detail.DamagedItem)
-                    .map(([size, value]) => `${size} : ${value}`)
-                    .join(" , ")
+                ? detail.DamagedItem
+                    .map(
+                      (size) =>
+                          `${size.label} : ${size.value}`
+                  ).join(", ")
                 : "N/A",
             duration: detail.DurationInHours || "N/A",
           }));

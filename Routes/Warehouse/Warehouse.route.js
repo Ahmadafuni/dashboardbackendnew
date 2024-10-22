@@ -4,6 +4,14 @@ import WarehouseController from "../../Controllers/Warehouse/Warehouse.controlle
 
 const router = express.Router();
 
+
+router.get(
+  "/getWarehouseMaterials",
+  // verifyUser(["WAREHOUSEMANAGER", "FACTORYMANAGER", "ENGINEERING"]),
+  WarehouseController.getWarehouseMaterials
+);
+
+
 router.get(
   "/all",
   verifyUser(["WAREHOUSEMANAGER", "FACTORYMANAGER", "ENGINEERING"]),
@@ -39,5 +47,10 @@ router.get(
   verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
   WarehouseController.searchWarehouse
 );
+
+
+
+
+
 const WarehouseRoute = router;
 export { WarehouseRoute };

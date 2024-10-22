@@ -259,9 +259,11 @@ const MaterialController = {
       });
     }
   },
+  
   getChildMaterialByParentId: async (req, res, next) => {
     const id = parseInt(req.params.id);
     try {
+      // جلب المواد الفرعية بناءً على معرف المادة الرئيسية
       const materials = await prisma.childMaterials.findMany({
         where: {
           ParentMaterialId: id,
@@ -270,7 +272,7 @@ const MaterialController = {
           },
         },
       });
-
+  
       if (!materials || materials.length === 0) {
         // Return response if no materials are found
         return res.status(404).send({
@@ -279,19 +281,112 @@ const MaterialController = {
           data: [],
         });
       }
-
-      // Format the data to match the expected structure
-      const formattedMaterials = materials.map(material => ({
-        Id: material.Id,
-        Name: material.Name,
-        DyeNumber: material.DyeNumber,
-        Kashan: material.Kashan,
-        Halil: material.Halil,
-        Phthalate: material.Phthalate,
-        GramWeight: material.GramWeight ? material.GramWeight.toString() : "",
-        Description: material.Description,
-      }));
-
+  
+      // جلب حركات المواد
+      const materialMovements = await prisma.materialMovement.findMany({
+        where: {
+          ChildMaterialId: {
+            in: materials.map((material) => material.Id), // ربط المواد بحركاتها
+          },
+        },
+        include: {
+          WarehouseFrom: true, // جلب معلومات المستودع الصادرة منه الحركة
+          WarehouseTo: true,   // جلب معلومات المستودع الواردة إليه الحركة
+        },
+      });
+  
+      // حساب الكميات الواردة والصادرة بناءً على نوع الحركة وحسب وحدة القياس
+      const materialQuantities = materialMovements.reduce((acc, movement) => {
+        const key = `${movement.ChildMaterialId}-${movement.UnitOfQuantity}`;
+        const quantity = Number(movement.Quantity);
+  
+        if (!acc[key]) {
+          acc[key] = 0;
+        }
+  
+        // إضافة الكميات بناءً على نوع الحركة (مثلاً، "INCOMING" للوارد و"OUTGOING" للصادر)
+        if (movement.MovementType === 'INCOMING') {
+          acc[key] += quantity;
+        } else if (movement.MovementType === 'OUTGOING') {
+          acc[key] -= quantity;
+        }
+  
+        return acc;
+      }, {});
+  
+      // حساب الكميات حسب المستودعات مع مراعاة وحدات القياس
+      const warehouseQuantities = materialMovements.reduce((acc, movement) => {
+        if (movement.WarehouseTo) {
+          const key = `${movement.ChildMaterialId}-${movement.WarehouseTo.Id}-${movement.UnitOfQuantity}`;
+          const quantity = Number(movement.Quantity);
+  
+          if (!acc[key]) {
+            acc[key] = {
+              WarehouseName: movement.WarehouseTo.WarehouseName,
+              Quantity: 0,
+              Unit: movement.UnitOfQuantity,
+            };
+          }
+  
+          if (movement.MovementType === 'INCOMING') {
+            acc[key].Quantity += quantity;
+          }
+        }
+  
+        if (movement.WarehouseFrom) {
+          const key = `${movement.ChildMaterialId}-${movement.WarehouseFrom.Id}-${movement.UnitOfQuantity}`;
+          const quantity = Number(movement.Quantity);
+  
+          if (!acc[key]) {
+            acc[key] = {
+              WarehouseName: movement.WarehouseFrom.WarehouseName,
+              Quantity: 0,
+              Unit: movement.UnitOfQuantity,
+            };
+          }
+  
+          if (movement.MovementType === 'OUTGOING') {
+            acc[key].Quantity -= quantity;
+          }
+        }
+  
+        return acc;
+      }, {});
+  
+      // تعديل تنسيق البيانات لتضمين الكميات المتبقية والكميات في المستودعات
+      const formattedMaterials = materials.map((material) => {
+        const generalQuantities = Object.keys(materialQuantities)
+          .filter((key) => key.startsWith(`${material.Id}-`))
+          .map((key) => ({
+            unit: key.split('-')[1],
+            quantity: materialQuantities[key], // تنسيق الكمية إلى خانتين عشريتين
+          }));
+  
+        const warehouseData = Object.keys(warehouseQuantities)
+          .filter((key) => key.startsWith(`${material.Id}-`))
+          .map((key) => {
+            const [_, warehouseId, unit] = key.split('-');
+            return {
+              WarehouseName: warehouseQuantities[key].WarehouseName,
+              Unit: unit,
+              Quantity: warehouseQuantities[key].Quantity,
+            };
+          });
+  
+        return {
+          Id: material.Id,
+          Name: material.Name,
+          DyeNumber: material.DyeNumber,
+          Kashan: material.Kashan,
+          Halil: material.Halil,
+          Phthalate: material.Phthalate,
+          GramWeight: material.GramWeight ? material.GramWeight.toString() : "",
+          Description: material.Description,
+          Quantities: generalQuantities, // الكميات المتبقية بشكل عام
+          WarehouseQuantities: warehouseData, // الكميات المتبقية في كل مستودع مع اسم المستودع
+        };
+      });
+  
       // Return response
       return res.status(200).send({
         status: 200,
@@ -308,6 +403,12 @@ const MaterialController = {
       });
     }
   },
+  
+  
+
+  
+ 
+ 
   deleteParentMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;

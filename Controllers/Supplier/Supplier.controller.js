@@ -246,6 +246,147 @@ const SupplierController = {
       });
     }
   },
+
+  getMaterialMovementsById: async (req, res) => {
+    const supplierId = Number(req.params.id);
+  
+    try {
+      const materialMovements = await prisma.materialMovement.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+          SupplierId: supplierId, // جلب جميع الحركات الخاصة بالمزود
+        },
+        select: {
+          Id: true,
+          InvoiceNumber: true,
+          MovementType: true,
+          Quantity: true,
+          UnitOfQuantity: true,
+          MovementDate: true,
+          Description: true,
+          ParentMaterial: {
+            select: {
+              Id: true, // ID المادة الأم
+              Name: true, // اسم المادة الأم
+              Category: {
+                select: {
+                  CategoryName: true, // صنف المادة
+                },
+              },
+            },
+          },
+          ChildMaterial: {
+            select: {
+              Name: true, // اسم المادة الفرعية في حال وجودها
+            },
+          },
+          WarehouseFrom: {
+            select: {
+              WarehouseName: true, // المخزن الذي خرجت منه المواد (إذا كانت OUTGOING)
+            },
+          },
+          WarehouseTo: {
+            select: {
+              WarehouseName: true, // المخزن الذي استقبل المواد (إذا كانت INCOMING)
+            },
+          },
+        },
+      });
+  
+      // تجميع الحركات حسب ParentMaterial.Id ووحدة القياس
+      const aggregatedMovements = {};
+  
+      materialMovements.forEach((movement) => {
+        const parentMaterialId = movement.ParentMaterial?.Id;
+        const materialName = movement.ParentMaterial?.Name || movement.ChildMaterial?.Name;
+        const unit = movement.UnitOfQuantity; // وحدة القياس
+
+        // إذا كانت المادة الأم غير موجودة، يتم تخطي الحركة
+        if (!parentMaterialId) return;
+  
+        // إذا كانت المادة الأم غير موجودة مسبقًا في التجميع، نقوم بإضافتها
+        if (!aggregatedMovements[parentMaterialId]) {
+          aggregatedMovements[parentMaterialId] = {
+            parentMaterialId: parentMaterialId,
+            materialName: materialName,
+            category: movement.ParentMaterial?.Category?.CategoryName,
+            movements: [],  // مصفوفة لحفظ الحركات الفردية
+            quantities: {},  // كائن لتخزين الكميات حسب وحدة القياس
+          };
+        }
+  
+        // إضافة التفاصيل المتعلقة بكل حركة
+        aggregatedMovements[parentMaterialId].movements.push({
+          id: movement.Id,
+          invoiceNumber: movement.InvoiceNumber,
+          quantity: Number(movement.Quantity),  // الكمية الخاصة بكل حركة
+          unit: unit, // وحدة القياس الخاصة بكل حركة
+          movementDate: movement.MovementDate,
+          description: movement.Description,
+          movementType: movement.MovementType === 'INCOMING' ? 'Incoming' : movement.MovementType === 'OUTGOING' ? 'Outgoing' : 'Other',
+          movementDestination: movement.MovementType === 'OUTGOING' 
+            ? `Exported from ${movement.WarehouseFrom?.WarehouseName} to Supplier` 
+            : `Imported from Supplier to ${movement.WarehouseTo?.WarehouseName}`,
+        });
+  
+        // تحديث الكمية الواردة أو الصادرة بناءً على نوع الحركة
+        const movementQuantity = Number(movement.Quantity);
+
+        if (movement.MovementType === 'INCOMING') {
+          if (!aggregatedMovements[parentMaterialId].quantities[unit]) {
+            aggregatedMovements[parentMaterialId].quantities[unit] = {
+              incomingQuantity: 0,
+              outgoingQuantity: 0,
+            };
+          }
+          aggregatedMovements[parentMaterialId].quantities[unit].incomingQuantity += movementQuantity;
+        } else if (movement.MovementType === 'OUTGOING') {
+          if (!aggregatedMovements[parentMaterialId].quantities[unit]) {
+            aggregatedMovements[parentMaterialId].quantities[unit] = {
+              incomingQuantity: 0,
+              outgoingQuantity: 0,
+            };
+          }
+          aggregatedMovements[parentMaterialId].quantities[unit].outgoingQuantity += movementQuantity;
+        }
+      });
+  
+      // حساب الكمية الصافية لكل مادة حسب وحدة القياس
+      Object.values(aggregatedMovements).forEach(material => {
+        material.quantities = Object.entries(material.quantities).map(([unit, qty]) => ({
+          unit,
+          incomingQuantity: Number(qty.incomingQuantity),
+          outgoingQuantity: Number(qty.outgoingQuantity),
+          netQuantity: Number(qty.incomingQuantity) - Number(qty.outgoingQuantity), // حساب الكمية الصافية
+        }));
+      });
+  
+      // تحويل النتيجة النهائية إلى مصفوفة
+      const processedMovements = Object.values(aggregatedMovements);
+  
+      return res.status(200).send({
+        status: 200,
+        message: "تم الحساب بنجاح!",
+        data: processedMovements,
+      });
+  
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  }
+
+  
+  
+  
+
+
 };
 
 export default SupplierController;

@@ -1,3 +1,4 @@
+import { MovementType } from "@prisma/client";
 import prisma from "../../client.js";
 
 const MaterialMovementController = {
@@ -227,40 +228,42 @@ const MaterialMovementController = {
   },
   updateMaterialMovement: async (req, res, next) => {
     const {
-      MovementType,
-      ParentMaterialId,
-      ChildMaterialId,
-      Quantity,
-      UnitOfQuantity,
-      Description,
-      MovementDate,
+      movementType,
+      parentMaterialId,
+      childMaterialId,
+      quantity,
+      unitOfQuantity,
+      description,
+      movementDate,
       WarehouseFromId,
-      WarehouseToId,
-      SupplierId,
+      warehouseToId,
+      supplierId,
       DepartmentFromId,
       DepartmentToId,
-      ModelId,
-      InvoiceNumber, // Added InvoiceNumber
+      modelId,
+      invoiceNumber, // Added InvoiceNumber
     } = req.body;
     const userId = req.userId;
     const id = parseInt(req.params.id);
 
+    console.log(req.body);
+
     // Initialize the data object with fields that are always set
     let updateData = {
-      MovementType,
-      InvoiceNumber, // Added InvoiceNumber
-      ParentMaterial: { connect: { Id: +ParentMaterialId } },
-      ChildMaterial: ChildMaterialId ? { connect: { Id: +ChildMaterialId } } : {},
-      Quantity: parseFloat(Quantity),
-      UnitOfQuantity,
-      Description,
-      MovementDate: new Date(MovementDate),
+      MovementType: movementType,
+      InvoiceNumber: invoiceNumber, // Added InvoiceNumber
+      ParentMaterial: { connect: { Id: +parentMaterialId } },
+      ChildMaterial: childMaterialId ? { connect: { Id: +childMaterialId } } : {},
+      Quantity: parseFloat(quantity),
+      UnitOfQuantity: unitOfQuantity,
+      Description: description,
+      MovementDate: new Date(movementDate),
       WarehouseFrom: WarehouseFromId ? { connect: { Id: +WarehouseFromId } } : {},
-      WarehouseTo: WarehouseToId ? { connect: { Id: +WarehouseToId } } : {},
-      Supplier: SupplierId ? { connect: { Id: +SupplierId } } : {},
+      WarehouseTo: warehouseToId ? { connect: { Id: +warehouseToId } } : {},
+      Supplier: supplierId ? { connect: { Id: +supplierId } } : {},
       DepartmentFrom: DepartmentFromId ? { connect: { Id: +DepartmentFromId } } : {},
       DepartmentTo: DepartmentToId ? { connect: { Id: +DepartmentToId } } : {},
-      Model: ModelId ? { connect: { Id: +ModelId } } : {},
+      Model: modelId ? { connect: { Id: +modelId } } : {},
       Audit: {
         update: {
           UpdatedById: userId,
@@ -297,7 +300,7 @@ const MaterialMovementController = {
     try {
       const materialMovements = await prisma.materialMovement.findMany({
         where: {
-          MovementType: movementType,
+          // MovementType: movementType,
           Audit: {
             IsDeleted: false,
           },

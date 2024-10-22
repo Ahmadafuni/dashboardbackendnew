@@ -3,7 +3,6 @@ import { verifyUser } from "../../Middleware/Auth.middleware.js";
 import ReportsController from "../../Controllers/Reports/Report.controller.js";
 
 const router = express.Router();
-
 router.post("/generateReport", 
 verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
 ReportsController.generateReport);

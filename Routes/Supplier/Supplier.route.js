@@ -4,6 +4,12 @@ import SupplierController from "../../Controllers/Supplier/Supplier.controller.j
 
 const router = express.Router();
 
+
+router.get(
+  "/getMaterialMovementsById/:id",
+  // verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  SupplierController.getMaterialMovementsById
+);
 router.post(
   "/",
   verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
