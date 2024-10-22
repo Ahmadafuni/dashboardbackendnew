@@ -83,8 +83,9 @@ const NoteController = {
           },
           CreatedDepartmentId: +userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
-        take: size ,
+        take: size,
         select: {
           Id: true,
           NoteType: true,
@@ -94,9 +95,21 @@ const NoteController = {
               Name: true,
             },
           },
+          CreatedDepartment: {
+            select: {
+              Id: true,
+              Name: true,
+            },
+          },
           Description: true,
+          Audit: {
+            select: {
+              CreatedAt: true,
+            },
+          },
         },
       });
+
       return res.status(200).send({
         status: 200,
         totalPages,
@@ -104,7 +117,7 @@ const NoteController = {
         data: notes,
       });
     } catch (error) {
-      // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -220,7 +233,6 @@ const NoteController = {
   },
   getCurrentDepartmentNotes: async (req, res, next) => {
     const userDepartmentId = req.userDepartmentId;
-
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     const totalRecords = await prisma.notes.count({});
@@ -229,16 +241,23 @@ const NoteController = {
     try {
       const notes = await prisma.notes.findMany({
         where: {
-          AssignedToDepartmentId: userDepartmentId,
           Audit: {
             IsDeleted: false,
           },
+          AssignedToDepartmentId: +userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
-        take: size ,
+        take: size,
         select: {
           Id: true,
           NoteType: true,
+          AssignedToDepartment: {
+            select: {
+              Id: true,
+              Name: true,
+            },
+          },
           CreatedDepartment: {
             select: {
               Id: true,
@@ -246,6 +265,11 @@ const NoteController = {
             },
           },
           Description: true,
+          Audit: {
+            select: {
+              CreatedAt: true,
+            },
+          },
         },
       });
       return res.status(200).send({
@@ -255,7 +279,7 @@ const NoteController = {
         data: notes,
       });
     } catch (error) {
-      // Server error or unsolved error
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

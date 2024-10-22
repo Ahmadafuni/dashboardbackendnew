@@ -4,26 +4,26 @@ import ReportsController from "../../Controllers/Reports/Report.controller.js";
 
 const router = express.Router();
 router.post("/generateReport", 
-verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.generateReport);
 router.post("/downloadReport", 
-verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.downloadReport);
 router.post("/generateReports", 
-verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.generateReports);
 router.post("/downloadReports", 
-verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]), 
+verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.downloadReports);
 
-router.get("/getAlldata", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+router.get("/getAlldata", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.fetchAllData);
 
 
-router.post("/productionReport", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+router.post("/productionReport", verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.productionReport);
 
-router.post("/orderReport", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+router.post("/orderReport", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.orderReport);
 
 const ReportsRoute = router;

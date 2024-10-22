@@ -14,6 +14,7 @@ router.get(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
+        "HumanResource",
 
     ]),
     NotificationController.getNotificationsByDepartment
@@ -29,6 +30,7 @@ router.get(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
+        "HumanResource",
 
     ]),
     NotificationController.getUnreadCountByDepartment
@@ -54,6 +56,7 @@ router.put(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
+        "HumanResource"
 
     ]),
     NotificationController.markAsRead
@@ -69,6 +72,7 @@ router.put(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
+        "HumanResource",
 
     ]),
     NotificationController.clearAll

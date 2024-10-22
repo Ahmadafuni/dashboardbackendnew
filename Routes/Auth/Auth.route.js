@@ -14,14 +14,14 @@ router.post(
 );
 router.post(
   "/",
-  verifyUser(["FACTORYMANAGER"]),
+  verifyUser(["FACTORYMANAGER","HumanResource"]),
   uploadProfile.single("profiles"),
   AuthenticationController.createUser
 );
 
 router.get(
   "/search/:searchTerm",
-  verifyUser(["FACTORYMANAGER"]),
+  verifyUser(["FACTORYMANAGER","HumanResource"]),
   AuthenticationController.searchUsers
 );
 
@@ -29,7 +29,7 @@ router.post("/login", AuthenticationController.login);
 
 router.get(
   "/all",
-  verifyUser(["FACTORYMANAGER", "CUTTING", "TAILORING"]),
+  verifyUser(["FACTORYMANAGER", "CUTTING", "TAILORING","HumanResource"]),
   AuthenticationController.getAllUsers
 );
 router.get(
@@ -42,6 +42,9 @@ router.get(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "HumanResource",
+    "MotherCompany",
+
   ]),
   AuthenticationController.getUserById
 );
@@ -65,6 +68,8 @@ router.put(
     "TAILORING",
     "PRINTING",
     "QUALITYASSURANCE",
+    "HumanResource",
+    "MotherCompany",
   ]),
   uploadProfile.single("profiles"),
   AuthenticationController.updateUser

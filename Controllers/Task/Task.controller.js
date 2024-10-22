@@ -86,6 +86,7 @@ const TaskController = {
           Audit: { IsDeleted: false },
           CreatedByDepartmentId: userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {
@@ -96,10 +97,17 @@ const TaskController = {
           AssignedFile: true,
           Status: true,
           Feedback: true,
+          StartTime: true,
+          EndTime: true,
           AssignedToDepartment: {
             select: {
               Id: true,
               Name: true,
+            },
+          },
+          Audit: {
+            select: {
+              CreatedAt: true, // Fetch createdAt timestamp
             },
           },
         },
@@ -136,6 +144,7 @@ const TaskController = {
           Audit: { IsDeleted: false },
           AssignedToDepartmentId: userDepartmentId,
         },
+        orderBy: { Id: "desc" },
         skip: (page - 1) * size,
         take: size ,
         select: {
@@ -146,10 +155,17 @@ const TaskController = {
           AssignedFile: true,
           Status: true,
           Feedback: true,
+          StartTime: true,
+          EndTime: true,
           CreatedByDepartment: {
             select: {
               Id: true,
               Name: true,
+            },
+          },
+          Audit: {
+            select: {
+              CreatedAt: true, // Fetch createdAt timestamp
             },
           },
         },
@@ -198,6 +214,8 @@ const TaskController = {
         data: {
           TaskName: task.TaskName,
           DueDate: task.DueAt,
+          StartTime: task.StartTime,
+          EndTime: task.EndTime,
           AssignedToDepartmentId: task.AssignedToDepartmentId.toString(),
           Description: task.Description,
         },
@@ -518,6 +536,7 @@ const TaskController = {
         },
         data: {
           Status: "ONGOING",
+          StartTime: new Date(),
         },
       });
 
@@ -594,6 +613,14 @@ const TaskController = {
         });
       }
 
+      if (task.Status !== "ONGOING") {
+        return res.status(409).send({
+          status: 409,
+          message: "The task must first be set to 'On Going'!",
+          data: {},
+        });
+      }
+
       await prisma.tasks.update({
         where: {
           Id: +id,
@@ -601,6 +628,7 @@ const TaskController = {
         data: {
           Feedback: Feedback,
           Status: "COMPLETED",
+          EndTime: new Date(),
           FeedbackFile: file
             ? `/${file.destination.split("/")[1]}/${file.filename}`
             : !task.FeedbackFile
@@ -611,7 +639,7 @@ const TaskController = {
 
       return res.status(200).send({
         status: 200,
-        message: "Task submited successfully!",
+        message: "Task submitted successfully!",
         data: {},
       });
     } catch (error) {
