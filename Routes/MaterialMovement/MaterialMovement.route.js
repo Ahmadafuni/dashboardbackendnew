@@ -46,5 +46,17 @@ router.get(
     MaterialMovementController.getMaterialReportMovements
 );
 
+router.get(
+    "/consumptionModel/:id",
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getConsumptionByModel
+);
+
+router.get(
+    "/consumptionDepartment/:id",
+    // verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    MaterialMovementController.getConsumptionByDepartment
+);
+
 const MaterialMovementRoute = router;
 export { MaterialMovementRoute };

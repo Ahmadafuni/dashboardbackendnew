@@ -414,7 +414,7 @@ const MaterialMovementController = {
     }
   },
   getMaterialReportMovements: async (req, res, next) => {
-    const { searchTerm, startDate, endDate, parentMaterialId, childMaterialId, movementType } = req.query;
+    const { searchTerm, startDate, endDate, parentMaterialId, childMaterialId, movementType , warehouseId } = req.query;
 
     try {
       const whereConditions = {
@@ -501,6 +501,15 @@ const MaterialMovementController = {
         whereConditions.MovementType = movementType;
       }
 
+      if (warehouseId) {
+        whereConditions.OR = [
+          {WarehouseFromId : Number(warehouseId)},
+          {WarehouseToId : Number(warehouseId)}
+        ]
+        // whereConditions.WarehouseFromId = Number(warehouseId);
+        // whereConditions.WarehouseToId = Number(warehouseId);
+      }
+
       const materialMovements = await prisma.materialMovement.findMany({
         where: whereConditions,
         include: {
@@ -547,7 +556,231 @@ const MaterialMovementController = {
       });
 
     }
-  }
+  },
+
+   getConsumptionByModel: async (req, res) => {
+    const  modelId  = req.params.id;
+    
+    
+    try {
+      // جلب الحركات الواردة (التي تم توريدها إلى المستودع)
+      const incomingMovements = await prisma.materialMovement.findMany({
+        where: {
+          ModelId: parseInt(modelId), // فقط الحركات المرتبطة بالموديل المحدد
+          MovementType: 'INCOMING', // الحركات الواردة
+        },
+        select: {
+          ChildMaterial: true,
+          Quantity: true,
+          UnitOfQuantity: true,
+        },
+      });
+  
+      // جلب الحركات الصادرة (التي تم إخراجها من المستودع)
+      const outgoingMovements = await prisma.materialMovement.findMany({
+        where: {
+          ModelId: parseInt(modelId), // فقط الحركات المرتبطة بالموديل المحدد
+          MovementType: 'OUTGOING', // الحركات الصادرة
+        },
+        select: {
+          ChildMaterial: true,
+          Quantity: true,
+          UnitOfQuantity: true,
+        },
+      });
+  
+      // حساب الاستهلاك لكل مادة
+      const consumptionReport = {};
+  
+      // حساب الكميات الواردة لكل مادة حسب وحدة القياس
+      incomingMovements.forEach((movement) => {
+        const materialId = movement.ChildMaterial.Id;
+        const unit = movement.UnitOfQuantity;
+  
+        // إذا لم يكن للمادة أي سجل بعد، نقوم بإضافته
+        if (!consumptionReport[materialId]) {
+          consumptionReport[materialId] = {
+            material: movement.ChildMaterial, // معلومات المادة
+            units: {}, // الوحدات والكميات
+          };
+        }
+  
+        // إذا لم يكن للوحدة أي سجل بعد، نقوم بإضافتها
+        if (!consumptionReport[materialId].units[unit]) {
+          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+        }
+  
+        // جمع الكمية الواردة
+        consumptionReport[materialId].units[unit].incoming += parseFloat(movement.Quantity);
+      });
+  
+      // حساب الكميات الصادرة لكل مادة حسب وحدة القياس
+      outgoingMovements.forEach((movement) => {
+        const materialId = movement.ChildMaterial.Id;
+        const unit = movement.UnitOfQuantity;
+  
+        // إذا لم يكن للمادة أي سجل بعد، نقوم بإضافته
+        if (!consumptionReport[materialId]) {
+          consumptionReport[materialId] = {
+            material: movement.ChildMaterial, // معلومات المادة
+            units: {}, // الوحدات والكميات
+          };
+        }
+  
+        // إذا لم يكن للوحدة أي سجل بعد، نقوم بإضافتها
+        if (!consumptionReport[materialId].units[unit]) {
+          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+        }
+  
+        // جمع الكمية الصادرة
+        consumptionReport[materialId].units[unit].outgoing += parseFloat(movement.Quantity);
+      });
+  
+      // إعداد التقرير النهائي
+      const result = Object.keys(consumptionReport).map((materialId) => {
+        const materialInfo = consumptionReport[materialId];
+        const unitsData = Object.keys(materialInfo.units).map((unit) => {
+          const { incoming, outgoing } = materialInfo.units[unit];
+          return {
+            unit,
+            incoming,
+            outgoing,
+            consumption: incoming - outgoing,
+          };
+        });
+  
+        return {
+          material: materialInfo.material,
+          units: unitsData,
+        };
+      });
+  
+      // إرجاع البيانات
+      res.json({
+        status: 'success',
+        message: 'Material report generated successfully!',
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Error fetching material consumption data',
+      });
+    }
+  },
+
+  getConsumptionByDepartment: async (req, res) => {
+    const departmentId = req.params.id;
+
+    try {
+        // جلب الحركات الواردة (التي تم توريدها إلى القسم)
+        const incomingMovements = await prisma.materialMovement.findMany({
+            where: {
+                DepartmentToId: parseInt(departmentId), // الحركات التي تم توريدها إلى القسم
+            },
+            select: {
+                ChildMaterial: true,
+                Quantity: true,
+                UnitOfQuantity: true,
+            },
+        });
+
+        // جلب الحركات الصادرة (التي تم إخراجها من القسم)
+        const outgoingMovements = await prisma.materialMovement.findMany({
+            where: {
+                DepartmentFromId: parseInt(departmentId), // الحركات التي تم إخراجها من القسم
+
+              },
+            select: {
+                ChildMaterial: true,
+                Quantity: true,
+                UnitOfQuantity: true,
+            },
+        });
+
+        // حساب الاستهلاك لكل مادة
+        const consumptionReport = {};
+
+        // حساب الكميات الواردة لكل مادة حسب وحدة القياس
+        incomingMovements.forEach((movement) => {
+            const materialId = movement.ChildMaterial.Id;
+            const unit = movement.UnitOfQuantity;
+
+            // إذا لم يكن للمادة أي سجل بعد، نقوم بإضافته
+            if (!consumptionReport[materialId]) {
+                consumptionReport[materialId] = {
+                    material: movement.ChildMaterial, // معلومات المادة
+                    units: {}, // الوحدات والكميات
+                };
+            }
+
+            // إذا لم يكن للوحدة أي سجل بعد، نقوم بإضافتها
+            if (!consumptionReport[materialId].units[unit]) {
+                consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+            }
+
+            // جمع الكمية الواردة
+            consumptionReport[materialId].units[unit].incoming += parseFloat(movement.Quantity);
+        });
+
+        // حساب الكميات الصادرة لكل مادة حسب وحدة القياس
+        outgoingMovements.forEach((movement) => {
+            const materialId = movement.ChildMaterial.Id;
+            const unit = movement.UnitOfQuantity;
+
+            // إذا لم يكن للمادة أي سجل بعد، نقوم بإضافته
+            if (!consumptionReport[materialId]) {
+                consumptionReport[materialId] = {
+                    material: movement.ChildMaterial, // معلومات المادة
+                    units: {}, // الوحدات والكميات
+                };
+            }
+
+            // إذا لم يكن للوحدة أي سجل بعد، نقوم بإضافتها
+            if (!consumptionReport[materialId].units[unit]) {
+                consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+            }
+
+            // جمع الكمية الصادرة
+            consumptionReport[materialId].units[unit].outgoing += parseFloat(movement.Quantity);
+        });
+
+        // إعداد التقرير النهائي
+        const result = Object.keys(consumptionReport).map((materialId) => {
+            const materialInfo = consumptionReport[materialId];
+            const unitsData = Object.keys(materialInfo.units).map((unit) => {
+                const { incoming, outgoing } = materialInfo.units[unit];
+                return {
+                    unit,
+                    outgoing:incoming,
+                    incoming:outgoing,
+                    consumption:  outgoing - incoming,
+                };
+            });
+
+            return {
+                material: materialInfo.material,
+                units: unitsData,
+            };
+        });
+
+        // إرجاع البيانات
+        res.json({
+            status: 'success',
+            message: 'Department material consumption report generated successfully!',
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error fetching material consumption data for the department',
+        });
+    }
+},
+
+
 };
 
 export default MaterialMovementController;

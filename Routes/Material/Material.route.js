@@ -74,5 +74,8 @@ router.get(
   verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   MaterialController.searchMaterial
 );
+
+
+
 const MaterialRoute = router;
 export { MaterialRoute };
