@@ -12,6 +12,7 @@ const MaterialController = {
       minimumLimit,
       isRelevantToProduction,
       hasChildren,
+      color
     } = req.body;
     const userId = req.userId;
     try {
@@ -26,6 +27,7 @@ const MaterialController = {
           MinimumLimit: parseFloat(minimumLimit),
           IsRelevantToProduction: isRelevantToProduction,
           HasChildren: hasChildren,
+          ...(color && { Color: { connect: { Id: +color } } }),
           Audit: {
             create: {
               CreatedById: userId,
@@ -183,6 +185,7 @@ const MaterialController = {
           },
         },
       });
+
       if (!material) {
         // Return response
         return res.status(404).send({
@@ -206,6 +209,7 @@ const MaterialController = {
           minimumLimit: material.MinimumLimit.toString(),
           isRelevantToProduction: material.IsRelevantToProduction,
           hasChildren: material.HasChildren,
+          ...(material.ColorId && ({color: material.ColorId.toString()}))
         },
       });
     } catch (error) {
