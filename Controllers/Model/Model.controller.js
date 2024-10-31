@@ -1051,25 +1051,28 @@ const ModelController = {
       });
   
       const sizes = [];
-      model.ModelVarients.forEach((e) => {
+      model?.ModelVarients.forEach((e) => {
         let sizeArray;
   
         try {
-          sizeArray = JSON.parse(e.Sizes);
+          sizeArray = e.Sizes;
           if (!Array.isArray(sizeArray)) {
             sizeArray = [sizeArray];
           }
         } catch (err) {
           sizeArray = [e.Sizes];
         }
-  
+        
         sizeArray.forEach((f) => {
           const sizeLabel = typeof f === "string" ? f : f.label;
           if (!sizes.includes(sizeLabel)) {
             sizes.push(sizeLabel);
           }
         });
+
       });
+      
+      
   
       // Summarize model information
       modelSummary.modelInfo = {
@@ -1092,19 +1095,22 @@ const ModelController = {
         DeliveryDate: model.Order.DeadlineDate.toDateString(),
         Quantity: model.ModelVarients.reduce((a, c) => a + c.Quantity, 0),
         Colors: model.ModelVarients.map((v) => v.Color.ColorName).join("-"),
-        Sizes: sizes.join("-"),
+        Sizes: sizes,
         Images: model.Images,
       };
   
       // Fetch model stages for each ModelVarient
-      const stages = model.ModelVarients.flatMap((variant) =>
+          const stages = model.ModelVarients
+      .flatMap((variant) =>
         variant.TrakingModels.map((tracking) => ({
           StageNumber: tracking.CurrentStage.StageNumber,
           StageName: tracking.CurrentStage.StageName,
           WorkDescription: tracking.CurrentStage.WorkDescription,
-          DepartmentName: tracking.CurrentStage.Department.Name, // جلب اسم القسم المرتبط مع المرحلة
+          DepartmentName: tracking.CurrentStage.Department.Name, 
         }))
-      );
+      )
+      .sort((a, b) => a.StageNumber - b.StageNumber); 
+
   
       const uniqueStages = Array.from(
         new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
@@ -1112,9 +1118,6 @@ const ModelController = {
   
       modelSummary.stages = uniqueStages;
   
-
-
-
       const cuttingDepartmentVariants = [];
       const printingDepartmentVariants = [];
       const sewingDepartmentVariants = [];
@@ -1132,31 +1135,72 @@ const ModelController = {
           switch (tracking.CurrentStage.Department.Id) {
             case 3:
               belongsToCutting = true;
+              belongsToPrinting = false;
+              belongsToSewing = false ;
+              belongsToEmballage = false;
               break;
             case 10:
+              belongsToCutting = false;
               belongsToPrinting = true;
+              belongsToSewing = false ;
+              belongsToEmballage = false;
               break;
+            case 11:
+              belongsToCutting = false;
+              belongsToPrinting = true;
+              belongsToSewing = false ;
+              belongsToEmballage = false;
+              break;  
             case 4:
-              belongsToSewing = true;
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = true ;
+              belongsToEmballage = false;
+              break;
+            case 5:
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = true ;
+              belongsToEmballage = false;
+              break;
+            case 6:
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = true ;
+              belongsToEmballage = false;
+              break;
+            case 7:
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = true ;
+              belongsToEmballage = false;
+              break;
+            case 8:
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = true ;
+              belongsToEmballage = false;   
               break;
             case 9:
+              belongsToCutting = false;
+              belongsToPrinting = false;
+              belongsToSewing = false ;
               belongsToEmballage = true;
               break;
           }
-        });
-      
-        const variantData = {
-          Id: variant.Id,
-          MainStatus: variant.MainStatus,
-          RunningStatus: variant.RunningStatus,
-          StopData: variant.StopData,
-          ColorName: variant.Color.ColorName,
-          Sizes: variant.Sizes,
-          Quantity: variant.Quantity,
-          TrakingModels: variant.TrakingModels,
-        };
-      
-        // Add the variant to the appropriate department array
+
+          const variantData = {
+            Id: variant.Id,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StopData: variant.StopData,
+            ColorName: variant.Color.ColorName,
+            Sizes: variant.Sizes,
+            Quantity: variant.Quantity,
+            TrakingModels: tracking,
+          };
+
+          // Add the variant to the appropriate department array
         if (belongsToCutting) {
           cuttingDepartmentVariants.push(variantData);
         } else if (belongsToPrinting) {
@@ -1168,6 +1212,9 @@ const ModelController = {
         } else {
           otherDepartmentVariants.push(variantData);
         }
+        
+        });
+        
       });
       
       // Summarize model variants based on the department
