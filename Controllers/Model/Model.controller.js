@@ -1189,6 +1189,13 @@ const ModelController = {
               break;
           }
 
+          let startDate = new Date(tracking.StartTime);
+          let endDate = new Date(tracking.EndTime);          
+          const differenceInMilliseconds = endDate - startDate;
+          const differenceInDays = Math.floor(differenceInMilliseconds / (1000 * 60 * 60 * 24));
+          const differenceInHours = Math.floor((differenceInMilliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const differenceInMinutes = Math.floor((differenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
+          
           const variantData = {
             Id: variant.Id,
             MainStatus: variant.MainStatus,
@@ -1198,6 +1205,9 @@ const ModelController = {
             Sizes: variant.Sizes,
             Quantity: variant.Quantity,
             TrakingModels: tracking,
+            StartDataTime: startDate,
+            EndDataTime: endDate,
+            Duration: `${differenceInDays} يوم، ${differenceInHours} ساعة، ${differenceInMinutes} دقيقة`
           };
 
           // Add the variant to the appropriate department array
