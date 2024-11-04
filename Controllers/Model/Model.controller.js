@@ -1122,6 +1122,7 @@ const ModelController = {
       const printingDepartmentVariants = [];
       const sewingDepartmentVariants = [];
       const emballageDepartmentVariants = [];
+      const warehouseSummary = [];
       const otherDepartmentVariants = [];
       
       // Filter ModelVarients based on DepartmentId in TrakingModels
@@ -1226,6 +1227,32 @@ const ModelController = {
         });
         
       });
+
+      const materials = await prisma.materialMovement.findMany({
+        where: {
+          ModelId: Number(id),
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          ChildMaterial: {
+            select: {
+              Id: true,
+              Name: true,
+              ParentMaterial: true,
+              DyeNumber: true,
+              Kashan: true,
+              Halil: true,
+              Phthalate: true,
+              GramWeight: true,
+              Description: true,
+              Color: true,
+              Audit: true,
+            },
+          },
+        },
+      });
       
       // Summarize model variants based on the department
       modelSummary.modelVarients = {
@@ -1235,9 +1262,9 @@ const ModelController = {
         emballageDepartment: emballageDepartmentVariants,
         otherDepartments: otherDepartmentVariants,
       };
+
+      modelSummary.warehouseSummary = materials;
       
-
-
   
       // Fetch cutting and dressup measurements (already exists in your code)
       const cutting = await prisma.measurements.findMany({
