@@ -187,7 +187,7 @@ const ModelController = {
           },
         },
         skip: (page - 1) * size,
-        take: size ,
+        take: size,
         include: {
           CategoryOne: true,
           categoryTwo: true,
@@ -198,6 +198,7 @@ const ModelController = {
             select: {
               RunningStatus: true,
               StopData: true,
+              OrderName: true,
             },
           },
         },
@@ -667,6 +668,8 @@ const ModelController = {
             select: {
               Id: true,
               OrderNumber: true,
+              OrderName: true,
+
             },
           },
           Template: {
@@ -1012,7 +1015,7 @@ const ModelController = {
     const id = req.params.id;
     try {
       const modelSummary = {};
-  
+
       const model = await prisma.models.findUnique({
         where: {
           Id: +id,
@@ -1049,11 +1052,11 @@ const ModelController = {
           },
         },
       });
-  
+
       const sizes = [];
       model?.ModelVarients.forEach((e) => {
         let sizeArray;
-  
+
         try {
           sizeArray = e.Sizes;
           if (!Array.isArray(sizeArray)) {
@@ -1062,7 +1065,7 @@ const ModelController = {
         } catch (err) {
           sizeArray = [e.Sizes];
         }
-        
+
         sizeArray.forEach((f) => {
           const sizeLabel = typeof f === "string" ? f : f.label;
           if (!sizes.includes(sizeLabel)) {
@@ -1071,15 +1074,16 @@ const ModelController = {
         });
 
       });
-      
-      
-  
+
+
+
       // Summarize model information
       modelSummary.modelInfo = {
         ModelDate: model.Audit.CreatedAt.toDateString(),
         ModelName: model.ModelName,
         ModelNumber: model.ModelNumber,
         OrderNumber: model.OrderNumber,
+        OrderName: model.OrderName,
         Template: model.Template.TemplateName,
         CategoryOne: model.CategoryOne.CategoryName,
         CategoryTwo: model.categoryTwo.CategoryName,
@@ -1098,105 +1102,105 @@ const ModelController = {
         Sizes: sizes,
         Images: model.Images,
       };
-  
-      // Fetch model stages for each ModelVarient
-          const stages = model.ModelVarients
-      .flatMap((variant) =>
-        variant.TrakingModels.map((tracking) => ({
-          StageNumber: tracking.CurrentStage.StageNumber,
-          StageName: tracking.CurrentStage.StageName,
-          WorkDescription: tracking.CurrentStage.WorkDescription,
-          DepartmentName: tracking.CurrentStage.Department.Name, 
-        }))
-      )
-      .sort((a, b) => a.StageNumber - b.StageNumber); 
 
-  
+      // Fetch model stages for each ModelVarient
+      const stages = model.ModelVarients
+        .flatMap((variant) =>
+          variant.TrakingModels.map((tracking) => ({
+            StageNumber: tracking.CurrentStage.StageNumber,
+            StageName: tracking.CurrentStage.StageName,
+            WorkDescription: tracking.CurrentStage.WorkDescription,
+            DepartmentName: tracking.CurrentStage.Department.Name,
+          }))
+        )
+        .sort((a, b) => a.StageNumber - b.StageNumber);
+
+
       const uniqueStages = Array.from(
         new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
       );
-  
+
       modelSummary.stages = uniqueStages;
-  
+
       const cuttingDepartmentVariants = [];
       const printingDepartmentVariants = [];
       const sewingDepartmentVariants = [];
       const emballageDepartmentVariants = [];
       const warehouseSummary = [];
       const otherDepartmentVariants = [];
-      
+
       // Filter ModelVarients based on DepartmentId in TrakingModels
       model.ModelVarients.forEach((variant) => {
         let belongsToCutting = false;
         let belongsToPrinting = false;
         let belongsToSewing = false;
         let belongsToEmballage = false;
-      
+
         variant.TrakingModels.forEach((tracking) => {
           switch (tracking.CurrentStage.Department.Id) {
             case 3:
               belongsToCutting = true;
               belongsToPrinting = false;
-              belongsToSewing = false ;
+              belongsToSewing = false;
               belongsToEmballage = false;
               break;
             case 10:
               belongsToCutting = false;
               belongsToPrinting = true;
-              belongsToSewing = false ;
+              belongsToSewing = false;
               belongsToEmballage = false;
               break;
             case 11:
               belongsToCutting = false;
               belongsToPrinting = true;
-              belongsToSewing = false ;
+              belongsToSewing = false;
               belongsToEmballage = false;
-              break;  
+              break;
             case 4:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = true ;
+              belongsToSewing = true;
               belongsToEmballage = false;
               break;
             case 5:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = true ;
+              belongsToSewing = true;
               belongsToEmballage = false;
               break;
             case 6:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = true ;
+              belongsToSewing = true;
               belongsToEmballage = false;
               break;
             case 7:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = true ;
+              belongsToSewing = true;
               belongsToEmballage = false;
               break;
             case 8:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = true ;
-              belongsToEmballage = false;   
+              belongsToSewing = true;
+              belongsToEmballage = false;
               break;
             case 9:
               belongsToCutting = false;
               belongsToPrinting = false;
-              belongsToSewing = false ;
+              belongsToSewing = false;
               belongsToEmballage = true;
               break;
           }
 
           let startDate = new Date(tracking.StartTime);
-          let endDate = new Date(tracking.EndTime);          
+          let endDate = new Date(tracking.EndTime);
           const differenceInMilliseconds = endDate - startDate;
           const differenceInDays = Math.floor(differenceInMilliseconds / (1000 * 60 * 60 * 24));
           const differenceInHours = Math.floor((differenceInMilliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           const differenceInMinutes = Math.floor((differenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
-          
+
           const variantData = {
             Id: variant.Id,
             MainStatus: variant.MainStatus,
@@ -1212,20 +1216,20 @@ const ModelController = {
           };
 
           // Add the variant to the appropriate department array
-        if (belongsToCutting) {
-          cuttingDepartmentVariants.push(variantData);
-        } else if (belongsToPrinting) {
-          printingDepartmentVariants.push(variantData);
-        } else if (belongsToSewing) {
-          sewingDepartmentVariants.push(variantData);
-        } else if (belongsToEmballage) {
-          emballageDepartmentVariants.push(variantData);
-        } else {
-          otherDepartmentVariants.push(variantData);
-        }
-        
+          if (belongsToCutting) {
+            cuttingDepartmentVariants.push(variantData);
+          } else if (belongsToPrinting) {
+            printingDepartmentVariants.push(variantData);
+          } else if (belongsToSewing) {
+            sewingDepartmentVariants.push(variantData);
+          } else if (belongsToEmballage) {
+            emballageDepartmentVariants.push(variantData);
+          } else {
+            otherDepartmentVariants.push(variantData);
+          }
+
         });
-        
+
       });
 
       const materials = await prisma.materialMovement.findMany({
@@ -1253,7 +1257,7 @@ const ModelController = {
           },
         },
       });
-      
+
       // Summarize model variants based on the department
       modelSummary.modelVarients = {
         cuttingDepartment: cuttingDepartmentVariants,
@@ -1264,8 +1268,8 @@ const ModelController = {
       };
 
       modelSummary.warehouseSummary = materials;
-      
-  
+
+
       // Fetch cutting and dressup measurements (already exists in your code)
       const cutting = await prisma.measurements.findMany({
         where: {
@@ -1292,7 +1296,7 @@ const ModelController = {
           },
         },
       });
-  
+
       // Format cutting sizes and measurements
       const cuttingSizes = [];
       cutting.forEach((m) => {
@@ -1300,14 +1304,14 @@ const ModelController = {
           cuttingSizes.push(m.Size.SizeName);
         }
       });
-  
+
       const formatedCutting = [];
       cutting.forEach((measurement) => {
         const size = measurement.Size.SizeName;
         const isThere = formatedCutting.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-  
+
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1319,7 +1323,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-  
+
       formatedCutting.forEach((m) => {
         cuttingSizes.forEach((s) => {
           if (!m[s]) {
@@ -1327,7 +1331,7 @@ const ModelController = {
           }
         });
       });
-  
+
       // Same logic for dressup
       const dressup = await prisma.measurements.findMany({
         where: {
@@ -1354,21 +1358,21 @@ const ModelController = {
           },
         },
       });
-  
+
       const dressupSizes = [];
       dressup.forEach((m) => {
         if (!dressupSizes.includes(m.Size.SizeName)) {
           dressupSizes.push(m.Size.SizeName);
         }
       });
-  
+
       const formatedDressup = [];
       dressup.forEach((measurement) => {
         const size = measurement.Size.SizeName;
         const isThere = formatedDressup.find(
           (m) => m.MeasurementName === measurement.MeasurementName
         );
-  
+
         if (!isThere) {
           const temp_object = {
             MeasurementName: measurement.MeasurementName,
@@ -1380,7 +1384,7 @@ const ModelController = {
           isThere[size] = measurement.MeasurementValue;
         }
       });
-  
+
       formatedDressup.forEach((m) => {
         dressupSizes.forEach((s) => {
           if (!m[s]) {
@@ -1388,10 +1392,10 @@ const ModelController = {
           }
         });
       });
-  
+
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
-  
+
       return res.status(200).send({
         status: 200,
         message: "Model summary fetched successfully!",
@@ -1406,7 +1410,7 @@ const ModelController = {
       });
     }
   },
-  
+
 
   holdModel: async (req, res, next) => {
     const id = req.params.id;
@@ -1443,8 +1447,8 @@ const ModelController = {
       if (model.StopData) {
         try {
           stopDataArray = Array.isArray(model.StopData)
-              ? model.StopData
-              : JSON.parse(model.StopData); // Ensure it's an array
+            ? model.StopData
+            : JSON.parse(model.StopData); // Ensure it's an array
         } catch (error) {
           console.error("Error parsing StopData:", error);
           stopDataArray = [];
@@ -1564,7 +1568,7 @@ const ModelController = {
       });
 
       // Check if the parent order is ONHOLD (paused)
-        if (order.RunningStatus === "ONHOLD" || order.RunningStatus === "PENDING") {
+      if (order.RunningStatus === "ONHOLD" || order.RunningStatus === "PENDING") {
         return res.status(400).send({
           status: 400,
           message: "We cannot start the model; its parent order is on hold!",
@@ -1573,22 +1577,22 @@ const ModelController = {
       }
 
       // If RunningStatus is ONHOLD
-        if (model.RunningStatus === "ONHOLD") {
-          let stopDataArray = [];
-          if (model.StopData) {
-            try {
-              stopDataArray = typeof model.StopData === 'string'
-                  ? JSON.parse(model.StopData)
-                  : model.StopData;
-            } catch (error) {
-              console.error("Error parsing StopData:", error);
-              return res.status(500).send({
-                status: 500,
-                message: "Invalid StopData format. Please check the data.",
-                data: {},
-              });
-            }
+      if (model.RunningStatus === "ONHOLD") {
+        let stopDataArray = [];
+        if (model.StopData) {
+          try {
+            stopDataArray = typeof model.StopData === 'string'
+              ? JSON.parse(model.StopData)
+              : model.StopData;
+          } catch (error) {
+            console.error("Error parsing StopData:", error);
+            return res.status(500).send({
+              status: 500,
+              message: "Invalid StopData format. Please check the data.",
+              data: {},
+            });
           }
+        }
         if (stopDataArray.length === 0) {
           return res.status(400).send({
             status: 400,
@@ -1728,8 +1732,8 @@ const ModelController = {
       return res.status(200).send({
         status: 200,
         message: model.RunningStatus === "ONHOLD"
-            ? "Model and its variants restarted successfully!"
-            : "Model and its variants started successfully!",
+          ? "Model and its variants restarted successfully!"
+          : "Model and its variants started successfully!",
         data: {},
       });
     } catch (error) {
@@ -1756,7 +1760,7 @@ const ModelController = {
       ReasonText: stopDataFromBody
     };
 
-    console.log("newStopData",newStopData);
+    console.log("newStopData", newStopData);
 
     try {
       const modelVariant = await prisma.modelVarients.findUnique({
@@ -1781,8 +1785,8 @@ const ModelController = {
       if (modelVariant.StopData) {
         try {
           stopDataArray = Array.isArray(modelVariant.StopData)
-              ? modelVariant.StopData
-              : JSON.parse(modelVariant.StopData); // Ensure it's an array
+            ? modelVariant.StopData
+            : JSON.parse(modelVariant.StopData); // Ensure it's an array
         } catch (error) {
           console.error("Error parsing StopData:", error);
           stopDataArray = [];
@@ -1898,8 +1902,8 @@ const ModelController = {
       if (modelVariant.StopData) {
         try {
           stopDataArray = typeof modelVariant.StopData === 'string'
-              ? JSON.parse(modelVariant.StopData)
-              : modelVariant.StopData;
+            ? JSON.parse(modelVariant.StopData)
+            : modelVariant.StopData;
         } catch (error) {
           console.error("Error parsing StopData:", error);
           return res.status(500).send({
@@ -2016,8 +2020,8 @@ const ModelController = {
       return res.status(200).send({
         status: 200,
         message: modelVariant.RunningStatus === "ONHOLD"
-            ? "Model variant restarted successfully!"
-            : "Model variant started successfully!",
+          ? "Model variant restarted successfully!"
+          : "Model variant started successfully!",
         data: {},
       });
 
@@ -2099,17 +2103,17 @@ const ModelController = {
         });
       }
     }
-    
+
     if (startDate || endDate) {
-      filter.StartTime = {}; 
+      filter.StartTime = {};
       filter.EndTime = {};
-    
+
       if (startDate) {
-        filter.StartTime.gte = new Date(startDate); 
+        filter.StartTime.gte = new Date(startDate);
       }
-    
+
       if (endDate) {
-        filter.EndTime.lte = new Date(endDate); 
+        filter.EndTime.lte = new Date(endDate);
       }
     }
 
@@ -2436,7 +2440,7 @@ const ModelController = {
     }
   },
 
-  getTasksStats : async (req, res) => {
+  getTasksStats: async (req, res) => {
     const now = new Date();
     const type = req.query.type || "monthly";
 
@@ -2450,7 +2454,7 @@ const ModelController = {
     }
   },
 
-  getCollectionStats : async (req, res) => {
+  getCollectionStats: async (req, res) => {
     const now = new Date();
     const type = req.query.type || "monthly";
 
@@ -2464,7 +2468,7 @@ const ModelController = {
     }
   },
 
-  getModelStats : async (req, res) => {
+  getModelStats: async (req, res) => {
     const now = new Date();
     const type = req.query.type || "monthly";
 
@@ -2476,14 +2480,14 @@ const ModelController = {
       console.log("Fetched models:", models);  // Debug log to check the fetched data
 
       const modelsStats = calculateStats(models);
-      console.log("modelsStats",modelsStats)
+      console.log("modelsStats", modelsStats)
       res.json(modelsStats);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   },
 
-  getOrdersStats : async (req, res) => {
+  getOrdersStats: async (req, res) => {
     const now = new Date();
     const type = req.query.type || "monthly";
 
@@ -2670,12 +2674,12 @@ const ModelController = {
                 Id: +ProductName,
               },
             },
-              Template: {
-                  connect: {
-                      // 26 is undefined Template in Production
-                      Id: templateId ? +Number(templateId) : 26,
-                  },
+            Template: {
+              connect: {
+                // 26 is undefined Template in Production
+                Id: templateId ? +Number(templateId) : 26,
               },
+            },
             Audit: {
               create: {
                 CreatedById: +userId,
@@ -2830,7 +2834,7 @@ const ModelController = {
     }
   },
 
-  getStagesWithDetailsByModelVariantId :async (req , res) => {
+  getStagesWithDetailsByModelVariantId: async (req, res) => {
     try {
       const { modelVariantId } = req.params;
 
@@ -2856,17 +2860,17 @@ const ModelController = {
           QuantityDelivered: true,
         },
       });
-  
+
       // التحقق مما إذا كانت السجلات موجودة
       if (trackingRecords.length === 0) {
         return res.status(404).json({ error: 'No stages found for the given ModelVariantId' });
       }
-  
+
       // استخراج تفاصيل المراحل
       const stagesWithDetails = trackingRecords.map(record => {
         const startTime = record.StartTime ? new Date(record.StartTime) : null;
         const endTime = record.EndTime ? new Date(record.EndTime) : null;
-  
+
         // حساب المدة الزمنية بين StartTime و EndTime
         let duration = null;
         if (startTime && endTime) {
@@ -2874,7 +2878,7 @@ const ModelController = {
           const durationInHours = durationInMilliseconds / (1000 * 60 * 60); // تحويل إلى ساعات
           duration = durationInHours;
         }
-  
+
         return {
           stageName: record.CurrentStage.StageName,
           startTime: record.StartTime,
@@ -2884,10 +2888,10 @@ const ModelController = {
           duration, // المدة الزمنية بالساعات
         };
       });
-  
+
       // إعادة الرد مع تفاصيل المراحل
       res.status(200).json({ stages: stagesWithDetails });
-  
+
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred while fetching stages' });
@@ -2958,17 +2962,17 @@ const calculateStats = (items, statusField = 'RunningStatus') => {
 // Helper function to fetch data for the given date ranges
 const fetchStatsForRanges = async (model, dateRanges) => {
   const promises = dateRanges.map(({ start, end }) =>
-      prisma[model].findMany({
-        where: {
-          Audit: {
-            CreatedAt: {
-              gte: start,  // Start of the range
-              lte: end,    // End of the range
-            },
+    prisma[model].findMany({
+      where: {
+        Audit: {
+          CreatedAt: {
+            gte: start,  // Start of the range
+            lte: end,    // End of the range
           },
         },
-        include: { Audit: true },  // Include Audit records to access CreatedAt field
-      })
+      },
+      include: { Audit: true },  // Include Audit records to access CreatedAt field
+    })
   );
 
   const results = await Promise.all(promises);
