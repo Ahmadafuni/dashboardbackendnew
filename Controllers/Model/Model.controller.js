@@ -1235,12 +1235,25 @@ const ModelController = {
             IsDeleted: false,
           },
         },
-        select: {
+        select: { 
           ChildMaterial: {
             select: {
               Id: true,
               Name: true,
-              ParentMaterial: true,
+              ParentMaterial: {
+                select: {
+                  Id: true,      
+                  Name: true,           
+                  Category: true,                  
+                  UnitOfMeasure: true,        
+                  UsageLocation: true,          
+                  AlternativeMaterials: true,   
+                  MinimumLimit: true,        
+                  IsRelevantToProduction: true,
+                  HasChildren: true,                
+                  Color: true,               
+                }
+              },
               DyeNumber: true,
               Kashan: true,
               Halil: true,
@@ -1251,6 +1264,9 @@ const ModelController = {
               Audit: true,
             },
           },
+          Quantity: true,
+          UnitOfQuantity: true,
+          
         },
       });
       
