@@ -669,7 +669,6 @@ const ModelController = {
               Id: true,
               OrderNumber: true,
               OrderName: true,
-
             },
           },
           Template: {
@@ -887,7 +886,9 @@ const ModelController = {
                   Id: mStages[0].Id, // Start with the first stage of this specific model
                 },
               },
-              NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // Connect to the next stage if available
+              NextStage: mStages[1]
+                ? { connect: { Id: mStages[1].Id } }
+                : undefined, // Connect to the next stage if available
               Audit: {
                 create: {
                   CreatedById: +userId,
@@ -1072,10 +1073,7 @@ const ModelController = {
             sizes.push(sizeLabel);
           }
         });
-
       });
-
-
 
       // Summarize model information
       modelSummary.modelInfo = {
@@ -1104,17 +1102,14 @@ const ModelController = {
       };
 
       // Fetch model stages for each ModelVarient
-      const stages = model.ModelVarients
-        .flatMap((variant) =>
-          variant.TrakingModels.map((tracking) => ({
-            StageNumber: tracking.CurrentStage.StageNumber,
-            StageName: tracking.CurrentStage.StageName,
-            WorkDescription: tracking.CurrentStage.WorkDescription,
-            DepartmentName: tracking.CurrentStage.Department.Name,
-          }))
-        )
-        .sort((a, b) => a.StageNumber - b.StageNumber);
-
+      const stages = model.ModelVarients.flatMap((variant) =>
+        variant.TrakingModels.map((tracking) => ({
+          StageNumber: tracking.CurrentStage.StageNumber,
+          StageName: tracking.CurrentStage.StageName,
+          WorkDescription: tracking.CurrentStage.WorkDescription,
+          DepartmentName: tracking.CurrentStage.Department.Name,
+        }))
+      ).sort((a, b) => a.StageNumber - b.StageNumber);
 
       const uniqueStages = Array.from(
         new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
@@ -1197,9 +1192,16 @@ const ModelController = {
           let startDate = new Date(tracking.StartTime);
           let endDate = new Date(tracking.EndTime);
           const differenceInMilliseconds = endDate - startDate;
-          const differenceInDays = Math.floor(differenceInMilliseconds / (1000 * 60 * 60 * 24));
-          const differenceInHours = Math.floor((differenceInMilliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const differenceInMinutes = Math.floor((differenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
+          const differenceInDays = Math.floor(
+            differenceInMilliseconds / (1000 * 60 * 60 * 24)
+          );
+          const differenceInHours = Math.floor(
+            (differenceInMilliseconds % (1000 * 60 * 60 * 24)) /
+              (1000 * 60 * 60)
+          );
+          const differenceInMinutes = Math.floor(
+            (differenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60)
+          );
 
           const variantData = {
             Id: variant.Id,
@@ -1212,7 +1214,7 @@ const ModelController = {
             TrakingModels: tracking,
             StartDataTime: startDate,
             EndDataTime: endDate,
-            Duration: `${differenceInDays} يوم، ${differenceInHours} ساعة، ${differenceInMinutes} دقيقة`
+            Duration: `${differenceInDays} يوم، ${differenceInHours} ساعة، ${differenceInMinutes} دقيقة`,
           };
 
           // Add the variant to the appropriate department array
@@ -1227,9 +1229,7 @@ const ModelController = {
           } else {
             otherDepartmentVariants.push(variantData);
           }
-
         });
-
       });
 
       const materials = await prisma.materialMovement.findMany({
@@ -1239,24 +1239,24 @@ const ModelController = {
             IsDeleted: false,
           },
         },
-        select: { 
+        select: {
           ChildMaterial: {
             select: {
               Id: true,
               Name: true,
               ParentMaterial: {
                 select: {
-                  Id: true,      
-                  Name: true,           
-                  Category: true,                  
-                  UnitOfMeasure: true,        
-                  UsageLocation: true,          
-                  AlternativeMaterials: true,   
-                  MinimumLimit: true,        
+                  Id: true,
+                  Name: true,
+                  Category: true,
+                  UnitOfMeasure: true,
+                  UsageLocation: true,
+                  AlternativeMaterials: true,
+                  MinimumLimit: true,
                   IsRelevantToProduction: true,
-                  HasChildren: true,                
-                  Color: true,               
-                }
+                  HasChildren: true,
+                  Color: true,
+                },
               },
               DyeNumber: true,
               Kashan: true,
@@ -1270,7 +1270,6 @@ const ModelController = {
           },
           Quantity: true,
           UnitOfQuantity: true,
-          
         },
       });
 
@@ -1284,7 +1283,6 @@ const ModelController = {
       };
 
       modelSummary.warehouseSummary = materials;
-
 
       // Fetch cutting and dressup measurements (already exists in your code)
       const cutting = await prisma.measurements.findMany({
@@ -1427,7 +1425,6 @@ const ModelController = {
     }
   },
 
-
   holdModel: async (req, res, next) => {
     const id = req.params.id;
     const userId = req.userId;
@@ -1504,7 +1501,6 @@ const ModelController = {
           StopData: stopDataArray,
         },
       });
-
 
       // Update the RunningStatus of all related model Trakinng to PAUSED
       const trackings = await prisma.trakingModels.findMany({
@@ -1584,7 +1580,10 @@ const ModelController = {
       });
 
       // Check if the parent order is ONHOLD (paused)
-      if (order.RunningStatus === "ONHOLD" || order.RunningStatus === "PENDING") {
+      if (
+        order.RunningStatus === "ONHOLD" ||
+        order.RunningStatus === "PENDING"
+      ) {
         return res.status(400).send({
           status: 400,
           message: "We cannot start the model; its parent order is on hold!",
@@ -1597,9 +1596,10 @@ const ModelController = {
         let stopDataArray = [];
         if (model.StopData) {
           try {
-            stopDataArray = typeof model.StopData === 'string'
-              ? JSON.parse(model.StopData)
-              : model.StopData;
+            stopDataArray =
+              typeof model.StopData === "string"
+                ? JSON.parse(model.StopData)
+                : model.StopData;
           } catch (error) {
             console.error("Error parsing StopData:", error);
             return res.status(500).send({
@@ -1680,7 +1680,6 @@ const ModelController = {
             },
           });
         }
-
       } else if (model.RunningStatus === "PENDING") {
         // If RunningStatus is PENDING, just update RunningStatus to ONGOING
         await prisma.models.update({
@@ -1747,9 +1746,10 @@ const ModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: model.RunningStatus === "ONHOLD"
-          ? "Model and its variants restarted successfully!"
-          : "Model and its variants started successfully!",
+        message:
+          model.RunningStatus === "ONHOLD"
+            ? "Model and its variants restarted successfully!"
+            : "Model and its variants started successfully!",
         data: {},
       });
     } catch (error) {
@@ -1773,7 +1773,7 @@ const ModelController = {
       userDepartmentId: req.userDepartmentId,
       StartStopTime: new Date(),
       EndStopTime: null,
-      ReasonText: stopDataFromBody
+      ReasonText: stopDataFromBody,
     };
 
     console.log("newStopData", newStopData);
@@ -1906,10 +1906,14 @@ const ModelController = {
       });
 
       // Check if the parent model is ONHOLD
-      if (model.RunningStatus === "ONHOLD" || model.RunningStatus === "PENDING") {
+      if (
+        model.RunningStatus === "ONHOLD" ||
+        model.RunningStatus === "PENDING"
+      ) {
         return res.status(400).send({
           status: 400,
-          message: "We cannot start the model variant; its parent model is on hold!",
+          message:
+            "We cannot start the model variant; its parent model is on hold!",
           data: {},
         });
       }
@@ -1917,9 +1921,10 @@ const ModelController = {
       let stopDataArray = [];
       if (modelVariant.StopData) {
         try {
-          stopDataArray = typeof modelVariant.StopData === 'string'
-            ? JSON.parse(modelVariant.StopData)
-            : modelVariant.StopData;
+          stopDataArray =
+            typeof modelVariant.StopData === "string"
+              ? JSON.parse(modelVariant.StopData)
+              : modelVariant.StopData;
         } catch (error) {
           console.error("Error parsing StopData:", error);
           return res.status(500).send({
@@ -1987,7 +1992,6 @@ const ModelController = {
             },
           });
         }
-
       } else if (modelVariant.RunningStatus === "PENDING") {
         // Handle start if RunningStatus is PENDING (no need to handle StopData)
         await prisma.modelVarients.update({
@@ -2035,12 +2039,12 @@ const ModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: modelVariant.RunningStatus === "ONHOLD"
-          ? "Model variant restarted successfully!"
-          : "Model variant started successfully!",
+        message:
+          modelVariant.RunningStatus === "ONHOLD"
+            ? "Model variant restarted successfully!"
+            : "Model variant started successfully!",
         data: {},
       });
-
     } catch (error) {
       // Server error or unsolved error
       console.error(error);
@@ -2132,7 +2136,6 @@ const ModelController = {
         filter.EndTime.lte = new Date(endDate);
       }
     }
-
 
     if (orderNumber) {
       filter.OrderNumber = orderNumber;
@@ -2364,7 +2367,7 @@ const ModelController = {
           const totalDuration = Math.floor(
             (new Date(model.Audit.UpdatedAt) -
               new Date(model.Audit.CreatedAt)) /
-            (1000 * 60 * 60 * 24)
+              (1000 * 60 * 60 * 24)
           );
 
           const modelProgress = modelsWithProgress.find(
@@ -2390,16 +2393,16 @@ const ModelController = {
                 StageName: trackingModel.CurrentStage.StageName,
                 QuantityDelivered: trackingModel.QuantityReceived
                   ? trackingModel.QuantityReceived.reduce(
-                    (receivedOgj, received) => {
-                      receivedOgj[received.size] = received.value;
-                      return receivedOgj;
-                    },
-                    {}
-                  )
+                      (receivedOgj, received) => {
+                        receivedOgj[received.size] = received.value;
+                        return receivedOgj;
+                      },
+                      {}
+                    )
                   : sizes.reduce((emptyObj, size) => {
-                    emptyObj[size] = "";
-                    return emptyObj;
-                  }, {}),
+                      emptyObj[size] = "";
+                      return emptyObj;
+                    }, {}),
               }))[0],
             };
           });
@@ -2493,10 +2496,10 @@ const ModelController = {
       const models = await fetchStatsForRanges("models", dateRanges);
 
       // Ensure you are processing the models correctly
-      console.log("Fetched models:", models);  // Debug log to check the fetched data
+      console.log("Fetched models:", models); // Debug log to check the fetched data
 
       const modelsStats = calculateStats(models);
-      console.log("modelsStats", modelsStats)
+      console.log("modelsStats", modelsStats);
       res.json(modelsStats);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -2551,13 +2554,13 @@ const ModelController = {
       const renameFields = (data) => {
         const fieldNamesMap = {
           "رقم الموديل": "ModelNumber",
-          "الصنف": "CategoryOne",
-          "الفئة": "CategoryTwo",
-          "الزمرة": "ProductName",
-          "القماش": "Textiles",
-          "القالب": "templateId",
-          "المراحل": "Stages",
-          "القياس": "scale",
+          الصنف: "CategoryOne",
+          الفئة: "CategoryTwo",
+          الزمرة: "ProductName",
+          القماش: "Textiles",
+          القالب: "templateId",
+          المراحل: "Stages",
+          القياس: "scale",
         };
 
         let renamedRecord = {};
@@ -2570,7 +2573,6 @@ const ModelController = {
 
         return renamedRecord;
       };
-
 
       for (let model of Models) {
         const renamedData = renameFields(model);
@@ -2586,8 +2588,6 @@ const ModelController = {
           scale,
           ...color
         } = renamedData;
-
-
 
         const colors = { ...color };
         console.log(colors);
@@ -2619,7 +2619,9 @@ const ModelController = {
 
         console.log(colorNameToIdMap);
 
-        const stageIds = Stages.split("-").map(stage => stageCodeToIdMap[stage]);
+        const stageIds = Stages.split("-").map(
+          (stage) => stageCodeToIdMap[stage]
+        );
 
         const pCatalogue = await prisma.productCatalogs.findUnique({
           where: {
@@ -2657,7 +2659,6 @@ const ModelController = {
 
         let modelCount = await prisma.models.count({});
         modelCount++;
-
 
         const createdModel = await prisma.models.create({
           data: {
@@ -2702,11 +2703,8 @@ const ModelController = {
                 UpdatedById: +userId,
               },
             },
-
-
           },
         });
-
 
         for (const stageId of stageIds) {
           const stagesCount = await prisma.manufacturingStagesModel.count({
@@ -2739,7 +2737,9 @@ const ModelController = {
 
         for (const [colorKey, colorValue] of Object.entries(colors)) {
           const colorIdObj = colorNameToIdMap.find(
-            (colorObj) => colorObj.ColorName.trim().toLowerCase() === colorKey.trim().toLowerCase()
+            (colorObj) =>
+              colorObj.ColorName.trim().toLowerCase() ===
+              colorKey.trim().toLowerCase()
           );
 
           if (!colorIdObj) {
@@ -2789,11 +2789,10 @@ const ModelController = {
             });
           }
 
-          const sizesArray = scale.split("-").map(size => {
+          const sizesArray = scale.split("-").map((size) => {
             const value = (colorValue / scale.split("-").length).toFixed(2);
             return { label: size.trim(), value: value };
           });
-
 
           await prisma.modelVarients.create({
             data: {
@@ -2822,7 +2821,9 @@ const ModelController = {
                       Id: mStages[0].Id,
                     },
                   },
-                  NextStage: mStages[1] ? { connect: { Id: mStages[1].Id } } : undefined, // إذا كانت المرحلة التالية موجودة
+                  NextStage: mStages[1]
+                    ? { connect: { Id: mStages[1].Id } }
+                    : undefined, // إذا كانت المرحلة التالية موجودة
                   Audit: {
                     create: {
                       CreatedById: +userId,
@@ -2856,7 +2857,11 @@ const ModelController = {
 
       // التأكد من أن المعرف هو رقم صالح
       if (!modelVariantId || isNaN(Number(modelVariantId))) {
-        return res.status(400).json({ error: 'ModelVariantId is required and must be a valid number' });
+        return res
+          .status(400)
+          .json({
+            error: "ModelVariantId is required and must be a valid number",
+          });
       }
 
       // جلب جميع السجلات التي لها نفس ModelVariantId
@@ -2879,18 +2884,21 @@ const ModelController = {
 
       // التحقق مما إذا كانت السجلات موجودة
       if (trackingRecords.length === 0) {
-        return res.status(404).json({ error: 'No stages found for the given ModelVariantId' });
+        return res
+          .status(404)
+          .json({ error: "No stages found for the given ModelVariantId" });
       }
 
       // استخراج تفاصيل المراحل
-      const stagesWithDetails = trackingRecords.map(record => {
+      const stagesWithDetails = trackingRecords.map((record) => {
         const startTime = record.StartTime ? new Date(record.StartTime) : null;
         const endTime = record.EndTime ? new Date(record.EndTime) : null;
 
         // حساب المدة الزمنية بين StartTime و EndTime
         let duration = null;
         if (startTime && endTime) {
-          const durationInMilliseconds = endTime.getTime() - startTime.getTime();
+          const durationInMilliseconds =
+            endTime.getTime() - startTime.getTime();
           const durationInHours = durationInMilliseconds / (1000 * 60 * 60); // تحويل إلى ساعات
           duration = durationInHours;
         }
@@ -2907,14 +2915,13 @@ const ModelController = {
 
       // إعادة الرد مع تفاصيل المراحل
       res.status(200).json({ stages: stagesWithDetails });
-
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'An error occurred while fetching stages' });
+      res
+        .status(500)
+        .json({ error: "An error occurred while fetching stages" });
     }
-
   },
-
 };
 
 // Helper function to get date ranges based on the requested type
