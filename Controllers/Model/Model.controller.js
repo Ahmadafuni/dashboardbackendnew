@@ -703,53 +703,59 @@ const ModelController = {
 
   getAllModelVarients: async (req, res, next) => {
     const id = req.params.id;
-    try {
-      const varients = await prisma.modelVarients
-        .findMany({
-          where: {
-            ModelId: +id,
-            Audit: {
-              IsDeleted: false,
-            },
-          },
-          select: {
-            Id: true,
-            Color: {
-              select: {
-                ColorName: true,
-              },
-            },
-            Sizes: true,
-            Quantity: true,
-            MainStatus: true,
-            RunningStatus: true,
-            StopData: true,
-            Model: {
-              select: {
-                ModelName: true,
-                TemplateId: true,
-              },
-            },
-          },
-        })
-        .then((varientss) =>
-          varientss.map((e) => ({
-            Id: e.Id,
-            Color: e.Color.ColorName,
-            Sizes: e.Sizes,
-            Model: e.Model.ModelName,
-            MainStatus: e.MainStatus,
-            Quantity: e.Quantity,
-            TemplateId: e.Model.TemplateId,
-            StopData: e.StopData,
-            RunningStatus: e.RunningStatus,
-          }))
-        );
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
 
-      // Return Response
+    try {
+      const allVarients = await prisma.modelVarients.findMany({
+        where: {
+          ModelId: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        select: {
+          Id: true,
+          Color: {
+            select: {
+              ColorName: true,
+            },
+          },
+          Sizes: true,
+          Quantity: true,
+          MainStatus: true,
+          RunningStatus: true,
+          StopData: true,
+          Model: {
+            select: {
+              ModelName: true,
+              TemplateId: true,
+            },
+          },
+        },
+      });
+
+      const processedVarients = allVarients.map((e) => ({
+        Id: e.Id,
+        Color: e.Color.ColorName,
+        Sizes: e.Sizes,
+        Model: e.Model.ModelName,
+        MainStatus: e.MainStatus,
+        Quantity: e.Quantity,
+        TemplateId: e.Model.TemplateId,
+        StopData: e.StopData,
+        RunningStatus: e.RunningStatus,
+      }));
+
+      const totalRecords = processedVarients.length;
+      const totalPages = Math.ceil(totalRecords / size);
+
+      const varients = processedVarients.slice((page - 1) * size, page * size);
+
       return res.status(200).send({
         status: 200,
         message: "Model varients fetched successfully!",
+        totalPages,
         data: varients,
       });
     } catch (error) {
@@ -762,6 +768,7 @@ const ModelController = {
       });
     }
   },
+
 
   getModelVarientById: async (req, res, next) => {
     const id = req.params.id;
@@ -2857,11 +2864,9 @@ const ModelController = {
 
       // التأكد من أن المعرف هو رقم صالح
       if (!modelVariantId || isNaN(Number(modelVariantId))) {
-        return res
-          .status(400)
-          .json({
-            error: "ModelVariantId is required and must be a valid number",
-          });
+        return res.status(400).json({
+          error: "ModelVariantId is required and must be a valid number",
+        });
       }
 
       // جلب جميع السجلات التي لها نفس ModelVariantId
@@ -2950,7 +2955,7 @@ const getDateRanges = (type, now) => {
 };
 
 // Helper function to calculate stats for a given set of tasks or models
-const calculateStats = (items, statusField = 'RunningStatus') => {
+const calculateStats = (items, statusField = "RunningStatus") => {
   const stats = { PENDING: 0, ONGOING: 0, COMPLETED: 0, ONHOLD: 0 }; // Add statuses as needed
 
   items.forEach((item) => {
@@ -2971,7 +2976,7 @@ const calculateStats = (items, statusField = 'RunningStatus') => {
         break;
       default:
         if (!stats[status]) {
-          stats[status] = 1;  // Dynamically add new statuses
+          stats[status] = 1; // Dynamically add new statuses
         } else {
           stats[status]++;
         }
@@ -2989,12 +2994,12 @@ const fetchStatsForRanges = async (model, dateRanges) => {
       where: {
         Audit: {
           CreatedAt: {
-            gte: start,  // Start of the range
-            lte: end,    // End of the range
+            gte: start, // Start of the range
+            lte: end, // End of the range
           },
         },
       },
-      include: { Audit: true },  // Include Audit records to access CreatedAt field
+      include: { Audit: true }, // Include Audit records to access CreatedAt field
     })
   );
 
