@@ -647,6 +647,7 @@ const DataTableController = {
             Details: modelVariantDetails,
             Template: model.Template,
             RunningStatus: model.RunningStatus,
+            Barcode: model.Barcode,
             Audit: {
               CreatedAt: model.Audit.CreatedAt,
               UpdatedAt: model.Audit.UpdatedAt,
