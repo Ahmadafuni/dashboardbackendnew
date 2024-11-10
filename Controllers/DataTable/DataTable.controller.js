@@ -309,7 +309,6 @@ const DataTableController = {
           }
         });
       }
-
       const results = await prisma[tableName].findMany({
         where: where,
         include: include,
@@ -540,16 +539,24 @@ const DataTableController = {
     }
   },
 
-  filterReport: async (req, res) => {
-    const { demoModelNumber } = req.params;
+  filterModels: async (req, res) => {
+    const { filters } = req.body;
+
     try {
-      const models = await prisma.models.findMany({
-        where: {
-          Audit: {
-            IsDeleted: false,
-          },
-          DemoModelNumber: demoModelNumber,
+      const whereCondition = {
+        Audit: {
+          IsDeleted: false,
         },
+      };
+
+      filters.forEach((filter) => {
+        if (filter.column == "ModelNumber")
+          whereCondition["DemoModelNumber"] = filter.value;
+        else whereCondition[filter.column] = filter.value;
+      });
+
+      const models = await prisma.models.findMany({
+        where: whereCondition,
         orderBy: { StartTime: "desc" },
         // skip: (page - 1) * size,
         // take: size,
@@ -568,6 +575,7 @@ const DataTableController = {
               TemplateName: true,
             },
           },
+          RunningStatus:true,
           ModelVarients: {
             select: {
               Color: true,
@@ -620,12 +628,14 @@ const DataTableController = {
             variant.TrakingModels[0]?.StartTime,
             variant.TrakingModels[0]?.EndTime
           ),
+         
         }));
 
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
         } else {
           acc.push({
+            Id: model.Id,
             DemoModelNumber: model.DemoModelNumber,
             ModelId: model.Id,
             ModelName: model.ModelName,
@@ -635,6 +645,7 @@ const DataTableController = {
             Textile: model.Textile,
             Details: modelVariantDetails,
             Template: model.Template,
+            RunningStatus: model.RunningStatus,
             Audit: {
               CreatedAt: model.Audit.CreatedAt,
               UpdatedAt: model.Audit.UpdatedAt,
@@ -644,7 +655,9 @@ const DataTableController = {
 
         return acc;
       }, []);
+
       console.log(groupedModels);
+
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",

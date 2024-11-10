@@ -11,6 +11,8 @@ router.get(
     DataTableController.getAllFields
 );
 
+router.post("/filter/models", DataTableController.filterModels);
+
 router.post(
     "/filter/:tableName" ,
     DataTableController.filterTable
@@ -21,9 +23,5 @@ router.get(
     DataTableController.filterDashboard
 );
 
-router.get(
-    "/filter/report/:demoModelNumber" ,
-    DataTableController.filterReport
-);
 
 export { router as DataTableRoute };

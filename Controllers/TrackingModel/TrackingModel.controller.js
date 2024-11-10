@@ -13,13 +13,12 @@ const safeParseJSON = (data) => {
 };
 
 const TrackingModelController = {
-
   startVariant: async (req, res, next) => {
     const userId = req.userId;
     const variantId = +req.params.id;
     const userDepartmentId = req.userDepartmentId;
-    console.log("variantId",variantId);
-    
+    console.log("variantId", variantId);
+
     try {
       await prisma.modelVarients.update({
         where: {
@@ -67,7 +66,7 @@ const TrackingModelController = {
           },
         },
       });
-      console.log("tracking",tracking)
+      console.log("tracking", tracking);
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
@@ -92,7 +91,9 @@ const TrackingModelController = {
           Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName}  البدء من ${tracking.CurrentStage.Department.Name}`,
           ToDepartment: {
             connect: {
-              Id: tracking.NextStage?.DepartmentId || tracking.CurrentStage.DepartmentId,
+              Id:
+                tracking.NextStage?.DepartmentId ||
+                tracking.CurrentStage.DepartmentId,
             },
           },
         },
@@ -527,7 +528,8 @@ const TrackingModelController = {
   completeVariant: async (req, res, next) => {
     const trackingId = +req.params.id;
     const userId = req.userId;
-    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } = req.body;
+    const { QuantityReceived, QuantityDelivered, DamagedItem, Notes } =
+      req.body;
 
     try {
       const tracking = await prisma.trakingModels.findUnique({
@@ -621,7 +623,9 @@ const TrackingModelController = {
         },
       });
 
-      console.log(`ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`);
+      console.log(
+        `ModelVariant updated successfully for ID: ${tracking.ModelVariantId}`
+      );
 
       const remainingVariants = await prisma.modelVarients.findMany({
         where: {
@@ -636,9 +640,13 @@ const TrackingModelController = {
         },
       });
 
-      const variantStatuses = remainingVariants.map((variant) => variant.RunningStatus);
+      const variantStatuses = remainingVariants.map(
+        (variant) => variant.RunningStatus
+      );
 
-      if (variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
+      if (
+        variantStatuses.every((runningStatus) => runningStatus === "COMPLETED")
+      ) {
         await prisma.models.update({
           where: {
             Id: tracking.ModelVariant.ModelId,
@@ -653,7 +661,9 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`);
+        console.log(
+          `Model updated to DONE for ID: ${tracking.ModelVariant.ModelId}`
+        );
       } else if (variantStatuses.includes("ONGOING")) {
         await prisma.models.update({
           where: {
@@ -668,7 +678,9 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`);
+        console.log(
+          `Model updated to INPROGRESS for ID: ${tracking.ModelVariant.ModelId}`
+        );
       }
 
       const remainingModels = await prisma.models.findMany({
@@ -685,7 +697,9 @@ const TrackingModelController = {
 
       const modelStatuses = remainingModels.map((model) => model.RunningStatus);
 
-      if (modelStatuses.every((runningStatus) => runningStatus === "COMPLETED")) {
+      if (
+        modelStatuses.every((runningStatus) => runningStatus === "COMPLETED")
+      ) {
         await prisma.orders.update({
           where: {
             Id: tracking.ModelVariant.Model.OrderId,
@@ -700,7 +714,9 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`);
+        console.log(
+          `Order updated to COMPLETED for ID: ${tracking.ModelVariant.Model.OrderId}`
+        );
       } else if (modelStatuses.includes("ONGOING")) {
         await prisma.orders.update({
           where: {
@@ -715,7 +731,9 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`);
+        console.log(
+          `Order updated to INPROGRESS for ID: ${tracking.ModelVariant.Model.OrderId}`
+        );
       }
 
       const remainingOrders = await prisma.orders.findMany({
@@ -732,7 +750,9 @@ const TrackingModelController = {
 
       const orderStatuses = remainingOrders.map((order) => order.RunningStatus);
 
-      if (orderStatuses.every((ruunningStatus) => ruunningStatus === "COMPLETED")) {
+      if (
+        orderStatuses.every((ruunningStatus) => ruunningStatus === "COMPLETED")
+      ) {
         await prisma.collections.update({
           where: {
             Id: tracking.ModelVariant.Model.Order.CollectionId,
@@ -747,7 +767,9 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
+        console.log(
+          `Collection updated to COMPLETED for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
+        );
       } else if (orderStatuses.includes("ONGOING")) {
         await prisma.collections.update({
           where: {
@@ -762,18 +784,21 @@ const TrackingModelController = {
             },
           },
         });
-        console.log(`Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`);
+        console.log(
+          `Collection updated to ONGOING for ID: ${tracking.ModelVariant.Model.Order.CollectionId}`
+        );
       }
 
       await prisma.notifications.create({
         data: {
-          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} انتهاء ` ,
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} انتهاء `,
           Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName}  الانتهاء صدر من ${tracking.CurrentStage.Department.Name}`,
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
             },
-          },        },
+          },
+        },
       });
 
       return res.status(200).send({
@@ -790,9 +815,9 @@ const TrackingModelController = {
       });
     }
   },
-  
+
   getAllTrackingByDepartment: async (req, res, next) => {
-    const userDepartmentId= req.userDepartmentId;
+    const userDepartmentId = req.userDepartmentId;
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
 
@@ -942,18 +967,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -1087,18 +1112,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -1233,18 +1258,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -1378,18 +1403,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -1399,32 +1424,35 @@ const TrackingModelController = {
         },
       });
 
-
       const addNameField = (items, stage) =>
         items.map((item) => {
           const modelName = item.ModelVariant.Model.ModelName;
-          const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
-          const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
-          const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
-          const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+          const TemplatePatternName =
+            item.ModelVariant.Model.Template.TemplatePattern
+              .TemplatePatternName;
+          const categoryOneName =
+            item.ModelVariant.Model.CategoryOne.CategoryName;
+          const ProductCatalogName =
+            item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+          const categoryTwoName =
+            item.ModelVariant.Model.categoryTwo.CategoryName;
 
           return {
             ...item,
             name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
             Barcode: item.ModelVariant.Model.Barcode,
-            CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
+            CollectionName:
+              item.ModelVariant.Model.Order.Collection.CollectionName,
             OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
             OrderName: item.ModelVariant.Model.Order.OrderName,
             TextileName: item.ModelVariant.Model.Textile.TextileName,
           };
         });
 
-    const awaitingWithNames = addNameField(awaiting, 1);
-    const inProgressWithNames = addNameField(inProgress, 2);
-    const completedWithNames = addNameField(completed, 3);
-    const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
-
-
+      const awaitingWithNames = addNameField(awaiting, 1);
+      const inProgressWithNames = addNameField(inProgress, 2);
+      const completedWithNames = addNameField(completed, 3);
+      const givingConfirmationWithNames = addNameField(givingConfirmation, 4);
 
       return res.status(200).send({
         status: 200,
@@ -1484,7 +1512,7 @@ const TrackingModelController = {
         },
       });
     } catch (error) {
-      console.log("error",error);
+      console.log("error", error);
       return res.status(500).send({
         status: 500,
         message: "Internal server error. Please try again later!",
@@ -1653,11 +1681,15 @@ const TrackingModelController = {
     });
 
     const totalPagesAwaiting = Math.ceil(totalRecordsAwaiting / sizes.awaiting);
-    const totalPagesInProgress = Math.ceil(totalRecordsInProgress / sizes.inProgress);
-    const totalPagesCompleted = Math.ceil(totalRecordsCompleted / sizes.completed);
+    const totalPagesInProgress = Math.ceil(
+      totalRecordsInProgress / sizes.inProgress
+    );
+    const totalPagesCompleted = Math.ceil(
+      totalRecordsCompleted / sizes.completed
+    );
     const totalPagesFinished = Math.ceil(totalRecordsFinished / sizes.finished);
     const totalPagesGivingConfirmation = Math.ceil(
-        totalRecordsGivingConfirmation / sizes.givingConfirmation
+      totalRecordsGivingConfirmation / sizes.givingConfirmation
     );
 
     try {
@@ -1794,18 +1826,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -1950,18 +1982,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -2109,18 +2141,18 @@ const TrackingModelController = {
                   },
                   Template: {
                     select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
+                      TemplatePattern: {
+                        select: {
+                          TemplatePatternName: true,
+                        },
+                      },
+                    },
+                  },
+                  ProductCatalog: {
+                    select: {
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -2129,118 +2161,127 @@ const TrackingModelController = {
           },
         },
       });
-
 
       const modelVariantsFinished = await prisma.modelVarients.findMany({
         where: {
           Audit: {
             IsDeleted: false,
           },
-          Model:{
-            Audit:{
-              IsDeleted: false
+          Model: {
+            Audit: {
+              IsDeleted: false,
             },
             Order: {
               Audit: {
-                IsDeleted: false
+                IsDeleted: false,
               },
               Collection: {
                 Audit: {
-                  IsDeleted: false
-                }
-              }
-            }
+                  IsDeleted: false,
+                },
+              },
+            },
           },
-          MainStatus: "DONE" ,
-          RunningStatus: "COMPLETED"
+          MainStatus: "DONE",
+          RunningStatus: "COMPLETED",
         },
         skip: (pages.finished - 1) * sizes.finished,
         take: sizes.finished,
 
         select: {
           Id: true,
-              RunningStatus: true,
-              StopData: true,
-              Color: {
+          RunningStatus: true,
+          StopData: true,
+          Color: {
+            select: {
+              ColorName: true,
+            },
+          },
+          Model: {
+            select: {
+              Textile: {
                 select: {
-                  ColorName: true,
+                  TextileName: true,
                 },
               },
-              Model: {
+              Order: {
                 select: {
-                  Textile: {
+                  OrderNumber: true,
+                  OrderName: true,
+                  Collection: {
                     select: {
-                      TextileName: true,
+                      CollectionName: true,
                     },
                   },
-                  Order: {
-                    select: {
-                      OrderNumber: true,
-                      OrderName: true,
-                      Collection: {
-                        select: {
-                          CollectionName: true,
-                        },
-                      },
-                    },
-                  },
-                  Barcode: true,
-
-                  ModelName: true,
-                  ModelNumber: true,
-                  DemoModelNumber: true,
-                  Id: true,
-                  CategoryOne: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  categoryTwo: {
-                    select: {
-                      CategoryName: true,
-                    },
-                  },
-                  Template: {
-                    select: {
-                     TemplatePattern:{
-                       select: {
-                         TemplatePatternName: true,
-                       }
-                     }
-                    }
-                 },
-                 ProductCatalog: {
-                  select: {
-                    ProductCatalogName: true
-                  }
-                }
                 },
               },
-              Sizes: true,
-              Quantity: true,
-        }
+              Barcode: true,
 
+              ModelName: true,
+              ModelNumber: true,
+              DemoModelNumber: true,
+              Id: true,
+              CategoryOne: {
+                select: {
+                  CategoryName: true,
+                },
+              },
+              categoryTwo: {
+                select: {
+                  CategoryName: true,
+                },
+              },
+              Template: {
+                select: {
+                  TemplatePattern: {
+                    select: {
+                      TemplatePatternName: true,
+                    },
+                  },
+                },
+              },
+              ProductCatalog: {
+                select: {
+                  ProductCatalogName: true,
+                },
+              },
+            },
+          },
+          Sizes: true,
+          Quantity: true,
+        },
       });
 
-
       const processFinishedModelVariants = (modelvarinte) => {
-        const modelName = `${modelvarinte?.Model?.ProductCatalog?.ProductCatalogName || 'N/A'} - 
-                          ${modelvarinte?.Model?.CategoryOne?.CategoryName || 'N/A'} - 
-                          ${modelvarinte?.Model?.categoryTwo?.CategoryName || 'N/A'} - 
-                          ${modelvarinte?.Model?.Template?.TemplatePattern?.TemplatePatternName || 'N/A'}`;
-        
-        const collectionName = modelvarinte?.Model?.Order?.Collection?.CollectionName || 'N/A';
-        const orderName = modelvarinte?.Model?.Order?.OrderName || 'N/A';
-        const textileName = modelvarinte?.Model?.Textile?.TextileName || 'N/A';
-        const colors = modelvarinte?.Color?.ColorName || 'N/A';
-        
+        const modelName = `${
+          modelvarinte?.Model?.ProductCatalog?.ProductCatalogName || "N/A"
+        } - 
+                          ${
+                            modelvarinte?.Model?.CategoryOne?.CategoryName ||
+                            "N/A"
+                          } - 
+                          ${
+                            modelvarinte?.Model?.categoryTwo?.CategoryName ||
+                            "N/A"
+                          } - 
+                          ${
+                            modelvarinte?.Model?.Template?.TemplatePattern
+                              ?.TemplatePatternName || "N/A"
+                          }`;
+
+        const collectionName =
+          modelvarinte?.Model?.Order?.Collection?.CollectionName || "N/A";
+        const orderName = modelvarinte?.Model?.Order?.OrderName || "N/A";
+        const textileName = modelvarinte?.Model?.Textile?.TextileName || "N/A";
+        const colors = modelvarinte?.Color?.ColorName || "N/A";
+
         // إذا كان 'Sizes' غير موجودة
-        const sizes = modelvarinte?.Sizes?.map(size => size.label) || [];
-      
+        const sizes = modelvarinte?.Sizes?.map((size) => size.label) || [];
+
         return {
           modelId: modelvarinte?.Model?.Id,
-          modelDemoNumber: modelvarinte?.Model?.DemoModelNumber || 'N/A',
-          modelBarcode: modelvarinte?.Model?.Barcode || 'N/A',
+          modelDemoNumber: modelvarinte?.Model?.DemoModelNumber || "N/A",
+          modelBarcode: modelvarinte?.Model?.Barcode || "N/A",
           modelName,
           collectionName,
           orderName,
@@ -2249,11 +2290,12 @@ const TrackingModelController = {
           sizes,
         };
       };
-    
-      const processedFinished = modelVariantsFinished.map(processFinishedModelVariants);
 
-      console.log("processedFinished" , processedFinished)
+      const processedFinished = modelVariantsFinished.map(
+        processFinishedModelVariants
+      );
 
+      console.log("processedFinished", processedFinished);
 
       // const finished = await prisma.models.findMany({
       //   where: {
@@ -2496,19 +2538,19 @@ const TrackingModelController = {
                     },
                   },
                   Template: {
-                     select: {
-                      TemplatePattern:{
+                    select: {
+                      TemplatePattern: {
                         select: {
                           TemplatePatternName: true,
-                        }
-                      }
-                     }
+                        },
+                      },
+                    },
                   },
                   ProductCatalog: {
                     select: {
-                      ProductCatalogName: true
-                    }
-                  }
+                      ProductCatalogName: true,
+                    },
+                  },
                 },
               },
               Sizes: true,
@@ -2519,23 +2561,29 @@ const TrackingModelController = {
       });
 
       const addNameField = (items, stage) =>
-          items.map((item) => {
-            const modelName = item.ModelVariant.Model.ModelName;
-            const TemplatePatternName = item.ModelVariant.Model.Template.TemplatePattern.TemplatePatternName;
-            const categoryOneName = item.ModelVariant.Model.CategoryOne.CategoryName;
-            const ProductCatalogName = item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
-            const categoryTwoName = item.ModelVariant.Model.categoryTwo.CategoryName;
+        items.map((item) => {
+          const modelName = item.ModelVariant.Model.ModelName;
+          const TemplatePatternName =
+            item.ModelVariant.Model.Template.TemplatePattern
+              .TemplatePatternName;
+          const categoryOneName =
+            item.ModelVariant.Model.CategoryOne.CategoryName;
+          const ProductCatalogName =
+            item.ModelVariant.Model.ProductCatalog.ProductCatalogName;
+          const categoryTwoName =
+            item.ModelVariant.Model.categoryTwo.CategoryName;
 
-            return {
-              ...item,
-              name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
-              Barcode: item.ModelVariant.Model.Barcode,
-              CollectionName: item.ModelVariant.Model.Order.Collection.CollectionName,
-              OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
-              OrderName: item.ModelVariant.Model.Order.OrderName,
-              TextileName: item.ModelVariant.Model.Textile.TextileName,
-            };
-          });
+          return {
+            ...item,
+            name: `${ProductCatalogName} - ${categoryOneName} - ${categoryTwoName} - ${TemplatePatternName}`,
+            Barcode: item.ModelVariant.Model.Barcode,
+            CollectionName:
+              item.ModelVariant.Model.Order.Collection.CollectionName,
+            OrderNumber: item.ModelVariant.Model.Order.OrderNumber,
+            OrderName: item.ModelVariant.Model.Order.OrderName,
+            TextileName: item.ModelVariant.Model.Textile.TextileName,
+          };
+        });
 
       const awaitingWithNames = addNameField(awaiting, 1);
       const inProgressWithNames = addNameField(inProgress, 2);
@@ -2571,11 +2619,11 @@ const TrackingModelController = {
   },
 
   getModelDetailsDepartment: async (req, res) => {
-    const userDepartmentId= req.userDepartmentId;
+    const userDepartmentId = req.userDepartmentId;
 
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
-  
+
     const getUniqueDemoModelCount = (workItems) => {
       const uniqueDemoModels = new Set();
       workItems.forEach((item) => {
@@ -2586,7 +2634,6 @@ const TrackingModelController = {
       return uniqueDemoModels.size;
     };
 
-  
     try {
       const awaiting = await prisma.trakingModels.findMany({
         where: {
@@ -2647,7 +2694,7 @@ const TrackingModelController = {
           },
         },
       });
-  
+
       const inProgress = await prisma.trakingModels.findMany({
         where: {
           Audit: { IsDeleted: false },
@@ -2698,7 +2745,7 @@ const TrackingModelController = {
           },
         },
       });
-  
+
       const completed = await prisma.trakingModels.findMany({
         where: {
           Audit: { IsDeleted: false },
@@ -2750,7 +2797,7 @@ const TrackingModelController = {
           },
         },
       });
-  
+
       const givingConfirmation = await prisma.trakingModels.findMany({
         where: {
           Audit: { IsDeleted: false },
@@ -2799,51 +2846,79 @@ const TrackingModelController = {
           },
         },
       });
-  
+
       const sumQuantities = (items, field) => {
         return items.reduce((total, item) => {
           const quantities = item[field] || [];
-          const fieldTotal = quantities.reduce((sum, q) => sum + (Number(q.value) || 0), 0);
+          const fieldTotal = quantities.reduce(
+            (sum, q) => sum + (Number(q.value) || 0),
+            0
+          );
           return total + fieldTotal;
         }, 0);
       };
-      
+
       // Awaiting models and quantities
       const awaitingModels = getUniqueDemoModelCount(awaiting);
-      const awaitingDeliveredQuantity = sumQuantities(awaiting, 'QuantityDelivered');
-      const awaitingReceivedQuantity = sumQuantities(awaiting, 'QuantityReceived');
-      
+      const awaitingDeliveredQuantity = sumQuantities(
+        awaiting,
+        "QuantityDelivered"
+      );
+      const awaitingReceivedQuantity = sumQuantities(
+        awaiting,
+        "QuantityReceived"
+      );
+
       // In progress models and quantities
       const inProgressModels = getUniqueDemoModelCount(inProgress);
-      const inProgressDeliveredQuantity = sumQuantities(inProgress, 'QuantityDelivered');
-      const inProgressReceivedQuantity = sumQuantities(inProgress, 'QuantityReceived');
-      
+      const inProgressDeliveredQuantity = sumQuantities(
+        inProgress,
+        "QuantityDelivered"
+      );
+      const inProgressReceivedQuantity = sumQuantities(
+        inProgress,
+        "QuantityReceived"
+      );
+
       // Completed models and quantities
       const completedModels = getUniqueDemoModelCount(completed);
-      const completedDeliveredQuantity = sumQuantities(completed, 'QuantityDelivered');
-      const completedReceivedQuantity = sumQuantities(completed, 'QuantityReceived');
-      
+      const completedDeliveredQuantity = sumQuantities(
+        completed,
+        "QuantityDelivered"
+      );
+      const completedReceivedQuantity = sumQuantities(
+        completed,
+        "QuantityReceived"
+      );
+
       // Giving confirmation models and quantities
-      const givingConfirmationModels = getUniqueDemoModelCount(givingConfirmation);
-      const givingConfirmationDeliveredQuantity = sumQuantities(givingConfirmation, 'QuantityDelivered');
-      const givingConfirmationReceivedQuantity = sumQuantities(givingConfirmation, 'QuantityReceived');
+      const givingConfirmationModels =
+        getUniqueDemoModelCount(givingConfirmation);
+      const givingConfirmationDeliveredQuantity = sumQuantities(
+        givingConfirmation,
+        "QuantityDelivered"
+      );
+      const givingConfirmationReceivedQuantity = sumQuantities(
+        givingConfirmation,
+        "QuantityReceived"
+      );
 
       return res.status(200).send({
         status: 200,
         message: "",
         data: {
-            awaitingModels,
-            awaitingDeliveredQuantity,
-            awaitingReceivedQuantity,
-            inProgressModels,
-            inProgressDeliveredQuantity,
-            inProgressReceivedQuantity,
-            completedModels,
-            completedDeliveredQuantity,
-            completedReceivedQuantity,
-            givingConfirmationModels,
-            givingConfirmationDeliveredQuantity,
-            givingConfirmationReceivedQuantity
+          awaitingModels,
+          awaitingDeliveredQuantity,
+          awaitingReceivedQuantity,
+          inProgressModels,
+          inProgressDeliveredQuantity,
+          inProgressReceivedQuantity,
+          completedModels,
+          completedDeliveredQuantity,
+          completedReceivedQuantity,
+          givingConfirmationModels,
+          givingConfirmationDeliveredQuantity,
+          givingConfirmationReceivedQuantity,
         },
       });
     } catch (error) {
@@ -2859,7 +2934,7 @@ const TrackingModelController = {
   getModelDetailsManager: async (req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const getUniqueDemoModelCount = (workItems) => {
       const uniqueDemoModels = new Set();
       workItems.forEach((item) => {
@@ -2869,7 +2944,7 @@ const TrackingModelController = {
       });
       return uniqueDemoModels.size;
     };
-  
+
     try {
       const awaiting = await prisma.trakingModels.findMany({
         where: {
@@ -2896,7 +2971,7 @@ const TrackingModelController = {
           },
           OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
         },
-      
+
         select: {
           Id: true,
           PrevStage: {
@@ -3432,49 +3507,92 @@ const TrackingModelController = {
 
       const sumQuantities = (items, field) => {
         return items.reduce((total, item) => {
-          const quantities = item[field] || [];
-          const fieldTotal = quantities.reduce((sum, q) => sum + (Number(q.value) || 0), 0);
-          return total + fieldTotal;
+          if (item.ModelVariant && item.ModelVariant.Quantity) {
+            return total + item.ModelVariant.Quantity;
+          }
+          return total;
         }, 0);
       };
-      
+
+      const sumQuantityDelivered = (items) => {
+        return items.reduce((total, item) => {
+          if (item.QuantityDelivered && Array.isArray(item.QuantityDelivered)) {
+            const quantityDeliveredSum = item.QuantityDelivered.reduce(
+              (sum, delivery) => {
+                return sum + (parseInt(delivery.value, 10) || 0);
+              },
+              0
+            );
+            return total + quantityDeliveredSum;
+          }
+          return total;
+        }, 0);
+      };
+      const sumQuantityReceived = (items) => {
+        return items.reduce((total, item) => {
+          if (item.QuantityReceived && Array.isArray(item.QuantityReceived)) {
+            // جمع قيم `size` في كل كائن داخل `QuantityReceived`
+            const quantityReceivedSum = item.QuantityReceived.reduce(
+              (sum, received) => {
+                return sum + (parseInt(received.size, 10) || 0);
+              },
+              0
+            );
+            return total + quantityReceivedSum;
+          }
+          return total;
+        }, 0);
+      };
+
       // Awaiting models and quantities
       const awaitingModels = getUniqueDemoModelCount(awaiting);
-      const awaitingDeliveredQuantity = sumQuantities(awaiting, 'QuantityDelivered');
-      const awaitingReceivedQuantity = sumQuantities(awaiting, 'QuantityReceived');
-      
+      const awaitingDeliveredQuantity = sumQuantities(
+        awaiting,
+        "QuantityDelivered"
+      );
+      const awaitingReceivedQuantity = sumQuantities(
+        awaiting,
+        "QuantityReceived"
+      );
+
       // In progress models and quantities
       const inProgressModels = getUniqueDemoModelCount(inProgress);
-      const inProgressDeliveredQuantity = sumQuantities(inProgress, 'QuantityDelivered');
-      const inProgressReceivedQuantity = sumQuantities(inProgress, 'QuantityReceived');
-      
+      const inProgressDeliveredQuantity = sumQuantityDelivered(inProgress);
+      const inProgressReceivedQuantity = sumQuantityReceived(inProgress);
+
       // Completed models and quantities
       const completedModels = getUniqueDemoModelCount(completed);
-      const completedDeliveredQuantity = sumQuantities(completed, 'QuantityDelivered');
-      const completedReceivedQuantity = sumQuantities(completed, 'QuantityReceived');
-      
-      // Giving confirmation models and quantities
-      const givingConfirmationModels = getUniqueDemoModelCount(givingConfirmation);
-      const givingConfirmationDeliveredQuantity = sumQuantities(givingConfirmation, 'QuantityDelivered');
-      const givingConfirmationReceivedQuantity = sumQuantities(givingConfirmation, 'QuantityReceived');
+      const completedDeliveredQuantity = sumQuantityDelivered(completed);
+      const completedReceivedQuantity = sumQuantityReceived(completed);
 
-  
+      // Giving confirmation models and quantities
+      const givingConfirmationModels =
+        getUniqueDemoModelCount(givingConfirmation);
+      const givingConfirmationDeliveredQuantity = sumQuantities(
+        givingConfirmation,
+        "QuantityDelivered"
+      );
+      const givingConfirmationReceivedQuantity = sumQuantities(
+        givingConfirmation,
+        "QuantityReceived"
+      );
+
       return res.status(200).send({
         status: 200,
         message: "",
         data: {
-            awaitingModels,
-            awaitingDeliveredQuantity,
-            awaitingReceivedQuantity,
-            inProgressModels,
-            inProgressDeliveredQuantity,
-            inProgressReceivedQuantity,
-            completedModels,
-            completedDeliveredQuantity,
-            completedReceivedQuantity,
-            givingConfirmationModels,
-            givingConfirmationDeliveredQuantity,
-            givingConfirmationReceivedQuantity
+          awaitingModels,
+          awaitingDeliveredQuantity,
+          awaitingReceivedQuantity,
+          inProgressModels,
+          inProgressDeliveredQuantity,
+          inProgressReceivedQuantity,
+          completedModels,
+          completedDeliveredQuantity,
+          completedReceivedQuantity,
+          givingConfirmationModels,
+          givingConfirmationDeliveredQuantity,
+          givingConfirmationReceivedQuantity,
         },
       });
     } catch (error) {
@@ -3569,7 +3687,9 @@ const TrackingModelController = {
       await prisma.notifications.create({
         data: {
           Description: Reasone,
-          Title: `${ tracking.RunningStatus === "ONGOING" ? "إيقاف" : "استئناف"}${variant.Model.DemoModelNumber} الموديل ${variant.Color.ColorName}`,
+          Title: `${
+            tracking.RunningStatus === "ONGOING" ? "إيقاف" : "استئناف"
+          }${variant.Model.DemoModelNumber} الموديل ${variant.Color.ColorName}`,
           ToDepartment: {
             connect: {
               Id: managerialDep.Id,
@@ -3581,7 +3701,7 @@ const TrackingModelController = {
       return res.status(200).send({
         status: 200,
         message: `Variant ${
-            tracking.RunningStatus === "ONGOING" ? "Paused" : "Unpaused"
+          tracking.RunningStatus === "ONGOING" ? "Paused" : "Unpaused"
         } successfully!`,
         data: {},
       });
@@ -3593,7 +3713,6 @@ const TrackingModelController = {
       });
     }
   },
-
 };
 
 export default TrackingModelController;
