@@ -351,23 +351,23 @@ const DataTableController = {
 
           ...(stage === "1"
             ? {
-                OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
-              }
+              OR: [{ MainStatus: "CHECKING" }, { MainStatus: "TODO" }],
+            }
             : stage === "2"
-            ? {
+              ? {
                 MainStatus: "INPROGRESS",
               }
-            : stage === "3"
-            ? {
-                MainStatus: "DONE",
-              }
-            : stage === "4"
-            ? {
-                MainStatus: "CHECKING",
-              }
-            : {
-                RunningStatus: "COMPLETED",
-              }),
+              : stage === "3"
+                ? {
+                  MainStatus: "DONE",
+                }
+                : stage === "4"
+                  ? {
+                    MainStatus: "CHECKING",
+                  }
+                  : {
+                    RunningStatus: "COMPLETED",
+                  }),
         },
         select: {
           Id: true,
@@ -575,7 +575,8 @@ const DataTableController = {
               TemplateName: true,
             },
           },
-          RunningStatus:true,
+          RunningStatus: true,
+          Barcode: true,
           ModelVarients: {
             select: {
               Color: true,
@@ -628,7 +629,7 @@ const DataTableController = {
             variant.TrakingModels[0]?.StartTime,
             variant.TrakingModels[0]?.EndTime
           ),
-         
+
         }));
 
         if (existingModel) {
