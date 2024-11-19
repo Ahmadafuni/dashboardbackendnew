@@ -1,583 +1,11 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model AuditRecords {
-  Id                                    Int                        @id @default(autoincrement())
-  CreatedAt                             DateTime                   @default(now())
-  UpdatedAt                             DateTime
-  CreatedById                           Int?
-  UpdatedById                           Int?
-  IsDeleted                             Boolean                    @default(false)
-  Users_AuditRecords_CreatedByIdToUsers Users?                     @relation("AuditRecords_CreatedByIdToUsers", fields: [CreatedById], references: [Id])
-  Users_AuditRecords_UpdatedByIdToUsers Users?                     @relation("AuditRecords_UpdatedByIdToUsers", fields: [UpdatedById], references: [Id])
-  ChildMaterials                        ChildMaterials[]
-  Collections                           Collections?
-  Colors                                Colors?
-  Departments                           Departments?
-  ManufacturingStages                   ManufacturingStages?
-  ManufacturingStagesModel              ManufacturingStagesModel?
-  MaterialCategories                    MaterialCategories?
-  MaterialMovement                      MaterialMovement?
-  Measurements                          Measurements?
-  ModelVarients                         ModelVarients?
-  Models                                Models?
-  Notes                                 Notes?
-  Notifications                         Notifications[]
-  OrderDetailColors                     OrderDetailColors?
-  OrderDetailSizes                      OrderDetailSizes?
-  OrderDetailTemplateTypes              OrderDetailTemplateTypes?
-  OrderDetails                          OrderDetails?
-  Orders                                Orders?
-  ParentMaterials                       ParentMaterials?
-  ProductCatalogCategoryOne             ProductCatalogCategoryOne?
-  ProductCatalogCategoryTwo             ProductCatalogCategoryTwo?
-  ProductCatalogDetails                 ProductCatalogDetails?
-  ProductCatalogTextiles                ProductCatalogTextiles?
-  ProductCatalogs                       ProductCatalogs?
-  Sizes                                 Sizes?
-  Suppliers                             Suppliers?
-  Tasks                                 Tasks?
-  TemplatePatterns                      TemplatePatterns?
-  TemplateSizes                         TemplateSizes?
-  TemplateTypes                         TemplateTypes?
-  Templates                             Templates?
-  TrakingModels                         TrakingModels?
-  Users_Users_AuditIdToAuditRecords     Users?                     @relation("Users_AuditIdToAuditRecords")
-  Warehouses                            Warehouses?
-}
-
-model ChildMaterials {
-  Id               Int                @id @default(autoincrement())
-  Name             String             @db.VarChar(255)
-  ParentMaterialId Int
-  DyeNumber        String?
-  Kashan           String?
-  Halil            String?
-  Phthalate        String?
-  GramWeight       Decimal?           @default(0.0)
-  Description      String?
-  AuditId          Int
-  ColorId          Int?
-  AuditRecords     AuditRecords       @relation(fields: [AuditId], references: [Id])
-  Colors           Colors?            @relation(fields: [ColorId], references: [Id])
-  ParentMaterials  ParentMaterials    @relation(fields: [ParentMaterialId], references: [Id])
-  MaterialMovement MaterialMovement[]
-}
-
-model Collections {
-  Id             Int          @id @default(autoincrement())
-  CollectionName String       @db.VarChar(255)
-  Description    String?
-  AuditId        Int          @unique
-  IsArchived     Boolean      @default(false)
-  RunningStatus  Status?      @default(PENDING)
-  EndTime        DateTime?
-  StartTime      DateTime?
-  StopData       Json?
-  AuditRecords   AuditRecords @relation(fields: [AuditId], references: [Id])
-  Orders         Orders[]
-}
-
-model Colors {
-  Id                Int                 @id @default(autoincrement())
-  ColorName         String              @db.VarChar(50)
-  ColorCode         String              @db.VarChar(10)
-  Description       String
-  AuditId           Int                 @unique
-  ChildMaterials    ChildMaterials[]
-  AuditRecords      AuditRecords        @relation(fields: [AuditId], references: [Id])
-  ModelVarients     ModelVarients[]
-  OrderDetailColors OrderDetailColors[]
-  ParentMaterials   ParentMaterials[]
-}
-
-model Departments {
-  Id                                                              Int                        @id @default(autoincrement())
-  Name                                                            String                     @unique @db.VarChar(255)
-  NameShort                                                       String                     @unique @db.VarChar(255)
-  Location                                                        String?                    @db.VarChar(255)
-  Description                                                     String?
-  Category                                                        DepartmentCategory
-  AuditId                                                         Int                        @unique
-  AuditRecords                                                    AuditRecords               @relation(fields: [AuditId], references: [Id])
-  ManufacturingStages                                             ManufacturingStages[]
-  ManufacturingStagesModel                                        ManufacturingStagesModel[]
-  MaterialMovement_MaterialMovement_DepartmentFromIdToDepartments MaterialMovement[]         @relation("MaterialMovement_DepartmentFromIdToDepartments")
-  MaterialMovement_MaterialMovement_DepartmentToIdToDepartments   MaterialMovement[]         @relation("MaterialMovement_DepartmentToIdToDepartments")
-  Notes_Notes_AssignedToDepartmentIdToDepartments                 Notes[]                    @relation("Notes_AssignedToDepartmentIdToDepartments")
-  Notes_Notes_CreatedDepartmentIdToDepartments                    Notes[]                    @relation("Notes_CreatedDepartmentIdToDepartments")
-  Notifications                                                   Notifications[]
-  Tasks_Tasks_AssignedToDepartmentIdToDepartments                 Tasks[]                    @relation("Tasks_AssignedToDepartmentIdToDepartments")
-  Tasks_Tasks_CreatedByDepartmentIdToDepartments                  Tasks[]                    @relation("Tasks_CreatedByDepartmentIdToDepartments")
-  Users                                                           Users[]
-}
-
-model ManufacturingStages {
-  Id              Int          @id @default(autoincrement())
-  StageNumber     Int
-  StageName       String       @db.VarChar(255)
-  WorkDescription String?
-  Duration        Int
-  TemplateId      Int
-  DepartmentId    Int
-  AuditId         Int          @unique
-  AuditRecords    AuditRecords @relation(fields: [AuditId], references: [Id])
-  Departments     Departments  @relation(fields: [DepartmentId], references: [Id])
-  Templates       Templates    @relation(fields: [TemplateId], references: [Id])
-}
-
-model ManufacturingStagesModel {
-  Id                                                                   Int             @id @default(autoincrement())
-  StageNumber                                                          Int
-  StageName                                                            String          @db.VarChar(255)
-  WorkDescription                                                      String?
-  Duration                                                             Int
-  ModelId                                                              Int
-  DepartmentId                                                         Int
-  AuditId                                                              Int             @unique
-  AuditRecords                                                         AuditRecords    @relation(fields: [AuditId], references: [Id])
-  Departments                                                          Departments     @relation(fields: [DepartmentId], references: [Id])
-  Models                                                               Models          @relation(fields: [ModelId], references: [Id])
-  TrakingModels_TrakingModels_CurrentStageIdToManufacturingStagesModel TrakingModels[] @relation("TrakingModels_CurrentStageIdToManufacturingStagesModel")
-  TrakingModels_TrakingModels_NextStageIdToManufacturingStagesModel    TrakingModels[] @relation("TrakingModels_NextStageIdToManufacturingStagesModel")
-  TrakingModels_TrakingModels_PrevStageIdToManufacturingStagesModel    TrakingModels[] @relation("TrakingModels_PrevStageIdToManufacturingStagesModel")
-}
-
-model MaterialCategories {
-  Id              Int               @id @default(autoincrement())
-  CategoryName    String            @db.VarChar(255)
-  Description     String?
-  AuditId         Int               @unique
-  AuditRecords    AuditRecords      @relation(fields: [AuditId], references: [Id])
-  ParentMaterials ParentMaterials[]
-}
-
-model MaterialMovement {
-  Id                                                         Int             @id @default(autoincrement())
-  InvoiceNumber                                              String?
-  MovementType                                               MovementType
-  ParentMaterialId                                           Int
-  ChildMaterialId                                            Int?
-  Quantity                                                   Decimal         @default(0.0)
-  UnitOfQuantity                                             String
-  Description                                                String?
-  MovementDate                                               DateTime
-  WarehouseFromId                                            Int?
-  WarehouseToId                                              Int?
-  SupplierId                                                 Int?
-  DepartmentFromId                                           Int?
-  DepartmentToId                                             Int?
-  ModelId                                                    Int?
-  AuditId                                                    Int             @unique
-  AuditRecords                                               AuditRecords    @relation(fields: [AuditId], references: [Id])
-  ChildMaterials                                             ChildMaterials? @relation(fields: [ChildMaterialId], references: [Id])
-  Departments_MaterialMovement_DepartmentFromIdToDepartments Departments?    @relation("MaterialMovement_DepartmentFromIdToDepartments", fields: [DepartmentFromId], references: [Id])
-  Departments_MaterialMovement_DepartmentToIdToDepartments   Departments?    @relation("MaterialMovement_DepartmentToIdToDepartments", fields: [DepartmentToId], references: [Id])
-  Models                                                     Models?         @relation(fields: [ModelId], references: [Id])
-  ParentMaterials                                            ParentMaterials @relation(fields: [ParentMaterialId], references: [Id])
-  Suppliers                                                  Suppliers?      @relation(fields: [SupplierId], references: [Id])
-  Warehouses_MaterialMovement_WarehouseFromIdToWarehouses    Warehouses?     @relation("MaterialMovement_WarehouseFromIdToWarehouses", fields: [WarehouseFromId], references: [Id])
-  Warehouses_MaterialMovement_WarehouseToIdToWarehouses      Warehouses?     @relation("MaterialMovement_WarehouseToIdToWarehouses", fields: [WarehouseToId], references: [Id])
-}
-
-model Measurements {
-  Id               Int           @id @default(autoincrement())
-  TemplateSizeId   Int
-  MeasurementName  String        @db.VarChar(255)
-  MeasurementValue String        @db.VarChar(255)
-  MeasurementUnit  String        @db.VarChar(255)
-  SizeId           Int
-  AuditId          Int           @unique
-  AuditRecords     AuditRecords  @relation(fields: [AuditId], references: [Id])
-  Sizes            Sizes         @relation(fields: [SizeId], references: [Id])
-  TemplateSizes    TemplateSizes @relation(fields: [TemplateSizeId], references: [Id])
-}
-
-model ModelVarients {
-  Id            Int             @id @default(autoincrement())
-  ModelId       Int
-  ColorId       Int
-  Quantity      Int
-  AuditId       Int             @unique
-  MainStatus    MainStatus      @default(AWAITING)
-  RunningStatus Status?         @default(PENDING)
-  StopData      Json?
-  Sizes         Json?
-  AuditRecords  AuditRecords    @relation(fields: [AuditId], references: [Id])
-  Colors        Colors          @relation(fields: [ColorId], references: [Id])
-  Models        Models          @relation(fields: [ModelId], references: [Id])
-  TrakingModels TrakingModels[]
-}
-
-model Models {
-  Id                        Int                        @id @default(autoincrement())
-  OrderId                   Int?
-  OrderNumber               String
-  ProductCatalogId          Int
-  CategoryOneId             Int
-  CategoryTwoId             Int
-  TextileId                 Int
-  TemplateId                Int
-  ModelName                 String                     @db.VarChar(255)
-  ModelNumber               String                     @db.VarChar(255)
-  DemoModelNumber           String?                    @db.VarChar(255)
-  Characteristics           String?
-  Barcode                   String?
-  LabelType                 String?
-  PrintName                 String?
-  PrintLocation             String?
-  Description               String?
-  Images                    String?
-  AuditId                   Int                        @unique
-  RunningStatus             Status?                    @default(PENDING)
-  EndTime                   DateTime?
-  StartTime                 DateTime?
-  StopData                  Json?
-  ManufacturingStagesModel  ManufacturingStagesModel[]
-  MaterialMovement          MaterialMovement[]
-  ModelVarients             ModelVarients[]
-  AuditRecords              AuditRecords               @relation(fields: [AuditId], references: [Id])
-  ProductCatalogCategoryOne ProductCatalogCategoryOne  @relation(fields: [CategoryOneId], references: [Id])
-  ProductCatalogCategoryTwo ProductCatalogCategoryTwo  @relation(fields: [CategoryTwoId], references: [Id])
-  Orders                    Orders?                    @relation(fields: [OrderId], references: [Id])
-  ProductCatalogs           ProductCatalogs            @relation(fields: [ProductCatalogId], references: [Id])
-  Templates                 Templates                  @relation(fields: [TemplateId], references: [Id])
-  ProductCatalogTextiles    ProductCatalogTextiles     @relation(fields: [TextileId], references: [Id])
-}
-
-model Notes {
-  Id                                                    Int          @id @default(autoincrement())
-  NoteType                                              NoteType     @default(GENERAL)
-  CreatedDepartmentId                                   Int?
-  AssignedToDepartmentId                                Int?
-  Description                                           String
-  AuditId                                               Int          @unique
-  Departments_Notes_AssignedToDepartmentIdToDepartments Departments? @relation("Notes_AssignedToDepartmentIdToDepartments", fields: [AssignedToDepartmentId], references: [Id])
-  AuditRecords                                          AuditRecords @relation(fields: [AuditId], references: [Id])
-  Departments_Notes_CreatedDepartmentIdToDepartments    Departments? @relation("Notes_CreatedDepartmentIdToDepartments", fields: [CreatedDepartmentId], references: [Id])
-}
-
-model Notifications {
-  Id             Int           @id @default(autoincrement())
-  Title          String
-  Description    String
-  URL            String?
-  IsSeen         Boolean       @default(false)
-  ToDepartmentId Int
-  AuditId        Int?
-  AuditRecords   AuditRecords? @relation(fields: [AuditId], references: [Id], onDelete: Restrict)
-  Departments    Departments   @relation(fields: [ToDepartmentId], references: [Id])
-}
-
-model OrderDetailColors {
-  Id            Int          @id @default(autoincrement())
-  OrderDetailId Int
-  ColorId       Int
-  AuditId       Int          @unique
-  AuditRecords  AuditRecords @relation(fields: [AuditId], references: [Id])
-  Colors        Colors       @relation(fields: [ColorId], references: [Id])
-  OrderDetails  OrderDetails @relation(fields: [OrderDetailId], references: [Id])
-}
-
-model OrderDetailSizes {
-  Id            Int          @id @default(autoincrement())
-  OrderDetailId Int
-  SizeId        Int
-  AuditId       Int          @unique
-  AuditRecords  AuditRecords @relation(fields: [AuditId], references: [Id])
-  OrderDetails  OrderDetails @relation(fields: [OrderDetailId], references: [Id])
-  Sizes         Sizes        @relation(fields: [SizeId], references: [Id])
-}
-
-model OrderDetailTemplateTypes {
-  Id             Int          @id @default(autoincrement())
-  OrderDetailId  Int
-  TemplateTypeId Int
-  AuditId        Int          @unique
-  AuditRecords   AuditRecords @relation(fields: [AuditId], references: [Id])
-}
-
-model OrderDetails {
-  Id                      Int                   @id @default(autoincrement())
-  QuantityDetails         String?
-  productCatalogDetailsId Int
-  ModelQuantity           Int
-  AuditId                 Int                   @unique
-  OrderDetailColors       OrderDetailColors[]
-  OrderDetailSizes        OrderDetailSizes[]
-  AuditRecords            AuditRecords          @relation(fields: [AuditId], references: [Id])
-  ProductCatalogDetails   ProductCatalogDetails @relation(fields: [productCatalogDetailsId], references: [Id])
-}
-
-model Orders {
-  Id            Int          @id @default(autoincrement())
-  OrderName     String       @db.VarChar(256)
-  OrderNumber   String       @unique @db.VarChar(20)
-  DeadlineDate  DateTime
-  CollectionId  Int
-  Quantity      Int
-  Description   String?
-  FilePath      String?
-  AuditId       Int          @unique
-  RunningStatus Status?      @default(PENDING)
-  EndTime       DateTime?
-  StartTime     DateTime?
-  StopData      Json?
-  Models        Models[]
-  AuditRecords  AuditRecords @relation(fields: [AuditId], references: [Id])
-  Collections   Collections  @relation(fields: [CollectionId], references: [Id])
-}
-
-model ParentMaterials {
-  Id                     Int                @id @default(autoincrement())
-  Name                   String             @db.VarChar(255)
-  CategoryId             Int
-  Description            String?
-  UnitOfMeasure          String?            @db.VarChar(10)
-  UsageLocation          String?
-  AlternativeMaterials   String?
-  MinimumLimit           Decimal?           @default(0.0)
-  IsRelevantToProduction Boolean            @default(false)
-  HasChildren            Boolean            @default(false)
-  AuditId                Int                @unique
-  ColorId                Int?
-  ChildMaterials         ChildMaterials[]
-  MaterialMovement       MaterialMovement[]
-  AuditRecords           AuditRecords       @relation(fields: [AuditId], references: [Id])
-  MaterialCategories     MaterialCategories @relation(fields: [CategoryId], references: [Id])
-  Colors                 Colors?            @relation(fields: [ColorId], references: [Id])
-}
-
-model ProductCatalogCategoryOne {
-  Id                    Int                     @id @default(autoincrement())
-  CategoryName          String                  @db.VarChar(255)
-  CategoryDescription   String?
-  AuditId               Int                     @unique
-  Models                Models[]
-  AuditRecords          AuditRecords            @relation(fields: [AuditId], references: [Id])
-  ProductCatalogDetails ProductCatalogDetails[]
-  Templates             Templates[]
-}
-
-model ProductCatalogCategoryTwo {
-  Id                    Int                     @id @default(autoincrement())
-  CategoryName          String                  @db.VarChar(255)
-  CategoryDescription   String?
-  AuditId               Int                     @unique
-  Models                Models[]
-  AuditRecords          AuditRecords            @relation(fields: [AuditId], references: [Id])
-  ProductCatalogDetails ProductCatalogDetails[]
-  Templates             Templates[]
-}
-
-model ProductCatalogDetails {
-  Id                        Int                       @id @default(autoincrement())
-  ProductCatalogId          Int
-  CategoryOneId             Int
-  CategoryTwoId             Int
-  Season                    Season
-  TextileId                 Int
-  TemplateTypeId            Int
-  TemplatePatternId         Int
-  StandardWeight            Decimal                   @db.Decimal(10, 2)
-  Grammage                  Decimal                   @db.Decimal(10, 2)
-  Description               String?
-  AuditId                   Int                       @unique
-  OrderDetails              OrderDetails[]
-  AuditRecords              AuditRecords              @relation(fields: [AuditId], references: [Id])
-  ProductCatalogCategoryOne ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
-  ProductCatalogCategoryTwo ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
-  ProductCatalogs           ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
-  TemplatePatterns          TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
-  TemplateTypes             TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
-  ProductCatalogTextiles    ProductCatalogTextiles    @relation(fields: [TextileId], references: [Id])
-}
-
-model ProductCatalogTextiles {
-  Id                    Int                     @id @default(autoincrement())
-  TextileName           String                  @db.VarChar(255)
-  TextileType           String                  @db.VarChar(255)
-  Composition           String                  @db.VarChar(255)
-  Description           String?
-  AuditId               Int                     @unique
-  Models                Models[]
-  ProductCatalogDetails ProductCatalogDetails[]
-  AuditRecords          AuditRecords            @relation(fields: [AuditId], references: [Id])
-}
-
-model ProductCatalogs {
-  Id                        Int                     @id @default(autoincrement())
-  ProductCatalogName        String                  @db.VarChar(255)
-  ProductCatalogDescription String?
-  AuditId                   Int                     @unique
-  Models                    Models[]
-  ProductCatalogDetails     ProductCatalogDetails[]
-  AuditRecords              AuditRecords            @relation(fields: [AuditId], references: [Id])
-  Templates                 Templates[]
-}
-
-model Sizes {
-  Id               Int                @id @default(autoincrement())
-  SizeName         String             @db.VarChar(255)
-  Description      String?
-  AuditId          Int                @unique
-  Measurements     Measurements[]
-  OrderDetailSizes OrderDetailSizes[]
-  AuditRecords     AuditRecords       @relation(fields: [AuditId], references: [Id])
-}
-
-model Suppliers {
-  Id               Int                @id @default(autoincrement())
-  Name             String             @db.VarChar(255)
-  Address          String?
-  PhoneNumber      String
-  Description      String?
-  AuditId          Int                @unique
-  MaterialMovement MaterialMovement[]
-  AuditRecords     AuditRecords       @relation(fields: [AuditId], references: [Id])
-}
-
-model Tasks {
-  Id                                                    Int          @id @default(autoincrement())
-  TaskName                                              String       @db.VarChar(255)
-  DueAt                                                 DateTime
-  Status                                                Status       @default(PENDING)
-  Description                                           String?
-  Feedback                                              String?
-  AssignedFile                                          String?
-  FeedbackFile                                          String?
-  AssignedToDepartmentId                                Int?
-  CreatedByDepartmentId                                 Int?
-  AuditId                                               Int          @unique
-  EndTime                                               DateTime?
-  StartTime                                             DateTime?
-  Departments_Tasks_AssignedToDepartmentIdToDepartments Departments? @relation("Tasks_AssignedToDepartmentIdToDepartments", fields: [AssignedToDepartmentId], references: [Id])
-  AuditRecords                                          AuditRecords @relation(fields: [AuditId], references: [Id])
-  Departments_Tasks_CreatedByDepartmentIdToDepartments  Departments? @relation("Tasks_CreatedByDepartmentIdToDepartments", fields: [CreatedByDepartmentId], references: [Id])
-}
-
-model TemplatePatterns {
-  Id                    Int                     @id @default(autoincrement())
-  TemplatePatternName   String                  @db.VarChar(255)
-  Description           String?
-  AuditId               Int                     @unique
-  ProductCatalogDetails ProductCatalogDetails[]
-  AuditRecords          AuditRecords            @relation(fields: [AuditId], references: [Id])
-  Templates             Templates[]
-}
-
-model TemplateSizes {
-  Id               Int               @id @default(autoincrement())
-  Name             String            @db.VarChar(255)
-  TemplateId       Int
-  Description      String?
-  TemplateSizeType TemplateSizeType?
-  AuditId          Int               @unique
-  Measurements     Measurements[]
-  AuditRecords     AuditRecords      @relation(fields: [AuditId], references: [Id])
-  Templates        Templates         @relation(fields: [TemplateId], references: [Id])
-}
-
-model TemplateTypes {
-  Id                    Int                     @id @default(autoincrement())
-  TemplateTypeName      String                  @db.VarChar(255)
-  Description           String?
-  AuditId               Int                     @unique
-  ProductCatalogDetails ProductCatalogDetails[]
-  AuditRecords          AuditRecords            @relation(fields: [AuditId], references: [Id])
-  Templates             Templates[]
-}
-
-model Templates {
-  Id                        Int                       @id @default(autoincrement())
-  TemplateName              String                    @db.VarChar(255)
-  ProductCatalogId          Int
-  CategoryOneId             Int
-  CategoryTwoId             Int
-  TemplatePatternId         Int
-  TemplateTypeId            Int
-  Season                    Season
-  Description               String?
-  FilePath                  String?
-  AuditId                   Int                       @unique
-  ManufacturingStages       ManufacturingStages[]
-  Models                    Models[]
-  TemplateSizes             TemplateSizes[]
-  AuditRecords              AuditRecords              @relation(fields: [AuditId], references: [Id])
-  ProductCatalogCategoryOne ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
-  ProductCatalogCategoryTwo ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
-  ProductCatalogs           ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
-  TemplatePatterns          TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
-  TemplateTypes             TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
-}
-
-model TrakingModels {
-  Id                                                                              Int                       @id @default(autoincrement())
-  ModelVariantId                                                                  Int
-  PrevStageId                                                                     Int?
-  CurrentStageId                                                                  Int
-  NextStageId                                                                     Int?
-  StartTime                                                                       DateTime?
-  EndTime                                                                         DateTime?
-  MainStatus                                                                      MainStatus                @default(AWAITING)
-  QuantityReceived                                                                Json?
-  QuantityDelivered                                                               Json?
-  DamagedItem                                                                     Json?
-  ReplacedItemInKG                                                                String?
-  ClothCount                                                                      String?
-  QuantityInKg                                                                    String?
-  ClothLength                                                                     String?
-  ClothWidth                                                                      String?
-  ClothWeight                                                                     String?
-  QuantityInNum                                                                   Json?
-  Notes                                                                           String?
-  AuditId                                                                         Int                       @unique
-  RunningStatus                                                                   Status?                   @default(PENDING)
-  StopData                                                                        Json?
-  AuditRecords                                                                    AuditRecords              @relation(fields: [AuditId], references: [Id])
-  ManufacturingStagesModel_TrakingModels_CurrentStageIdToManufacturingStagesModel ManufacturingStagesModel  @relation("TrakingModels_CurrentStageIdToManufacturingStagesModel", fields: [CurrentStageId], references: [Id])
-  ModelVarients                                                                   ModelVarients             @relation(fields: [ModelVariantId], references: [Id])
-  ManufacturingStagesModel_TrakingModels_NextStageIdToManufacturingStagesModel    ManufacturingStagesModel? @relation("TrakingModels_NextStageIdToManufacturingStagesModel", fields: [NextStageId], references: [Id])
-  ManufacturingStagesModel_TrakingModels_PrevStageIdToManufacturingStagesModel    ManufacturingStagesModel? @relation("TrakingModels_PrevStageIdToManufacturingStagesModel", fields: [PrevStageId], references: [Id])
-}
-
-model Users {
-  Id                                           Int            @id @default(autoincrement())
-  IsActive                                     Boolean        @default(false)
-  Username                                     String         @unique @db.VarChar(255)
-  Email                                        String         @unique @db.VarChar(255)
-  Firstname                                    String         @db.VarChar(255)
-  Lastname                                     String         @db.VarChar(255)
-  PhotoPath                                    String?
-  PasswordHash                                 String
-  PhoneNumber                                  String         @unique @db.VarChar(50)
-  LastLogin                                    DateTime?
-  DepartmentId                                 Int?
-  WarehouseId                                  Int?
-  AuditId                                      Int            @unique
-  AuditRecords_AuditRecords_CreatedByIdToUsers AuditRecords[] @relation("AuditRecords_CreatedByIdToUsers")
-  AuditRecords_AuditRecords_UpdatedByIdToUsers AuditRecords[] @relation("AuditRecords_UpdatedByIdToUsers")
-  AuditRecords_Users_AuditIdToAuditRecords     AuditRecords   @relation("Users_AuditIdToAuditRecords", fields: [AuditId], references: [Id])
-  Departments                                  Departments?   @relation(fields: [DepartmentId], references: [Id])
-}
-
-model Warehouses {
-  Id                                                            Int                @id @default(autoincrement())
-  WarehouseName                                                 String             @db.VarChar(255)
-  CategoryName                                                  CategoryName
-  Location                                                      String             @db.VarChar(255)
-  Capacity                                                      String
-  Description                                                   String
-  AuditId                                                       Int                @unique
-  MaterialMovement_MaterialMovement_WarehouseFromIdToWarehouses MaterialMovement[] @relation("MaterialMovement_WarehouseFromIdToWarehouses")
-  MaterialMovement_MaterialMovement_WarehouseToIdToWarehouses   MaterialMovement[] @relation("MaterialMovement_WarehouseToIdToWarehouses")
-  AuditRecords                                                  AuditRecords       @relation(fields: [AuditId], references: [Id])
 }
 
 enum CategoryName {
@@ -586,18 +14,17 @@ enum CategoryName {
   SERVICES
 }
 
-enum DepartmentCategory {
-  CUTTING
-  DRAWING
-  ENGINEERING
-  FACTORYMANAGER
-  PRINTING
-  QUALITYASSURANCE
-  TAILORING
-  WAREHOUSEMANAGER
-  HumanResource
-  MotherCompany
-  Accounting
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Status {
+  PENDING
+  COMPLETED
+  ONGOING
+  ONHOLD
 }
 
 enum MainStatus {
@@ -615,16 +42,23 @@ enum MovementType {
   RETURN
 }
 
-enum NoteType {
-  GENERAL
-  REMINDER
-  ATTENTION
+enum TemplateSizeType {
+  CUTTING
+  DRESSUP
 }
 
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
+enum DepartmentCategory {
+  CUTTING
+  DRAWING
+  ENGINEERING
+  FACTORYMANAGER
+  PRINTING
+  QUALITYASSURANCE
+  TAILORING
+  WAREHOUSEMANAGER
+  HumanResource
+  MotherCompany
+  Accounting
 }
 
 enum Season {
@@ -634,14 +68,582 @@ enum Season {
   SPRING
 }
 
-enum Status {
-  PENDING
-  COMPLETED
-  ONGOING
-  ONHOLD
+enum NoteType {
+  GENERAL
+  REMINDER
+  ATTENTION
 }
 
-enum TemplateSizeType {
-  CUTTING
-  DRESSUP
+model AuditRecords {
+  Id                        Int                        @id @default(autoincrement())
+  CreatedAt                 DateTime                   @default(now())
+  UpdatedAt                 DateTime                   @updatedAt
+  CreatedById               Int?
+  UpdatedById               Int?
+  CreatedBy                 Users?                     @relation(name: "CreatedBy", fields: [CreatedById], references: [Id])
+  UpdatedBy                 Users?                     @relation(name: "UpdatedBy", fields: [UpdatedById], references: [Id])
+  IsDeleted                 Boolean                    @default(false)
+  Colors                    Colors?
+  Departments               Departments?
+  ManufacturingStages       ManufacturingStages?
+  ManufacturingStagesModel  ManufacturingStagesModel?
+  MaterialCategories        MaterialCategories?
+  ParentMaterials           ParentMaterials?
+  OrderDetailColors         OrderDetailColors?
+  OrderDetails              OrderDetails?
+  OrderDetailSizes          OrderDetailSizes?
+  OrderDetailTemplateTypes  OrderDetailTemplateTypes?
+  Orders                    Orders?
+  ProductCatalogCategoryOne ProductCatalogCategoryOne?
+  ProductCatalogCategoryTwo ProductCatalogCategoryTwo?
+  ProductCatalogDetails     ProductCatalogDetails?
+  ProductCatalogs           ProductCatalogs?
+  ProductCatalogTextiles    ProductCatalogTextiles?
+  Sizes                     Sizes?
+  Suppliers                 Suppliers?
+  TemplatePatterns          TemplatePatterns?
+  Templates                 Templates?
+  TemplateSizes             TemplateSizes?
+  TemplateTypes             TemplateTypes?
+  Users                     Users?
+  Warehouses                Warehouses?
+  Tasks                     Tasks?
+  Measurements              Measurements?
+  Models                    Models?
+  Collections               Collections?
+  ModelVarients             ModelVarients?
+  Notes                     Notes?
+  Notifications             Notifications?
+  TrakingModels             TrakingModels?
+  ChildMaterials            ChildMaterials[]
+  MaterialMovement          MaterialMovement[]
+}
+
+model Collections {
+  Id             Int          @id @default(autoincrement())
+  CollectionName String       @db.VarChar(255)
+  Description    String?
+  IsArchived     Boolean      @default(false)
+  Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId        Int          @unique
+  RunningStatus  Status?      @default(PENDING)
+  StopData       Json?
+  StartTime      DateTime?
+  EndTime        DateTime?
+  Orders         Orders[]
+}
+
+model Colors {
+  Id                Int                 @id @default(autoincrement())
+  ColorName         String              @db.VarChar(50)
+  ColorCode         String              @db.VarChar(10)
+  Description       String
+  Audit             AuditRecords        @relation(fields: [AuditId], references: [Id])
+  AuditId           Int                 @unique
+  OrderDetailColors OrderDetailColors[]
+  ModelVarients     ModelVarients[]
+  ParentMaterials   ParentMaterials[]
+  ChildMaterials    ChildMaterials[]
+}
+
+model Departments {
+  Id                       Int                        @id @default(autoincrement())
+  Name                     String                     @unique @db.VarChar(255)
+  NameShort                String                     @unique @db.VarChar(255)
+  Location                 String?                    @db.VarChar(255)
+  Description              String?
+  Category                 DepartmentCategory
+  Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
+  AuditId                  Int                        @unique
+  AssignedTasks            Tasks[]                    @relation(name: "AssignedTo")
+  CreatedTasks             Tasks[]                    @relation(name: "CreatedBy")
+  ManufacturingStages      ManufacturingStages[]
+  ManufacturingStagesModel ManufacturingStagesModel[]
+  Users                    Users[]
+  AssignedDepartment       Notes[]                    @relation("AssignedDepartment")
+  CreatedDepartment        Notes[]                    @relation("CreatedDepartment")
+  Notifications            Notifications[]
+  MaterialMovementFrom     MaterialMovement[]         @relation(name: "DepartmentFrom")
+  MaterialMovementTo       MaterialMovement[]         @relation(name: "DepartmentTo")
+}
+
+model ManufacturingStages {
+  Id              Int          @id @default(autoincrement())
+  StageNumber     Int
+  StageName       String       @db.VarChar(255)
+  WorkDescription String?
+  Duration        Int
+  Template        Templates    @relation(fields: [TemplateId], references: [Id])
+  TemplateId      Int
+  Department      Departments  @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId    Int
+  Audit           AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId         Int          @unique
+}
+
+model ManufacturingStagesModel {
+  Id                   Int             @id @default(autoincrement())
+  StageNumber          Int
+  StageName            String          @db.VarChar(255)
+  WorkDescription      String?
+  Duration             Int
+  Model                Models          @relation(fields: [ModelId], references: [Id])
+  ModelId              Int
+  Department           Departments     @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId         Int
+  Audit                AuditRecords    @relation(fields: [AuditId], references: [Id])
+  AuditId              Int             @unique
+  CurrentTrakingModels TrakingModels[] @relation("CurrentStage")
+  NextTrakingModels    TrakingModels[] @relation("NextStage")
+  PrevTrakingModels    TrakingModels[] @relation("PrevStage")
+}
+
+model MaterialCategories {
+  Id           Int               @id @default(autoincrement())
+  CategoryName String            @db.VarChar(255)
+  Description  String?
+  Audit        AuditRecords      @relation(fields: [AuditId], references: [Id])
+  AuditId      Int               @unique
+  Materials    ParentMaterials[]
+}
+
+model ParentMaterials {
+  Id                     Int                @id @default(autoincrement())
+  Name                   String             @db.VarChar(255)
+  Category               MaterialCategories @relation(fields: [CategoryId], references: [Id])
+  CategoryId             Int
+  Description            String?
+  UnitOfMeasure          String?            @db.VarChar(10)
+  UsageLocation          String?
+  AlternativeMaterials   String?
+  MinimumLimit           Decimal?           @default(0.0)
+  IsRelevantToProduction Boolean            @default(false)
+  HasChildren            Boolean            @default(false)
+  Audit                  AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId                Int                @unique
+  ChildMaterials         ChildMaterials[]
+  MaterialMovement       MaterialMovement[]
+  Color                  Colors?            @relation(fields: [ColorId], references: [Id])
+  ColorId                Int?
+}
+
+model ChildMaterials {
+  Id               Int                @id @default(autoincrement())
+  Name             String             @db.VarChar(255)
+  ParentMaterial   ParentMaterials    @relation(fields: [ParentMaterialId], references: [Id])
+  ParentMaterialId Int
+  DyeNumber        String?
+  Kashan           String?
+  Halil            String?
+  Phthalate        String?
+  GramWeight       Decimal?           @default(0.0)
+  Description      String?
+  Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId          Int
+  MaterialMovement MaterialMovement[]
+  Color            Colors?            @relation(fields: [ColorId], references: [Id])
+  ColorId          Int?
+}
+
+model MaterialMovement {
+  Id               Int             @id @default(autoincrement())
+  InvoiceNumber    String?
+  MovementType     MovementType
+  ParentMaterial   ParentMaterials @relation(fields: [ParentMaterialId], references: [Id])
+  ParentMaterialId Int
+  ChildMaterial    ChildMaterials? @relation(fields: [ChildMaterialId], references: [Id])
+  ChildMaterialId  Int?
+  Quantity         Decimal         @default(0.0)
+  UnitOfQuantity   String
+  Description      String?
+  MovementDate     DateTime
+  WarehouseFrom    Warehouses?     @relation(fields: [WarehouseFromId], references: [Id], name: "WarehouseFrom")
+  WarehouseFromId  Int?
+  WarehouseTo      Warehouses?     @relation(fields: [WarehouseToId], references: [Id], name: "WarehouseTo")
+  WarehouseToId    Int?
+  Supplier         Suppliers?      @relation(fields: [SupplierId], references: [Id])
+  SupplierId       Int?
+  DepartmentFrom   Departments?    @relation(fields: [DepartmentFromId], references: [Id], name: "DepartmentFrom")
+  DepartmentFromId Int?
+  DepartmentTo     Departments?    @relation(fields: [DepartmentToId], references: [Id], name: "DepartmentTo")
+  DepartmentToId   Int?
+  Model            Models?         @relation(fields: [ModelId], references: [Id])
+  ModelId          Int?
+  Audit            AuditRecords    @relation(fields: [AuditId], references: [Id])
+  AuditId          Int             @unique
+}
+
+model Measurements {
+  Id               Int           @id @default(autoincrement())
+  TemplateSize     TemplateSizes @relation(fields: [TemplateSizeId], references: [Id])
+  TemplateSizeId   Int
+  MeasurementName  String        @db.VarChar(255)
+  MeasurementValue String        @db.VarChar(255)
+  MeasurementUnit  String        @db.VarChar(255)
+  Size             Sizes         @relation(fields: [SizeId], references: [Id])
+  SizeId           Int
+  Audit            AuditRecords  @relation(fields: [AuditId], references: [Id])
+  AuditId          Int           @unique
+}
+
+model Models {
+  Id                       Int                        @id @default(autoincrement())
+  Order                    Orders?                    @relation(fields: [OrderId], references: [Id])
+  OrderId                  Int?
+  OrderNumber              String
+  ProductCatalog           ProductCatalogs            @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId         Int
+  CategoryOne              ProductCatalogCategoryOne  @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId            Int
+  categoryTwo              ProductCatalogCategoryTwo  @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId            Int
+  Textile                  ProductCatalogTextiles     @relation(fields: [TextileId], references: [Id])
+  TextileId                Int
+  Template                 Templates                  @relation(fields: [TemplateId], references: [Id])
+  TemplateId               Int
+  ModelName                String                     @db.VarChar(255)
+  ModelNumber              String                     @db.VarChar(255)
+  DemoModelNumber          String?                    @db.VarChar(255)
+  Characteristics          String?
+  Barcode                  String?
+  LabelType                String?
+  PrintName                String?
+  PrintLocation            String?
+  Description              String?
+  RunningStatus            Status?                    @default(PENDING)
+  StopData                 Json?
+  StartTime                DateTime?
+  EndTime                  DateTime?
+  Images                   String?
+  Audit                    AuditRecords               @relation(fields: [AuditId], references: [Id])
+  AuditId                  Int                        @unique
+  ModelVarients            ModelVarients[]
+  MaterialMovement         MaterialMovement[]
+  ManufacturingStagesModel ManufacturingStagesModel[]
+}
+
+model ModelVarients {
+  Id            Int             @id @default(autoincrement())
+  Model         Models          @relation(fields: [ModelId], references: [Id])
+  ModelId       Int
+  MainStatus    MainStatus      @default(AWAITING)
+  RunningStatus Status?         @default(PENDING)
+  StopData      Json?
+  Color         Colors          @relation(fields: [ColorId], references: [Id])
+  ColorId       Int
+  Sizes         Json?
+  Quantity      Int
+  Audit         AuditRecords    @relation(fields: [AuditId], references: [Id])
+  AuditId       Int             @unique
+  TrakingModels TrakingModels[]
+}
+
+model Notes {
+  Id                     Int          @id @default(autoincrement())
+  NoteType               NoteType     @default(GENERAL)
+  CreatedDepartment      Departments? @relation(name: "CreatedDepartment", fields: [CreatedDepartmentId], references: [Id])
+  CreatedDepartmentId    Int?
+  AssignedToDepartment   Departments? @relation(name: "AssignedDepartment", fields: [AssignedToDepartmentId], references: [Id])
+  AssignedToDepartmentId Int?
+  Description            String
+  Audit                  AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId                Int          @unique
+}
+
+model Notifications {
+  Id             Int         @id @default(autoincrement())
+  Title          String
+  Description    String
+  URL            String?
+  IsSeen         Boolean     @default(false)
+  ToDepartment   Departments @relation(fields: [ToDepartmentId], references: [Id])
+  ToDepartmentId Int
+  Audit                  AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId                Int          @unique
+}
+
+model OrderDetailColors {
+  Id            Int          @id @default(autoincrement())
+  OrderDetail   OrderDetails @relation(fields: [OrderDetailId], references: [Id])
+  OrderDetailId Int
+  Color         Colors       @relation(fields: [ColorId], references: [Id])
+  ColorId       Int
+  Audit         AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId       Int          @unique
+}
+
+model OrderDetails {
+  Id                      Int                    @id @default(autoincrement())
+  QuantityDetails         String?
+  productCatalogDetailsId Int
+  ProductCatalogDetails   ProductCatalogDetails? @relation(fields: [productCatalogDetailsId], references: [Id])
+  ModelQuantity           Int
+  Audit                   AuditRecords           @relation(fields: [AuditId], references: [Id])
+  AuditId                 Int                    @unique
+  OrderDetailColors       OrderDetailColors[]
+  OrderDetailSizes        OrderDetailSizes[]
+}
+
+model OrderDetailSizes {
+  Id            Int          @id @default(autoincrement())
+  OrderDetail   OrderDetails @relation(fields: [OrderDetailId], references: [Id])
+  OrderDetailId Int
+  Size          Sizes        @relation(fields: [SizeId], references: [Id])
+  SizeId        Int
+  Audit         AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId       Int          @unique
+}
+
+model OrderDetailTemplateTypes {
+  Id             Int          @id @default(autoincrement())
+  OrderDetailId  Int
+  TemplateTypeId Int
+  Audit          AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId        Int          @unique
+}
+
+model Orders {
+  Id            Int          @id @default(autoincrement())
+  OrderName     String       @db.VarChar(256)
+  OrderNumber   String       @unique @db.VarChar(20)
+  DeadlineDate  DateTime
+  Collection    Collections  @relation(fields: [CollectionId], references: [Id])
+  CollectionId  Int
+  Quantity      Int
+  RunningStatus Status?      @default(PENDING)
+  StopData      Json?
+  StartTime     DateTime?
+  EndTime       DateTime?
+  Description   String?
+  FilePath      String?
+  Audit         AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId       Int          @unique
+  Models        Models[]
+}
+
+model ProductCatalogCategoryOne {
+  Id                    Int                     @id @default(autoincrement())
+  CategoryName          String                  @db.VarChar(255)
+  CategoryDescription   String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
+  Models                Models[]
+}
+
+model ProductCatalogCategoryTwo {
+  Id                    Int                     @id @default(autoincrement())
+  CategoryName          String                  @db.VarChar(255)
+  CategoryDescription   String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
+  Models                Models[]
+}
+
+model ProductCatalogDetails {
+  Id                Int                       @id @default(autoincrement())
+  ProductCatalog    ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId  Int
+  CategoryOne       ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId     Int
+  CategoryTwo       ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId     Int
+  Season            Season
+  Textile           ProductCatalogTextiles    @relation(fields: [TextileId], references: [Id])
+  TextileId         Int
+  TemplateType      TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
+  TemplateTypeId    Int
+  TemplatePattern   TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
+  TemplatePatternId Int
+  StandardWeight    Decimal                   @db.Decimal(10, 2)
+  Grammage          Decimal                   @db.Decimal(10, 2)
+  Description       String?
+  Audit             AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId           Int                       @unique
+  OrderDetails      OrderDetails[]
+}
+
+model ProductCatalogs {
+  Id                        Int                     @id @default(autoincrement())
+  ProductCatalogName        String                  @db.VarChar(255)
+  ProductCatalogDescription String?
+  Audit                     AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId                   Int                     @unique
+  ProductCatalogDetails     ProductCatalogDetails[]
+  Templates                 Templates[]
+  Models                    Models[]
+}
+
+model ProductCatalogTextiles {
+  Id                    Int                     @id @default(autoincrement())
+  TextileName           String                  @db.VarChar(255)
+  TextileType           String                  @db.VarChar(255)
+  Composition           String                  @db.VarChar(255)
+  Description           String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
+  Models                Models[]
+}
+
+model Sizes {
+  Id               Int                @id @default(autoincrement())
+  SizeName         String             @db.VarChar(255)
+  Description      String?
+  Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId          Int                @unique
+  OrderDetailSizes OrderDetailSizes[]
+  Measurements     Measurements[]
+}
+
+model Suppliers {
+  Id               Int                @id @default(autoincrement())
+  Name             String             @db.VarChar(255)
+  Address          String?
+  PhoneNumber      String
+  Description      String?
+  Audit            AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId          Int                @unique
+  MaterialMovement MaterialMovement[]
+}
+
+model Tasks {
+  Id                     Int          @id @default(autoincrement())
+  TaskName               String       @db.VarChar(255)
+  DueAt                  DateTime
+  Status                 Status       @default(PENDING)
+  Description            String?
+  Feedback               String?
+  AssignedFile           String?
+  FeedbackFile           String?
+  StartTime              DateTime?
+  EndTime                DateTime?
+  AssignedToDepartment   Departments? @relation(name: "AssignedTo", fields: [AssignedToDepartmentId], references: [Id])
+  AssignedToDepartmentId Int?
+  CreatedByDepartment    Departments? @relation(name: "CreatedBy", fields: [CreatedByDepartmentId], references: [Id])
+  CreatedByDepartmentId  Int?
+  Audit                  AuditRecords @relation(fields: [AuditId], references: [Id])
+  AuditId                Int          @unique
+}
+
+model TemplatePatterns {
+  Id                    Int                     @id @default(autoincrement())
+  TemplatePatternName   String                  @db.VarChar(255)
+  Description           String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
+}
+
+model Templates {
+  Id                  Int                       @id @default(autoincrement())
+  TemplateName        String                    @db.VarChar(255)
+  ProductCatalogue    ProductCatalogs           @relation(fields: [ProductCatalogId], references: [Id])
+  ProductCatalogId    Int
+  CategoryOne         ProductCatalogCategoryOne @relation(fields: [CategoryOneId], references: [Id])
+  CategoryOneId       Int
+  CategoryTwo         ProductCatalogCategoryTwo @relation(fields: [CategoryTwoId], references: [Id])
+  CategoryTwoId       Int
+  TemplatePattern     TemplatePatterns          @relation(fields: [TemplatePatternId], references: [Id])
+  TemplatePatternId   Int
+  TemplateType        TemplateTypes             @relation(fields: [TemplateTypeId], references: [Id])
+  TemplateTypeId      Int
+  Season              Season
+  Description         String?
+  FilePath            String?
+  Audit               AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId             Int                       @unique
+  ManufacturingStages ManufacturingStages[]
+  TemplateSizes       TemplateSizes[]
+  Models              Models[]
+}
+
+model TemplateSizes {
+  Id               Int               @id @default(autoincrement())
+  Name             String            @db.VarChar(255)
+  Template         Templates         @relation(fields: [TemplateId], references: [Id])
+  TemplateId       Int
+  Description      String?
+  TemplateSizeType TemplateSizeType?
+  Audit            AuditRecords      @relation(fields: [AuditId], references: [Id])
+  AuditId          Int               @unique
+  Measurements     Measurements[]
+}
+
+model TemplateTypes {
+  Id                    Int                     @id @default(autoincrement())
+  TemplateTypeName      String                  @db.VarChar(255)
+  Description           String?
+  Audit                 AuditRecords            @relation(fields: [AuditId], references: [Id])
+  AuditId               Int                     @unique
+  ProductCatalogDetails ProductCatalogDetails[]
+  Templates             Templates[]
+}
+
+model TrakingModels {
+  Id                Int                       @id @default(autoincrement())
+  ModelVariant      ModelVarients             @relation(fields: [ModelVariantId], references: [Id])
+  ModelVariantId    Int
+  PrevStage         ManufacturingStagesModel? @relation("PrevStage", fields: [PrevStageId], references: [Id])
+  PrevStageId       Int?
+  CurrentStage      ManufacturingStagesModel  @relation("CurrentStage", fields: [CurrentStageId], references: [Id])
+  CurrentStageId    Int
+  NextStage         ManufacturingStagesModel? @relation("NextStage", fields: [NextStageId], references: [Id])
+  NextStageId       Int?
+  StartTime         DateTime?
+  EndTime           DateTime?
+  MainStatus        MainStatus                @default(AWAITING)
+  RunningStatus     Status?                   @default(PENDING)
+  StopData          Json?
+  QuantityReceived  Json?
+  QuantityDelivered Json?
+  DamagedItem       Json?
+  ReplacedItemInKG  String?
+  ClothCount        String?
+  QuantityInKg      String?
+  ClothLength       String?
+  ClothWidth        String?
+  ClothWeight       String?
+  QuantityInNum     Json?
+  Notes             String?
+  Audit             AuditRecords              @relation(fields: [AuditId], references: [Id])
+  AuditId           Int                       @unique
+}
+
+model Users {
+  Id             Int            @id @default(autoincrement())
+  IsActive       Boolean        @default(false)
+  Username       String         @unique @db.VarChar(255)
+  Email          String         @unique @db.VarChar(255)
+  Firstname      String         @db.VarChar(255)
+  Lastname       String         @db.VarChar(255)
+  PhotoPath      String?
+  PasswordHash   String
+  PhoneNumber    String         @unique @db.VarChar(50)
+  LastLogin      DateTime?
+  Department     Departments?   @relation(fields: [DepartmentId], references: [Id])
+  DepartmentId   Int?
+  // Warehouse      Warehouses?    @relation(fields: [WarehouseId], references: [Id])
+  WarehouseId    Int?
+  Audit          AuditRecords   @relation(fields: [AuditId], references: [Id])
+  AuditId        Int            @unique
+  AuditCreatedBy AuditRecords[] @relation(name: "CreatedBy")
+  AuditUpdatedBy AuditRecords[] @relation(name: "UpdatedBy")
+}
+
+model Warehouses {
+  Id                   Int                @id @default(autoincrement())
+  WarehouseName        String             @db.VarChar(255)
+  CategoryName         CategoryName
+  Location             String             @db.VarChar(255)
+  Capacity             String
+  Description          String
+  Audit                AuditRecords       @relation(fields: [AuditId], references: [Id])
+  AuditId              Int                @unique
+  MaterialMovementFrom MaterialMovement[] @relation(name: "WarehouseFrom")
+  MaterialMovementTo   MaterialMovement[] @relation(name: "WarehouseTo")
 }
