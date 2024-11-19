@@ -120,14 +120,12 @@ const TrackingModelController = {
     const {
       DamagedItem,
       ReplacedItemInKG,
-      ClothCount,
       QuantityInKg,
-      ClothLength,
-      ClothWidth,
-      ClothWeight,
       QuantityInNum,
       Notes,
+      ClothGroups,
     } = req.body;
+
     try {
       const tracking = await prisma.trakingModels.findFirst({
         where: {
@@ -156,6 +154,27 @@ const TrackingModelController = {
           },
         },
       });
+
+      const clothCountValues = ClothGroups.reduce((acc, group, index) => {
+      acc[`cloth_${index + 1}`] = group.ClothCount;
+      return acc;
+    }, {});
+
+    const clothLengthValues = ClothGroups.reduce((acc, group, index) => {
+      acc[`cloth_${index + 1}`] = group.ClothLength;
+      return acc;
+    }, {});
+
+    const clothWidthValues = ClothGroups.reduce((acc, group, index) => {
+      acc[`cloth_${index + 1}`] = group.ClothWidth;
+      return acc;
+    }, {});
+
+    const clothWeightValues = ClothGroups.reduce((acc, group, index) => {
+      acc[`cloth_${index + 1}`] = group.ClothWeight;
+      return acc;
+    }, {});
+
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
@@ -164,11 +183,11 @@ const TrackingModelController = {
           MainStatus: "CHECKING",
           DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
           ReplacedItemInKG: ReplacedItemInKG,
-          ClothCount: +ClothCount,
           QuantityInKg: QuantityInKg,
-          ClothLength: ClothLength,
-          ClothWidth: ClothWidth,
-          ClothWeight: ClothWeight,
+          ClothCount: JSON.stringify(clothCountValues),
+          ClothLength: JSON.stringify(clothLengthValues), 
+          ClothWidth: JSON.stringify(clothWidthValues), 
+          ClothWeight: JSON.stringify(clothWeightValues),
           QuantityInNum: QuantityInNum ? JSON.parse(QuantityInNum) : [],
           Notes: Notes,
           Audit: {
@@ -286,7 +305,6 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
-      console.error("Error in sendForCheckingOthers:", error);
       console.error("Error in sendForCheckingOthers:", error);
       return res.status(500).send({
         status: 500,

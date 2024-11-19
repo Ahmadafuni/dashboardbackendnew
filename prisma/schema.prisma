@@ -600,7 +600,7 @@ model TrakingModels {
   QuantityDelivered Json?
   DamagedItem       Json?
   ReplacedItemInKG  String?
-  ClothCount        Int?
+  ClothCount        String?
   QuantityInKg      String?
   ClothLength       String?
   ClothWidth        String?
