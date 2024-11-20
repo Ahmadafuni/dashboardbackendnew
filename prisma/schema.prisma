@@ -604,6 +604,7 @@ model TrakingModels {
   DamagedItem       Json?
   ReplacedItemInKG  String?
   ClothCount        String?
+  CuttingName       String?
   QuantityInKg      String?
   ClothLength       String?
   ClothWidth        String?
