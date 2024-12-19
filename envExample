@@ -1,4 +1,13 @@
-#Database in backendRender  postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a/dashboarddb_vkfy
+ACCESS_TOKEN="cb6ada58af0109c5fe55f8af8415124eb86fdae905cf5bd1ea2ea005bbe735bb53ad37eab52ddf75a051e51041297705bc695770d7f7f20089dad4d7832efea3"
 
-DATABASE_URL="postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a.frankfurt-postgres.render.com:5432/dashboarddb_vkfy"
-DIRECT_URL="postgresql://dashboarddb_vkfy_user:W7lv92SYtufkyKeRfVZ6MQPI96hxIPFr@dpg-cqjutgpu0jms73do3bhg-a.frankfurt-postgres.render.com:5432/dashboarddb_vkfy"
+#OLD DATABASE
+#DATABASE_URL="postgres://postgres:6e9c36fafc4ac80a1bbf@92.112.194.101:5432/dashboard"
+#DIRECT_URL="postgres://postgres:6e9c36fafc4ac80a1bbf@92.112.194.101:5432/dashboard"
+
+#TEST DATABASE
+#DATABASE_URL="postgres://postgres:9d48de38400de6a10ca1@92.112.194.101:5444/testdatabase"
+#DIRECT_URL="postgres://postgres:9d48de38400de6a10ca1@92.112.194.101:5444/testdatabase"
+
+#New DataBase besharaDB
+DIRECT_URL="postgres://postgres:6088c71d1abb85893504@92.112.194.101:5434/besharaDB"
+DATABASE_URL="postgres://postgres:6088c71d1abb85893504@92.112.194.101:5434/besharaDB"
