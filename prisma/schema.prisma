@@ -603,13 +603,17 @@ model TrakingModels {
   QuantityDelivered Json?
   DamagedItem       Json?
   ReplacedItemInKG  String?
-  ClothCount        String?
   CuttingName       String?
+  ClothCount        String?
   QuantityInKg      String?
   ClothLength       String?
   ClothWidth        String?
   ClothWeight       String?
   QuantityInNum     Json?
+  AdditonalInfo1    String?
+  AdditonalInfo2    String?
+  AdditonalInfo3    String?
+  AdditonalInfo4    String?
   Notes             String?
   Audit             AuditRecords              @relation(fields: [AuditId], references: [Id])
   AuditId           Int                       @unique
