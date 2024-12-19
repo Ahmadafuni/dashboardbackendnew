@@ -87,17 +87,23 @@ const TrackingModelController = {
 
       await prisma.notifications.create({
         data: {
-          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} بدء `,
-          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName}  البدء من ${tracking.CurrentStage.Department.Name}`,
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} بدء`,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} البدء من ${tracking.CurrentStage.Department.Name}`,
           ToDepartment: {
             connect: {
-              Id:
-                tracking.NextStage?.DepartmentId ||
-                tracking.CurrentStage.DepartmentId,
+              Id: tracking.NextStage?.DepartmentId || tracking.CurrentStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
       });
+
+
       return res.status(200).send({
         status: 200,
         message: "Variant started successfully!",
@@ -156,24 +162,24 @@ const TrackingModelController = {
       });
 
       const clothCountValues = ClothGroups.reduce((acc, group, index) => {
-      acc[`cloth_${index + 1}`] = group.ClothCount;
-      return acc;
-    }, {});
+        acc[`cloth_${index + 1}`] = group.ClothCount;
+        return acc;
+      }, {});
 
-    const clothLengthValues = ClothGroups.reduce((acc, group, index) => {
-      acc[`cloth_${index + 1}`] = group.ClothLength;
-      return acc;
-    }, {});
+      const clothLengthValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.ClothLength;
+        return acc;
+      }, {});
 
-    const clothWidthValues = ClothGroups.reduce((acc, group, index) => {
-      acc[`cloth_${index + 1}`] = group.ClothWidth;
-      return acc;
-    }, {});
+      const clothWidthValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.ClothWidth;
+        return acc;
+      }, {});
 
-    const clothWeightValues = ClothGroups.reduce((acc, group, index) => {
-      acc[`cloth_${index + 1}`] = group.ClothWeight;
-      return acc;
-    }, {});
+      const clothWeightValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.ClothWeight;
+        return acc;
+      }, {});
 
       await prisma.trakingModels.update({
         where: {
@@ -185,8 +191,8 @@ const TrackingModelController = {
           ReplacedItemInKG: ReplacedItemInKG,
           QuantityInKg: QuantityInKg,
           ClothCount: JSON.stringify(clothCountValues),
-          ClothLength: JSON.stringify(clothLengthValues), 
-          ClothWidth: JSON.stringify(clothWidthValues), 
+          ClothLength: JSON.stringify(clothLengthValues),
+          ClothWidth: JSON.stringify(clothWidthValues),
           ClothWeight: JSON.stringify(clothWeightValues),
           QuantityInNum: QuantityInNum ? JSON.parse(QuantityInNum) : [],
           Notes: Notes,
@@ -207,6 +213,12 @@ const TrackingModelController = {
           ToDepartment: {
             connect: {
               Id: tracking.NextStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
@@ -296,6 +308,12 @@ const TrackingModelController = {
               Id: tracking.NextStage.DepartmentId,
             },
           },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
         },
       });
 
@@ -362,6 +380,12 @@ const TrackingModelController = {
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
@@ -517,6 +541,12 @@ const TrackingModelController = {
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
@@ -814,6 +844,12 @@ const TrackingModelController = {
           ToDepartment: {
             connect: {
               Id: tracking.CurrentStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
@@ -2271,21 +2307,17 @@ const TrackingModelController = {
       });
 
       const processFinishedModelVariants = (modelvarinte) => {
-        const modelName = `${
-          modelvarinte?.Model?.ProductCatalog?.ProductCatalogName || "N/A"
-        } - 
-                          ${
-                            modelvarinte?.Model?.CategoryOne?.CategoryName ||
-                            "N/A"
-                          } - 
-                          ${
-                            modelvarinte?.Model?.categoryTwo?.CategoryName ||
-                            "N/A"
-                          } - 
-                          ${
-                            modelvarinte?.Model?.Template?.TemplatePattern
-                              ?.TemplatePatternName || "N/A"
-                          }`;
+        const modelName = `${modelvarinte?.Model?.ProductCatalog?.ProductCatalogName || "N/A"
+          } - 
+                          ${modelvarinte?.Model?.CategoryOne?.CategoryName ||
+          "N/A"
+          } - 
+                          ${modelvarinte?.Model?.categoryTwo?.CategoryName ||
+          "N/A"
+          } - 
+                          ${modelvarinte?.Model?.Template?.TemplatePattern
+            ?.TemplatePatternName || "N/A"
+          }`;
 
         const collectionName =
           modelvarinte?.Model?.Order?.Collection?.CollectionName || "N/A";
@@ -3705,12 +3737,17 @@ const TrackingModelController = {
       await prisma.notifications.create({
         data: {
           Description: Reasone,
-          Title: `${
-            tracking.RunningStatus === "ONGOING" ? "إيقاف" : "استئناف"
-          }${variant.Model.DemoModelNumber} الموديل ${variant.Color.ColorName}`,
+          Title: `${tracking.RunningStatus === "ONGOING" ? "إيقاف" : "استئناف"
+            }${variant.Model.DemoModelNumber} الموديل ${variant.Color.ColorName}`,
           ToDepartment: {
             connect: {
               Id: managerialDep.Id,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
             },
           },
         },
@@ -3718,9 +3755,8 @@ const TrackingModelController = {
 
       return res.status(200).send({
         status: 200,
-        message: `Variant ${
-          tracking.RunningStatus === "ONGOING" ? "Paused" : "Unpaused"
-        } successfully!`,
+        message: `Variant ${tracking.RunningStatus === "ONGOING" ? "Paused" : "Unpaused"
+          } successfully!`,
         data: {},
       });
     } catch (error) {
