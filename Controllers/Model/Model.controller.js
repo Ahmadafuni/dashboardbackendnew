@@ -1024,6 +1024,33 @@ const ModelController = {
     try {
       const modelSummary = {};
 
+
+      const initialModel = await prisma.models.findUnique({
+        where: {
+          Id: +id,
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          ProductCatalog: {
+            include: {
+              ProductCatalogDetails: {
+                where: {
+                  Audit: {
+                    IsDeleted: false,
+                  }
+                },
+                include: {
+                  TemplateType: true,
+                  TemplatePattern: true
+                }
+              }
+            }
+          }
+        }
+      });
+
       const model = await prisma.models.findUnique({
         where: {
           Id: +id,
@@ -1036,7 +1063,22 @@ const ModelController = {
           CategoryOne: true,
           categoryTwo: true,
           Order: true,
-          ProductCatalog: true,
+          ProductCatalog: {
+            include: {
+              ProductCatalogDetails: {
+                where: {
+                  CategoryOneId: initialModel.CategoryOneId,
+                  CategoryTwoId: initialModel.CategoryTwoId,
+                  // TextileId: initialModel.TextileId,
+                  // TemplatePatternId: initialModel.ProductCatalog?.ProductCatalogDetails[0]?.TemplatePatternId,
+                  // TemplateTypeId: initialModel.ProductCatalog?.ProductCatalogDetails[0]?.TemplateTypeId,
+                  Audit: {
+                    IsDeleted: false,
+                  },
+                },
+              },
+            },
+          },       
           Textile: true,
           Audit: true,
           ModelVarients: {
@@ -1060,6 +1102,7 @@ const ModelController = {
           },
         },
       });
+
 
       const sizes = [];
       model?.ModelVarients.forEach((e) => {
@@ -1093,6 +1136,7 @@ const ModelController = {
         CategoryOne: model.CategoryOne.CategoryName,
         CategoryTwo: model.categoryTwo.CategoryName,
         ProductCatalog: model.ProductCatalog.ProductCatalogName,
+        StandardWeight: model.ProductCatalog.ProductCatalogDetails[0]?.StandardWeight || 0,
         FabricType: model.Textile.TextileType,
         Specification: model.Textile.TextileName,
         Characteristics: model.Characteristics,
@@ -1106,6 +1150,10 @@ const ModelController = {
         Colors: model.ModelVarients.map((v) => v.Color.ColorName).join("-"),
         Sizes: sizes,
         Images: model.Images,
+        ColorQuantities: model.ModelVarients.map((v) => ({
+          Color: v.Color.ColorName,
+          Quantity: v.Quantity,
+         })),
       };
 
       // Fetch model stages for each ModelVarient
@@ -1437,6 +1485,7 @@ const ModelController = {
     const userId = req.userId;
     const stopDataFromBody = req.body.stopData;
 
+
     const newStopData = {
       ...stopDataFromBody,
       userId: req.userId,
@@ -1485,7 +1534,7 @@ const ModelController = {
           },
         },
         data: {
-          RunningStatus: "ONHOLD",
+          RunningStatus: "REJECT",
           StopData: stopDataArray,
           Audit: {
             update: {
@@ -1758,6 +1807,7 @@ const ModelController = {
             ? "Model and its variants restarted successfully!"
             : "Model and its variants started successfully!",
         data: {},
+        
       });
     } catch (error) {
       // Server error or unsolved error

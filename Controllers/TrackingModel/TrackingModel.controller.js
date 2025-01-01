@@ -125,8 +125,6 @@ const TrackingModelController = {
     const userDepartmentId = req.userDepartmentId;
     const {
       DamagedItem,
-      ReplacedItemInKG,
-      QuantityInKg,
       QuantityInNum,
       Notes,
       ClothGroups,
@@ -166,6 +164,11 @@ const TrackingModelController = {
         return acc;
       }, {});
 
+      const clothPiecesPerPeriodValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.ClothPiecesPerPeriod;
+        return acc;
+      }, {});
+
       const clothLengthValues = ClothGroups.reduce((acc, group, index) => {
         acc[`cloth_${index + 1}`] = group.ClothLength;
         return acc;
@@ -181,6 +184,16 @@ const TrackingModelController = {
         return acc;
       }, {});
 
+      const quantityInKgValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.QuantityInKg;
+        return acc;
+      }, {});
+
+      const replacedItemInKGValues = ClothGroups.reduce((acc, group, index) => {
+        acc[`cloth_${index + 1}`] = group.ReplacedItemInKG;
+        return acc;
+      }, {});
+
       await prisma.trakingModels.update({
         where: {
           Id: tracking.Id,
@@ -188,9 +201,10 @@ const TrackingModelController = {
         data: {
           MainStatus: "CHECKING",
           DamagedItem: DamagedItem ? JSON.parse(DamagedItem) : [],
-          ReplacedItemInKG: ReplacedItemInKG,
-          QuantityInKg: QuantityInKg,
+          ReplacedItemInKG: JSON.stringify(replacedItemInKGValues),
+          QuantityInKg: JSON.stringify(quantityInKgValues),
           ClothCount: JSON.stringify(clothCountValues),
+          ClothPiecesPerPeriod: JSON.stringify(clothPiecesPerPeriodValues),
           ClothLength: JSON.stringify(clothLengthValues),
           ClothWidth: JSON.stringify(clothWidthValues),
           ClothWeight: JSON.stringify(clothWeightValues),
@@ -356,13 +370,35 @@ const TrackingModelController = {
         },
       });
 
+      const newStopData = {
+        ReasonText: "Quantity received was rejected" ,
+        userId: userId,
+        userDepartmentId: req.userDepartmentId,
+        StartStopTime: new Date(),
+        EndStopTime: null,
+      };
+
+      let stopDataArray = [];
+      if (tracking.StopData) {
+        try {
+          stopDataArray = Array.isArray(tracking.StopData)
+            ? tracking.StopData
+            : JSON.parse(tracking.StopData);
+        } catch (error) {
+          console.error("Error parsing StopData:", error);
+          stopDataArray = [];
+        }
+      }
+      stopDataArray.push(newStopData);
+      
       await prisma.trakingModels.update({
         where: {
           Id: trackingId,
         },
         data: {
           MainStatus: "INPROGRESS",
-          RunningStatus: "ONGOING",
+          RunningStatus: "REJECT",
+          StopData: stopDataArray,
           Audit: {
             update: {
               data: {
@@ -372,7 +408,7 @@ const TrackingModelController = {
           },
         },
       });
-
+            
       await prisma.notifications.create({
         data: {
           Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} تم الرفض `,
@@ -397,9 +433,119 @@ const TrackingModelController = {
         data: {},
       });
     } catch (error) {
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
+  restartRejectedModel: async (req, res) => {
+    const userId = req.userId;
+    const trackingId = +req.params.id;
+  
+    try {
+      const tracking = await prisma.trakingModels.findUnique({
+        where: {
+          Id: trackingId,
+          Audit: {
+            IsDeleted: false,
+          }
+        },
+        include: {
+          CurrentStage: {
+            include: {
+              Department: true,
+            },
+          },
+          NextStage: {
+            include: {
+              Department: true,
+            },
+          },
+          ModelVariant: {
+            include: {
+              Model: true,
+              Color: true,
+            },
+          },
+        },
+      });
+  
+      if (!tracking) {
+        return res.status(404).send({
+          status: 404,
+          message: "Tracking not found",
+          data: {},
+        });
+      }
+  
+      // Update the tracking model status
+      await prisma.trakingModels.update({
+        where: {
+          Id: trackingId,
+        },
+        data: {
+          MainStatus: "INPROGRESS",
+          RunningStatus: "ONGOING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+  
+      // Update the model variant status
+      await prisma.modelVarients.update({
+        where: {
+          Id: tracking.ModelVariant.Id,
+        },
+        data: {
+          RunningStatus: "ONGOING",
+          Audit: {
+            update: {
+              data: {
+                UpdatedById: userId,
+              },
+            },
+          },
+        },
+      });
+  
+      await prisma.notifications.create({
+        data: {
+          Title: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} إعادة تشغيل`,
+          Description: `${tracking.ModelVariant.Model.DemoModelNumber}-${tracking.ModelVariant.Color.ColorName} تم إعادة تشغيل الموديل في ${tracking.CurrentStage.Department.Name}`,
+          ToDepartment: {
+            connect: {
+              Id: tracking.CurrentStage.DepartmentId,
+            },
+          },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
+        },
+      });
+  
+      return res.status(200).send({
+        status: 200,
+        message: "Model restarted successfully",
+        data: tracking,
+      });
+  
+    } catch (error) {
+      console.error("Error in restartRejectedModel:", error);
+      return res.status(500).send({
+        status: 500,
+        message: "Internal server error. Please try again later!",
         data: {},
       });
     }

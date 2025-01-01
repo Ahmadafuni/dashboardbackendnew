@@ -77,6 +77,15 @@ router.get(
   TrackingModelController.rejectVariant
 );
 
+router.get(
+  "/restart/:id",
+  // verifyUser([
+  //   "FACTORYMANAGER",
+  //   "ENGINEERING",
+  // ]),
+    TrackingModelController.restartRejectedModel
+);
+
 router.put(
   "/complete/variant/:id",
   verifyUser([

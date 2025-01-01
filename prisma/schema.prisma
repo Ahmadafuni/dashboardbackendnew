@@ -25,6 +25,7 @@ enum Status {
   COMPLETED
   ONGOING
   ONHOLD
+  REJECT
 }
 
 enum MainStatus {
@@ -610,7 +611,7 @@ model TrakingModels {
   ClothWidth        String?
   ClothWeight       String?
   QuantityInNum     Json?
-  AdditonalInfo1    String?
+  ClothPiecesPerPeriod    String?
   AdditonalInfo2    String?
   AdditonalInfo3    String?
   AdditonalInfo4    String?
