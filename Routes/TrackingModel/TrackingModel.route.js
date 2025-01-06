@@ -76,8 +76,8 @@ router.get(
   ]),
   TrackingModelController.rejectVariant
 );
-
-router.get(
+  
+router.get( 
   "/restart/:id",
   // verifyUser([
   //   "FACTORYMANAGER",

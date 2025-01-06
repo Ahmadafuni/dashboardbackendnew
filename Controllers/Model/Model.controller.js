@@ -1033,21 +1033,7 @@ const ModelController = {
           },
         },
         include: {
-          ProductCatalog: {
-            include: {
-              ProductCatalogDetails: {
-                where: {
-                  Audit: {
-                    IsDeleted: false,
-                  }
-                },
-                include: {
-                  TemplateType: true,
-                  TemplatePattern: true
-                }
-              }
-            }
-          }
+          Template:true,
         }
       });
 
@@ -1069,9 +1055,9 @@ const ModelController = {
                 where: {
                   CategoryOneId: initialModel.CategoryOneId,
                   CategoryTwoId: initialModel.CategoryTwoId,
-                  // TextileId: initialModel.TextileId,
-                  // TemplatePatternId: initialModel.ProductCatalog?.ProductCatalogDetails[0]?.TemplatePatternId,
-                  // TemplateTypeId: initialModel.ProductCatalog?.ProductCatalogDetails[0]?.TemplateTypeId,
+                  TextileId: initialModel.TextileId,
+                  TemplatePatternId: initialModel.Template?.TemplatePatternId,
+                  TemplateTypeId: initialModel.Template?.TemplateTypeId,
                   Audit: {
                     IsDeleted: false,
                   },
