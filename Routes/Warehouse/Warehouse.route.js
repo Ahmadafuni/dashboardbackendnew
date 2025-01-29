@@ -24,32 +24,29 @@ router.get(
 );
 router.get(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING" , "WAREHOUSEMANAGER" ]),
   WarehouseController.getWarehouseById
 );
 router.post(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING" , "WAREHOUSEMANAGER" ]),
   WarehouseController.createWarehouse
 );
 router.put(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING" , "WAREHOUSEMANAGER" ]),
   WarehouseController.updateWarehouse
 );
 router.delete(
   "/:id",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING" , "WAREHOUSEMANAGER" ]),
   WarehouseController.deleteWarehouse
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING" , "WAREHOUSEMANAGER"  ]),
   WarehouseController.searchWarehouse
 );
-
-
-
 
 
 const WarehouseRoute = router;
