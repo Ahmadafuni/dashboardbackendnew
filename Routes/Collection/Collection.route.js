@@ -24,7 +24,7 @@ router.get(
 
 router.get(
   "/all",
-  // verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  // verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   CollectionController.getCollections
 );
 router.get(

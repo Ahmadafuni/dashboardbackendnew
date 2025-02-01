@@ -4,19 +4,19 @@ import OrderDetailSizeController from "../../Controllers/OrderDetailSize/OrderDe
 
 const router = express.Router();
 
-router.post("/", verifyUser(["STOREMANAGER", "ENGINEERING"]), OrderDetailSizeController.createSize);
-router.get("/all", verifyUser(["STOREMANAGER", "ENGINEERING"]), OrderDetailSizeController.getSizes);
-router.get("/", verifyUser(["STOREMANAGER", "ENGINEERING"]), OrderDetailSizeController.getOrderDetailSizes);
+router.post("/", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]), OrderDetailSizeController.createSize);
+router.get("/all", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]), OrderDetailSizeController.getSizes);
+router.get("/", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]), OrderDetailSizeController.getOrderDetailSizes);
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailSizeController.getSizeById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailSizeController.deleteSize
 );
-router.put("/:id", verifyUser(["STOREMANAGER", "ENGINEERING"]), OrderDetailSizeController.updateSize);
+router.put("/:id", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]), OrderDetailSizeController.updateSize);
 
 export { router as OrderDetailSizeRoute };

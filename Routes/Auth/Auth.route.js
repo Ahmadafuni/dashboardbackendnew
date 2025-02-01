@@ -50,7 +50,7 @@ router.get(
 );
 // router.get(
 //   "/managers",
-//   verifyUser(["FACTORYMANAGER", "ENGINEERING", "STOREMANAGER"]),
+//   verifyUser(["FACTORYMANAGER", "ENGINEERING", "WAREHOUSEMANAGER"]),
 //   AuthenticationController.getManagers
 // );
 router.delete(

@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.createComponent
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.getComponents
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.getComponentNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.getComponentById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.deleteComponent
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.updateComponent
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   ComponentController.searchComponents
 );
 

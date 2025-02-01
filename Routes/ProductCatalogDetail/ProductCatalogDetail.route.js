@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.createDetail
 );
 router.get(
   "/all/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getAllDetails
 );
 router.post(
   "/search-by-category",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.searchByCategory
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.getDetailById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.deleteDetail
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.updateDetail
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogDetailController.searchPCD
 );
 

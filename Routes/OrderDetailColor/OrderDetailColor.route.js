@@ -4,30 +4,30 @@ import OrderDetailColorController from "../../Controllers/OrderDetailColor/Order
 
 const router = express.Router();
 
-router.post("/", verifyUser(["STOREMANAGER", "ENGINEERING"]), OrderDetailColorController.createColor);
+router.post("/", verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]), OrderDetailColorController.createColor);
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailColorController.getColors
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailColorController.getOrderDetailColorNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailColorController.getColorById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailColorController.deleteColor
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING"]),
   OrderDetailColorController.updateColor
 );
 

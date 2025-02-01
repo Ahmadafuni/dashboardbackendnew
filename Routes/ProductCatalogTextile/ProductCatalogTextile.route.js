@@ -6,37 +6,37 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.createTextile
 );
 router.get(
   "/all",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.getAllTextiles
 );
 router.get(
   "/",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.getCatalogueTextileNames
 );
 router.get(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.getTextileById
 );
 router.delete(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.deleteTextile
 );
 router.put(
   "/:id",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.updateTextile
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["STOREMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
   ProductCatalogTextileController.searchPCT
 );
 
