@@ -180,7 +180,7 @@ const ManufacturingStageModelController = {
         },
       });
 
-      const otherStages = await prisma.manufacturingStages.findMany({
+      const otherStages = await prisma.manufacturingStagesModel.findMany({
         where: {
           Audit: {
             IsDeleted: false,
@@ -194,7 +194,7 @@ const ManufacturingStageModelController = {
       });
       for (const stage of otherStages) {
         if (stage.StageNumber > current.StageNumber) {
-          await prisma.manufacturingStages.update({
+          await prisma.manufacturingStagesModel.update({
             where: {
               Id: stage.Id,
             },
@@ -209,7 +209,7 @@ const ManufacturingStageModelController = {
           });
         }
       }
-      await prisma.manufacturingStages.update({
+      await prisma.manufacturingStagesModel.update({
         where: {
           Id: +id,
         },
@@ -371,7 +371,7 @@ const ManufacturingStageModelController = {
           },
         },
       });
-      await prisma.manufacturingStages.update({
+      await prisma.manufacturingStagesModel.update({
         where: {
           Id: current.Id,
         },
@@ -379,7 +379,7 @@ const ManufacturingStageModelController = {
           StageNumber: currentTop.StageNumber,
         },
       });
-      await prisma.manufacturingStages.update({
+      await prisma.manufacturingStagesModel.update({
         where: {
           Id: currentTop.Id,
         },
@@ -394,6 +394,7 @@ const ManufacturingStageModelController = {
         data: {},
       });
     } catch (error) {
+      console.log("error", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -419,7 +420,7 @@ const ManufacturingStageModelController = {
           },
         },
       });
-      await prisma.manufacturingStages.update({
+      await prisma.manufacturingStagesModel.update({
         where: {
           Id: current.Id,
         },
@@ -427,7 +428,7 @@ const ManufacturingStageModelController = {
           StageNumber: currentDown.StageNumber,
         },
       });
-      await prisma.manufacturingStages.update({
+      await prisma.manufacturingStagesModel.update({
         where: {
           Id: currentDown.Id,
         },
@@ -442,6 +443,7 @@ const ManufacturingStageModelController = {
         data: {},
       });
     } catch (error) {
+      console.log("error", error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
