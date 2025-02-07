@@ -279,9 +279,9 @@ const MaterialController = {
   
       if (!materials || materials.length === 0) {
         // Return response if no materials are found
-        return res.status(404).send({
-          status: 404,
-          message: "No materials found!",
+        return res.send({
+          status: 200,
+          message: "No child materials found!",
           data: [],
         });
       }
