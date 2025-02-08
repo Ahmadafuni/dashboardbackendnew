@@ -645,7 +645,7 @@ const MaterialMovementController = {
             unit,
             incoming,
             outgoing,
-            consumption: incoming - outgoing,
+            consumption: outgoing  - incoming ,
           };
         });
   
@@ -755,7 +755,7 @@ const MaterialMovementController = {
                     unit,
                     outgoing:incoming,
                     incoming:outgoing,
-                    consumption:  outgoing - incoming,
+                    consumption: incoming - outgoing ,
                 };
             });
 

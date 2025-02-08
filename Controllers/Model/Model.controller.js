@@ -30,6 +30,7 @@ const ModelController = {
           },
         },
       });
+
       if (!order) {
         return res.status(404).send({
           status: 404,
@@ -102,11 +103,14 @@ const ModelController = {
       let modelCount = await prisma.models.count({});
       modelCount++;
 
+
+   
+
       const createdModel = await prisma.models.create({
         data: {
           ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
           ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
-          DemoModelNumber: DemoModelNumber,
+          DemoModelNumber: `${DemoModelNumber}-${order.OrderName}` ,
           Order: {
             connect: {
               Id: +orderId,
@@ -162,6 +166,7 @@ const ModelController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error)
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -1115,7 +1120,7 @@ const ModelController = {
       modelSummary.modelInfo = {
         ModelDate: model.Audit.CreatedAt.toDateString(),
         ModelName: model.ModelName,
-        ModelNumber: model.ModelNumber,
+        ModelNumber: model.DemoModelNumber,
         OrderNumber: model.OrderNumber,
         OrderName: model.OrderName,
         Template: model.Template.TemplateName,
@@ -1123,8 +1128,10 @@ const ModelController = {
         CategoryTwo: model.categoryTwo.CategoryName,
         ProductCatalog: model.ProductCatalog.ProductCatalogName,
         StandardWeight: model.ProductCatalog.ProductCatalogDetails[0]?.StandardWeight || 0,
-        FabricType: model.Textile.TextileType,
+        FabricType: model.Textile.TextileName,
+        
         Specification: model.Textile.TextileName,
+
         Characteristics: model.Characteristics,
         Barcode: model.Barcode,
         LabelType: model.LabelType,
@@ -2660,7 +2667,6 @@ const ModelController = {
           },
         });
 
-        console.log(colorNameToIdMap);
 
         const stageIds = Stages.split("-").map(
           (stage) => stageCodeToIdMap[stage]
@@ -2707,7 +2713,7 @@ const ModelController = {
           data: {
             ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
             ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
-            DemoModelNumber: ModelNumber.toString(),
+            DemoModelNumber: `${ModelNumber.toString()}-${order.OrderName}`,
             Order: {
               connect: {
                 Id: +orderId,
