@@ -301,6 +301,10 @@ const DataTableController = {
         }
       });
 
+      where.Audit = {
+        IsDeleted: false 
+      }
+
       if (relationshipMap) {
         Object.keys(relationshipMap).forEach((key) => {
           const prismaRelationship = relationshipMap[key];

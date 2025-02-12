@@ -633,105 +633,397 @@ const ReportsController = {
     }
   },
 
-  productionReport: async (req, res, next) => {
-    let {
-      status,
-      productCatalogue,
-      productCategoryOne,
-      productCategoryTwo,
-      templateType,
-      templatePattern,
-      startDate,
-      endDate,
-      departments,
-    } = req.body;
+  departmentProductionReport: async(req, res, next) => {
+    try {
+      const {
+        departments,
+        status,
+        startDate,
+        endDate,
+        productCatalogue,
+        productCategoryOne,
+        productCategoryTwo,
+        templateType,
+        templatePattern,
+      } = req.body;
 
-    // status = status ? status.filter(item => item.label !== 'DONE'): status;
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.query.size) || 10;
+      
+       let filter = {
+        Audit: {
+          IsDeleted: false
+        }
+      };  
 
-
-    const page = parseInt(req.query.page) || 1;
-    const size = parseInt(req.query.size) || 10;
-    
-    let filter = {};
-    
-    
-    const isDoneIncluded = Array.isArray(status) ?  status.some((item) => item.label === 'DONE') : false ;
-
-
-    status = Array.isArray(status) ? status.filter(item => item.label !== 'DONE') : status;
-  
-
-    if (status && Array.isArray(status) && status.length != 0) {
-
-      filter.RunningStatus = { in: status.map((item) => item.value) };
-
-
-    }
-
-    if (productCatalogue && Array.isArray(productCatalogue)) {
-      filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };
-    }
-
-    if (departments && Array.isArray(departments)) {
-      filter.ModelVarients = {
+       let modelVarientsFilter = {
         some: {
           TrakingModels: {
             some: {
-              CurrentStage: {
-                DepartmentId: { in: departments.map((item) => parseInt(item.value)) }
-              }
+              AND: [] // Initialize AND array for combining conditions
             }
           }
         }
       };
-    }
 
-    if (productCategoryOne && Array.isArray(productCategoryOne)) {
-      filter.CategoryOneId = { in: productCategoryOne.map((item) => parseInt(item.value)) };
-    }
-
-    if (productCategoryTwo && Array.isArray(productCategoryTwo)) {
-      filter.CategoryTwoId = { in: productCategoryTwo.map((item) => parseInt(item.value)) };
-    }
-
-    if (templateType || templatePattern) {
-      filter.Template = { AND: [] };
-
-      if (templateType && Array.isArray(templateType)) {
-        filter.Template.AND.push({
-          TemplateType: { TemplateTypeName: { in: templateType.map((item) => item.label) } }
+       if (departments && Array.isArray(departments)) {
+        modelVarientsFilter.some.TrakingModels.some.AND.push({
+          CurrentStage: {
+            DepartmentId: { in: departments.map(dept => parseInt(dept.value)) }
+          }
         });
       }
 
-      if (templatePattern && Array.isArray(templatePattern)) {
-        filter.Template.AND.push({
-          TemplatePattern: { TemplatePatternName: { in: templatePattern.map((item) => item.label) } }
+       if (status && Array.isArray(status)) {
+        modelVarientsFilter.some.TrakingModels.some.AND.push({
+          RunningStatus: { in: status.map(s => s.value) }
         });
       }
-    }
 
-    if (startDate || endDate) {
-      filter.OR = [];
-
-      if (startDate) {
-        filter.OR.push({
+       if (startDate) {
+        modelVarientsFilter.some.TrakingModels.some.AND.push({
           StartTime: { gte: new Date(startDate) }
         });
       }
-
+      
       if (endDate) {
-        filter.OR.push({
+        modelVarientsFilter.some.TrakingModels.some.AND.push({
           EndTime: { lte: new Date(endDate) }
         });
       }
-    }
 
+       filter.ModelVarients = modelVarientsFilter;
+
+        if (productCatalogue && Array.isArray(productCatalogue)) {
+        filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };
+      }
+  
+       if (productCategoryOne && Array.isArray(productCategoryOne)) {
+        filter.CategoryOneId = { in: productCategoryOne.map((item) => parseInt(item.value)) };
+      }
+  
+      if (productCategoryTwo && Array.isArray(productCategoryTwo)) {
+        filter.CategoryTwoId = { in: productCategoryTwo.map((item) => parseInt(item.value)) };
+      }
+  
+       if (templateType || templatePattern) {
+        filter.Template = { AND: [] };
+  
+        if (templateType && Array.isArray(templateType)) {
+          filter.Template.AND.push({
+            TemplateType: { TemplateTypeName: { in: templateType.map((item) => item.label) } }
+          });
+        }
+  
+        if (templatePattern && Array.isArray(templatePattern)) {
+          filter.Template.AND.push({
+            TemplatePattern: { TemplatePatternName: { in: templatePattern.map((item) => item.label) } }
+          });
+        }
+      }
+
+       const models = await prisma.models.findMany({
+        where: filter,
+        select: {
+          Id: true,
+          ModelName: true,
+          DemoModelNumber: true,
+          ModelVarients: {
+            select: {
+              Id: true,
+              Color: {
+                select: {
+                  ColorName: true
+                }
+              },
+              Sizes: true,
+              MainStatus: true,
+              RunningStatus: true,
+              TrakingModels: {
+                where: {
+                  AND: [
+                    departments ? {
+                      CurrentStage: {
+                        DepartmentId: { in: departments.map(dept => parseInt(dept.value)) }
+                      }
+                    } : {},
+                    status ? {
+                      RunningStatus: { in: status.map(s => s.value) }
+                    } : {}
+                  ]
+                },
+                select: {
+                  Id: true,
+                  CurrentStage: {
+                    select: {
+                      Id: true,
+                      StageName: true,
+                      Department: {
+                        select: {
+                          Id: true,
+                          Name: true
+                        }
+                      }
+                    }
+                  },
+                  MainStatus: true,
+                  RunningStatus: true,
+                  StartTime: true,
+                  EndTime: true,
+                  QuantityReceived: true,
+                  QuantityDelivered: true,
+                  DamagedItem: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+
+      const getArabicStatus = (status) => {
+        const statusMap = {
+          'PENDING': 'قيد الانتظار',
+          'ONGOING': 'جاري العمل',
+          'ONHOLD': 'متوقف مؤقتاً',
+          'COMPLETED': 'مكتمل',
+          'DONE': 'منتهي',
+          'IN_PROGRESS': 'قيد التنفيذ',
+          'STOPPED': 'متوقف'
+        };
+      
+        return statusMap[status] || status;
+      };
+
+      const calculateDuration = (startTime, endTime, stopDates) => {
+        if (!startTime) return 'لم يبدأ بعد';
+        
+        const start = new Date(startTime);
+        const end = endTime ? new Date(endTime) : new Date();
+        
+        let totalDuration = end - start;
+        
+         let totalStopDuration = 0;
+        if (stopDates && Array.isArray(stopDates)) {
+          totalStopDuration = stopDates.reduce((acc, stop) => {
+            const stopStart = new Date(stop.StartStopTime);
+            const stopEnd = new Date(stop.EndStopTime);
+            return acc + (stopEnd - stopStart);
+          }, 0);
+        }
+        
+        const actualDuration = totalDuration - totalStopDuration;
+        
+         const days = Math.floor(actualDuration / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((actualDuration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((actualDuration % (1000 * 60 * 60)) / (1000 * 60));
+        
+         const parts = [];
+        
+        if (days > 0) {
+          parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+        }
+        
+        if (hours > 0) {
+          parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+        }
+        
+        if (minutes > 0 || (!days && !hours)) {
+          parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`);
+        }
+      
+        let durationText = parts.join(' , ');
+        
+         if (!endTime) {
+          durationText = `${durationText} (جارٍ التنفيذ)`;
+        }
+        
+        return durationText || 'أقل من دقيقة';
+      };
+
+
+      const formatQuantities = (items) => {
+        if (!Array.isArray(items)) return '';
+        
+        const formattedItems = items
+          .filter(item => item.label && (item.value || item.value === 0))
+          .map(item => `${item.label}: ${item.value}`)
+          .join(' | ');
+          
+        return formattedItems || '-';
+      };
+
+      const formatSizes = (sizes) => {
+        if (!Array.isArray(sizes)) return '';
+        
+        return sizes
+          .map(size => `${size.label}: ${size.value}`)
+          .join(' | ');
+      };
+
+       let tableRows = [];
+      
+      models.forEach(model => {
+        model.ModelVarients.forEach(variant => {
+          variant.TrakingModels.forEach(tracking => {
+            tableRows.push({
+              departmentName: tracking.CurrentStage.Department.Name,
+              modelNumber: model.DemoModelNumber,
+              modelName: model.ModelName,
+              color: variant.Color.ColorName,
+              status: getArabicStatus(tracking.RunningStatus), 
+              sizes: formatSizes(variant.Sizes),
+              quantityReceived: formatQuantities(variant.QuantityReceived),
+              quantityDelivered: formatQuantities(tracking.QuantityDelivered),
+              damagedItems: formatQuantities(tracking.DamagedItem),
+              startTime: tracking.StartTime,
+              endTime: tracking.EndTime,
+              duration: calculateDuration(
+                tracking.StartTime,
+                tracking.EndTime,
+                tracking.StopDate
+              ),
+            });
+          });
+        });
+      });
+
+       const summary = {
+        totalDepartments: new Set(tableRows.map(row => row.departmentName)).size,
+        totalModels: models.length,
+        totalVariants: tableRows.length,
+        totalCompleted: tableRows.filter(row => row.status === getArabicStatus('COMPLETED')).length,
+        totalInProgress: tableRows.filter(row => row.status === getArabicStatus('ONGOING')).length
+      };
+
+      const totalRecords = tableRows.length;
+      const totalPages = Math.ceil(totalRecords / size);
+      const startIndex = (page - 1) * size;
+      const endIndex = page * size;
+      const paginatedRows = tableRows.slice(startIndex, endIndex);
+
+      return res.status(200).send({
+        status: 200,
+        message: "Department reports generated successfully!",
+        totalPages,
+        data: {
+          reports: paginatedRows,
+          summary
+        }
+      });
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        status: 500,
+        message: 'Internal server error. Please try again later!',
+        data: {}
+      });
+    }
+  },
+ 
+  productionReport: async (req, res, next) => {
     try {
-      let models = await prisma.models.findMany({
+      let {
+        status,
+        productCatalogue,
+        productCategoryOne,
+        productCategoryTwo,
+        templateType,
+        templatePattern,
+        startDate,
+        endDate,
+        departments,
+      } = req.body;
+  
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.query.size) || 10;
+
+
+
+      let filter = {};
+      
+       const isDoneIncluded = Array.isArray(status) ? status.some((item) => item.value === 'DONE') : false;
+      status = Array.isArray(status) ? status.filter(item => item.value !== 'DONE') : status;
+  
+       filter.Audit = {
+        IsDeleted: false
+      };
+      
+       if (status && Array.isArray(status) && status.length !== 0) {
+        if (departments && Array.isArray(departments)) {
+           filter.ModelVarients = {
+            some: {
+              TrakingModels: {
+                some: {
+                  AND: [
+                    {
+                      CurrentStage: {
+                        DepartmentId: { in: departments.map((item) => parseInt(item.value)) }
+                      }
+                    },
+                    {
+                      RunningStatus: { in: status.map((item) => item.value) }
+                    }
+                  ]
+                }
+              }
+            }
+          };
+        } else {
+           filter.RunningStatus = { in: status.map((item) => item.value) };
+        }
+      } else if (departments && Array.isArray(departments)) {
+         filter.ModelVarients = {
+          some: {
+            TrakingModels: {
+              some: {
+                CurrentStage: {
+                  DepartmentId: { in: departments.map((item) => parseInt(item.value)) }
+                }
+              }
+            }
+          }
+        };
+      }
+  
+       if (productCatalogue && Array.isArray(productCatalogue)) {
+        filter.ProductCatalogId = { in: productCatalogue.map((item) => parseInt(item.value)) };
+      }
+  
+       if (productCategoryOne && Array.isArray(productCategoryOne)) {
+        filter.CategoryOneId = { in: productCategoryOne.map((item) => parseInt(item.value)) };
+      }
+  
+      if (productCategoryTwo && Array.isArray(productCategoryTwo)) {
+        filter.CategoryTwoId = { in: productCategoryTwo.map((item) => parseInt(item.value)) };
+      }
+  
+       if (templateType || templatePattern) {
+        filter.Template = { AND: [] };
+  
+        if (templateType && Array.isArray(templateType)) {
+          filter.Template.AND.push({
+            TemplateType: { TemplateTypeName: { in: templateType.map((item) => item.label) } }
+          });
+        }
+  
+        if (templatePattern && Array.isArray(templatePattern)) {
+          filter.Template.AND.push({
+            TemplatePattern: { TemplatePatternName: { in: templatePattern.map((item) => item.label) } }
+          });
+        }
+      }
+  
+       if (startDate || endDate) {
+        filter.OR = [];
+        if (startDate) filter.OR.push({ StartTime: { gte: new Date(startDate) } });
+        if (endDate) filter.OR.push({ EndTime: { lte: new Date(endDate) } });
+      }
+      
+       let models = await prisma.models.findMany({
         where: filter,
         orderBy: { StartTime: 'desc' },
-        // skip: (page - 1) * size,
-        // take: size,
         select: {
           Order: { select: { CollectionId: true } },
           OrderId: true,
@@ -763,6 +1055,8 @@ const ReportsController = {
                   QuantityDelivered: true,
                   QuantityReceived: true,
                   DamagedItem: true,
+                  StartTime: true,
+                  EndTime: true,
                 }
               }
             }
@@ -770,59 +1064,57 @@ const ReportsController = {
           Audit: { select: { CreatedAt: true, UpdatedAt: true } }
         }
       });
-
-      if(isDoneIncluded){
-        models = models.filter((model) => {
-          // تحقق من وجود ModelVarients والتأكد من أن الشرط ينطبق على جميع الـ ModelVarients
-          return model.ModelVarients.some((variant) => {
-            return variant.RunningStatus == "COMPLETED" && variant.MainStatus == "DONE";
+  
+       if (isDoneIncluded) {
+        if (departments && Array.isArray(departments)) {
+           models = models.filter((model) => {
+            return model.ModelVarients.some((variant) => {
+              return variant.TrakingModels.some(tracking => 
+                departments.some(dept => parseInt(dept.value) === tracking.CurrentStage.DepartmentId) &&
+                tracking.RunningStatus === "COMPLETED"
+              );
+            });
           });
-        });
-        
-      }
-      
-      // Keep the existing model grouping and processing logic intact
-      const groupedModels = models.reduce((acc, model) => {
-        const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
-
-        let modelVariantDetails ;
-        if(isDoneIncluded){
-           modelVariantDetails = model.ModelVarients
-          .filter((variant) => 
-            variant.MainStatus === "DONE" && variant.RunningStatus === "COMPLETED"
-          )
-          .map((variant) => ({
-            Color: variant.Color,
-            Sizes: variant.Sizes,
-            MainStatus: variant.MainStatus,
-            RunningStatus: variant.RunningStatus,
-            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
-            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
-            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
-            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
-            StartTime: variant.TrakingModels[0]?.StartTime || null,
-            EndTime: variant.TrakingModels[0]?.EndTime || null,
-            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
-          }));
-        }else {
-           modelVariantDetails = model.ModelVarients
-          .map((variant) => ({
-            Color: variant.Color,
-            Sizes: variant.Sizes,
-            MainStatus: variant.MainStatus,
-            RunningStatus: variant.RunningStatus,
-            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
-            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
-            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
-            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
-            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
-            StartTime: variant.TrakingModels[0]?.StartTime || null,
-            EndTime: variant.TrakingModels[0]?.EndTime || null,
-            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
-          }));
+        } else {
+           models = models.filter((model) => {
+            return model.ModelVarients.some((variant) => {
+              return variant.RunningStatus === "COMPLETED" && variant.MainStatus === "DONE";
+            });
+          });
         }
-        
+      }
+  
+       const groupedModels = models.reduce((acc, model) => {
+        const existingModel = acc.find((entry) => entry.DemoModelNumber === model.DemoModelNumber);
+  
+        const modelVariantDetails = model.ModelVarients
+          .filter(variant => {
+            if (isDoneIncluded) {
+              if (departments && Array.isArray(departments)) {
+                 return variant.TrakingModels.some(tracking => 
+                  departments.some(dept => parseInt(dept.value) === tracking.CurrentStage.DepartmentId) &&
+                  tracking.RunningStatus === "COMPLETED"
+                );
+              }
+              return variant.MainStatus === "DONE" && variant.RunningStatus === "COMPLETED";
+            }
+            return true;
+          })
+          .map((variant) => ({
+            Color: variant.Color,
+            Sizes: variant.Sizes,
+            MainStatus: variant.MainStatus,
+            RunningStatus: variant.RunningStatus,
+            StageName: variant.TrakingModels[0]?.CurrentStage.StageName || null,
+            DepartmentName: variant.TrakingModels[0]?.CurrentStage.Department.Name || null,
+            QuantityDelivered: variant.TrakingModels[0]?.QuantityDelivered || null,
+            QuantityReceived: variant.TrakingModels[0]?.QuantityReceived || null,
+            DamagedItem: variant.TrakingModels[0]?.DamagedItem || null,
+            StartTime: variant.TrakingModels[0]?.StartTime || null,
+            EndTime: variant.TrakingModels[0]?.EndTime || null,
+            DurationInHours: durationInHours(variant.TrakingModels[0]?.StartTime, variant.TrakingModels[0]?.EndTime),
+          }));
+  
         if (existingModel) {
           existingModel.Details.push(...modelVariantDetails);
         } else {
@@ -841,103 +1133,73 @@ const ReportsController = {
             },
           });
         }
-
+  
         return acc;
       }, []);
-
-      // Summary logic for counting data (new logic added here)
-      const summary = {
-        totalModels: models.length, // Count of all models
-        totalVariants: models.reduce((acc, model) => acc + model.ModelVarients.length, 0), // Sum of all variants
-
+  
+       const summary = {
+        totalModels: models.length,
+        totalVariants: models.reduce((acc, model) => acc + model.ModelVarients.length, 0),
         totalQuantityDelivered: models.reduce((acc, model) => {
           return acc + model.ModelVarients.reduce((subAcc, variant) => {
             return subAcc + (variant.TrakingModels[0]?.QuantityDelivered
-                ? variant.TrakingModels[0].QuantityDelivered.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+              ? variant.TrakingModels[0].QuantityDelivered.reduce((sum, item) => {
+                  const value = parseInt(item.value);
+                  return sum + (isNaN(value) ? 0 : value);
                 }, 0)
-                : 0);
+              : 0);
           }, 0);
-        }, 0), // Sum of all delivered quantities
-
+        }, 0),
         totalQuantityReceived: models.reduce((acc, model) => {
           return acc + model.ModelVarients.reduce((subAcc, variant) => {
             return subAcc + (variant.TrakingModels[0]?.QuantityReceived
-                ? variant.TrakingModels[0].QuantityReceived.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+              ? variant.TrakingModels[0].QuantityReceived.reduce((sum, item) => {
+                  const value = parseInt(item.value);
+                  return sum + (isNaN(value) ? 0 : value);
                 }, 0)
-                : 0);
+              : 0);
           }, 0);
-        }, 0), // Sum of all received quantities
-
+        }, 0),
         totalDamagedItems: models.reduce((acc, model) => {
           return acc + model.ModelVarients.reduce((subAcc, variant) => {
             return subAcc + (variant.TrakingModels[0]?.DamagedItem
-                ? variant.TrakingModels[0].DamagedItem.reduce((sum, item) => {
-                  const value = parseInt(item.value); // Convert string to number
-                  return sum + (isNaN(value) ? 0 : value); // Only sum valid numbers
+              ? variant.TrakingModels[0].DamagedItem.reduce((sum, item) => {
+                  const value = parseInt(item.value);
+                  return sum + (isNaN(value) ? 0 : value);
                 }, 0)
-                : 0);
+              : 0);
           }, 0);
-        }, 0) // Sum of all damaged items
+        }, 0)
       };
-
-      const reports = Array.isArray(groupedModels)
-        ? groupedModels.flatMap((item) => {
-          const demoModelNumber = item.DemoModelNumber;
-          const modelName = item.ModelName;
-
-          // Map over each variant, making sure the first variant has the model info,
-          // but subsequent variants have empty values for the model fields.
-          return item.Details.map((detail, index) => ({
-            modelNumber: index === 0 ? demoModelNumber : "", // Only the first row has the model number
-            name: index === 0 ? modelName : "", // Only the first row has the model name
-            barcode: index === 0 ? item.Barcode : "", // Example: if you have barcode data
-            textile: index === 0 ? item.Textiles : "", // Only the first row has textile
-            colors:  detail.Color ? detail.Color.ColorName :"",
-            sizes: detail.Sizes.map(
-                (size) =>
-                    `${size.label} : ${size.value}`
-            ).join(", "),
-            currentStage: detail.DepartmentName || "N/A",
-            QuantityDelivered: detail.QuantityDelivered
-                ? detail.QuantityDelivered
-                    .map(
-                      (size) =>
-                          `${size.label} : ${size.value}`
-                  ).join(", ")
-                : "N/A",
-            QuantityReceived: detail.QuantityReceived
-                ? detail.QuantityReceived
-                    .map(
-                      (size) =>
-                          `${size.label} : ${size.value}`
-                  ).join(", ")
-                : "N/A",
-            DamagedItem: detail.DamagedItem
-                ? detail.DamagedItem
-                    .map(
-                      (size) =>
-                          `${size.label} : ${size.value}`
-                  ).join(", ")
-                : "N/A",
-            duration: detail.DurationInHours || "N/A",
-          }));
-        })
-        : [];
-
-
-        const totalRecords = reports.length;
-        const totalPages = Math.ceil(totalRecords / size);
-
-        const startIndex = (page - 1) * size;
-        const endIndex = page * size;
-
-        const paginatedReport = reports.slice(startIndex, endIndex);
-
-
+  
+       const reports = groupedModels.flatMap((item) => {
+        return item.Details.map((detail, index) => ({
+          modelNumber: index === 0 ? item.DemoModelNumber : "",
+          name: index === 0 ? item.ModelName : "",
+          barcode: index === 0 ? item.Barcode : "",
+          textile: index === 0 ? item.Textiles : "",
+          colors: detail.Color ? detail.Color.ColorName : "",
+          sizes: detail.Sizes.map((size) => `${size.label} : ${size.value}`).join(", "),
+          currentStage: detail.DepartmentName || "N/A",
+          QuantityDelivered: detail.QuantityDelivered
+            ? detail.QuantityDelivered.map((size) => `${size.label} : ${size.value}`).join(", ")
+            : "N/A",
+          QuantityReceived: detail.QuantityReceived
+            ? detail.QuantityReceived.map((size) => `${size.label} : ${size.value}`).join(", ")
+            : "N/A",
+          DamagedItem: detail.DamagedItem
+            ? detail.DamagedItem.map((size) => `${size.label} : ${size.value}`).join(", ")
+            : "N/A",
+          duration: detail.DurationInHours || "N/A",
+        }));
+      });
+  
+       const totalRecords = reports.length;
+      const totalPages = Math.ceil(totalRecords / size);
+      const startIndex = (page - 1) * size;
+      const endIndex = page * size;
+      const paginatedReport = reports.slice(startIndex, endIndex);
+  
       return res.status(200).send({
         status: 200,
         message: "Models fetched successfully!",

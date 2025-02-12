@@ -292,6 +292,9 @@ const MaterialController = {
           ChildMaterialId: {
             in: materials.map((material) => material.Id), // ربط المواد بحركاتها
           },
+          Audit: {
+            IsDeleted: false
+          }
         },
         include: {
           WarehouseFrom: true, // جلب معلومات المستودع الصادرة منه الحركة
@@ -318,66 +321,73 @@ const MaterialController = {
         return acc;
       }, {});
   
-      // حساب الكميات حسب المستودعات مع مراعاة وحدات القياس
+    
       const warehouseQuantities = materialMovements.reduce((acc, movement) => {
-        if (movement.WarehouseTo) {
-          const key = `${movement.ChildMaterialId}-${movement.WarehouseTo.Id}-${movement.UnitOfQuantity}`;
-          const quantity = Number(movement.Quantity);
-  
-          if (!acc[key]) {
-            acc[key] = {
-              WarehouseName: movement.WarehouseTo.WarehouseName,
-              Quantity: 0,
-              Unit: movement.UnitOfQuantity,
-            };
-          }
-  
-          if (movement.MovementType === 'INCOMING') {
-            acc[key].Quantity += quantity;
-          }
+        const quantity = Number(movement.Quantity);
+        
+         if (movement.WarehouseTo) {
+            const keyTo = `${movement.ChildMaterialId}-${movement.WarehouseTo.Id}-${movement.UnitOfQuantity}`;
+    
+            if (!acc[keyTo]) {
+                acc[keyTo] = {
+                    WarehouseName: movement.WarehouseTo.WarehouseName,
+                    Quantity: 0,
+                    Unit: movement.UnitOfQuantity,
+                };
+            }
+    
+            acc[keyTo].Quantity += quantity; 
         }
-  
-        if (movement.WarehouseFrom) {
-          const key = `${movement.ChildMaterialId}-${movement.WarehouseFrom.Id}-${movement.UnitOfQuantity}`;
-          const quantity = Number(movement.Quantity);
-  
-          if (!acc[key]) {
-            acc[key] = {
-              WarehouseName: movement.WarehouseFrom.WarehouseName,
-              Quantity: 0,
-              Unit: movement.UnitOfQuantity,
-            };
-          }
-  
-          if (movement.MovementType === 'OUTGOING') {
-            acc[key].Quantity -= quantity;
-          }
+    
+         if (movement.WarehouseFrom) {
+            const keyFrom = `${movement.ChildMaterialId}-${movement.WarehouseFrom.Id}-${movement.UnitOfQuantity}`;
+    
+            if (!acc[keyFrom]) {
+                acc[keyFrom] = {
+                    WarehouseName: movement.WarehouseFrom.WarehouseName,
+                    Quantity: 0,
+                    Unit: movement.UnitOfQuantity,
+                };
+            }
+    
+            acc[keyFrom].Quantity -= quantity;
         }
-  
+    
         return acc;
-      }, {});
+    }, {});
+    
+    const formattedMaterials = materials.map((material) => {
+       const aggregatedQuantities = {};
   
-      // تعديل تنسيق البيانات لتضمين الكميات المتبقية والكميات في المستودعات
-      const formattedMaterials = materials.map((material) => {
-        const generalQuantities = Object.keys(materialQuantities)
+      Object.keys(warehouseQuantities)
           .filter((key) => key.startsWith(`${material.Id}-`))
-          .map((key) => ({
-            unit: key.split('-')[1],
-            quantity: materialQuantities[key], // تنسيق الكمية إلى خانتين عشريتين
-          }));
+          .forEach((key) => {
+              const [, , unit] = key.split('-');
+              const quantity = warehouseQuantities[key].Quantity;
   
-        const warehouseData = Object.keys(warehouseQuantities)
-          .filter((key) => key.startsWith(`${material.Id}-`))
-          .map((key) => {
-            const [_, warehouseId, unit] = key.split('-');
-            return {
-              WarehouseName: warehouseQuantities[key].WarehouseName,
-              Unit: unit,
-              Quantity: warehouseQuantities[key].Quantity,
-            };
+              if (!aggregatedQuantities[unit]) {
+                  aggregatedQuantities[unit] = 0;
+              }
+              aggregatedQuantities[unit] += quantity;
           });
   
-        return {
+       const generalQuantities = Object.keys(aggregatedQuantities).map((unit) => ({
+          unit,
+          quantity: aggregatedQuantities[unit],
+      }));
+  
+      const warehouseData = Object.keys(warehouseQuantities)
+          .filter((key) => key.startsWith(`${material.Id}-`))
+          .map((key) => {
+              const [_, warehouseId, unit] = key.split('-');
+              return {
+                  WarehouseName: warehouseQuantities[key].WarehouseName,
+                  Unit: unit,
+                  Quantity: warehouseQuantities[key].Quantity,
+              };
+          });
+  
+      return {
           Id: material.Id,
           Name: material.Name,
           DyeNumber: material.DyeNumber,
@@ -386,11 +396,13 @@ const MaterialController = {
           Phthalate: material.Phthalate,
           GramWeight: material.GramWeight ? material.GramWeight.toString() : "",
           Description: material.Description,
-          Quantities: generalQuantities, // الكميات المتبقية بشكل عام
-          WarehouseQuantities: warehouseData, // الكميات المتبقية في كل مستودع مع اسم المستودع
-        };
-      });
-  
+          Quantities: generalQuantities,
+          WarehouseQuantities: warehouseData,
+      };
+  });
+
+
+
       // Return response
       return res.status(200).send({
         status: 200,
@@ -410,14 +422,12 @@ const MaterialController = {
   
   
 
-  
- 
- 
   deleteParentMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;
+
     try {
-      await prisma.materials.update({
+      await prisma.ParentMaterials.update({
         where: {
           Id: +id,
         },
@@ -438,6 +448,7 @@ const MaterialController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log(error)
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -445,6 +456,8 @@ const MaterialController = {
       });
     }
   },
+
+
   deleteChildMaterial: async (req, res, next) => {
     const id = parseInt(req.params.id);
     const userId = req.userId;

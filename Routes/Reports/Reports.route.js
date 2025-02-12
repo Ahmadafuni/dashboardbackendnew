@@ -26,5 +26,13 @@ ReportsController.productionReport);
 router.post("/orderReport", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.orderReport);
 
+
+router.post(
+    "/departmentProductionReport",
+     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+    ReportsController.departmentProductionReport
+);
+
+
 const ReportsRoute = router;
 export { ReportsRoute };
