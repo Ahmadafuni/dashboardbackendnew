@@ -682,7 +682,7 @@ const ReportsController = {
 
        if (startDate) {
         modelVarientsFilter.some.TrakingModels.some.AND.push({
-          StartTime: { gte: new Date(startDate) }
+          EndTime: { gte: new Date(startDate) }
         });
       }
       
