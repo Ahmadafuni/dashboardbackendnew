@@ -131,7 +131,7 @@ router.get("/current/dep",
         "PRINTING",
         "QUALITYASSURANCE",
         "DRAWING",
-        "WAREHOUSEMANAGER",
+        "WAREHOUSEMANAGER","Accounting"
     ]),
     TrackingModelController.getAllTrackingByDepartment);
 
@@ -145,7 +145,7 @@ router.get("/model/details/dept" ,
         "PRINTING",
         "QUALITYASSURANCE",
         "DRAWING",
-        "WAREHOUSEMANAGER",
+        "WAREHOUSEMANAGER","Accounting"
     ]),
     TrackingModelController.getModelDetailsDepartment);
 

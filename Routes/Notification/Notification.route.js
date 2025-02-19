@@ -14,7 +14,7 @@ router.get(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
-        "HumanResource",
+        "HumanResource","Accounting"
 
     ]),
     NotificationController.getNotificationsByDepartment

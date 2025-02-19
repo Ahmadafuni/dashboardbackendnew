@@ -7,7 +7,12 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING",  "HumanResource", "MotherCompany"]),
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "HumanResource",
+    "MotherCompany",
+  ]),
   uploadTask.single("task"),
   TaskController.createTask
 );
@@ -56,7 +61,12 @@ router.get(
 );
 router.get(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING", "HumanResource", "MotherCompany"]),
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "HumanResource",
+    "MotherCompany",
+  ]),
   TaskController.getTaskNames
 );
 
@@ -72,6 +82,7 @@ router.get(
     "WAREHOUSEMANAGER",
     "HumanResource",
     "MotherCompany",
+    "Accounting",
   ]),
   TaskController.getCurrentTasks
 );
@@ -86,8 +97,8 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.searchTasks
 );
@@ -107,8 +118,8 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",
   ]),
   uploadTask.single("task"),
   TaskController.updateTask
@@ -123,8 +134,8 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",
   ]),
   TaskController.getSubmitFeedback
 );
@@ -138,8 +149,8 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",
   ]),
   uploadTask.single("task"),
   TaskController.submitFeedback
