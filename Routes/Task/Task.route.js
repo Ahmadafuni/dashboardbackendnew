@@ -7,7 +7,12 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING",  "HumanResource", "MotherCompany"]),
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "HumanResource",
+    "MotherCompany",
+  ]),
   uploadTask.single("task"),
   TaskController.createTask
 );
@@ -23,6 +28,9 @@ router.get(
     "QUALITYASSURANCE",
     "HumanResource",
     "MotherCompany",
+    "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.getAllTasks
 );
@@ -37,6 +45,9 @@ router.get(
     "QUALITYASSURANCE",
     "HumanResource",
     "MotherCompany",
+    "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.getTaskById
 );
@@ -51,12 +62,20 @@ router.get(
     "QUALITYASSURANCE",
     "HumanResource",
     "MotherCompany",
+    "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.startTask
 );
 router.get(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING", "HumanResource", "MotherCompany"]),
+  verifyUser([
+    "FACTORYMANAGER",
+    "ENGINEERING",
+    "HumanResource",
+    "MotherCompany",
+  ]),
   TaskController.getTaskNames
 );
 
@@ -72,6 +91,9 @@ router.get(
     "WAREHOUSEMANAGER",
     "HumanResource",
     "MotherCompany",
+    "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.getCurrentTasks
 );
@@ -86,8 +108,10 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",   "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.searchTasks
 );
@@ -107,8 +131,8 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",
   ]),
   uploadTask.single("task"),
   TaskController.updateTask
@@ -123,8 +147,10 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",   "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   TaskController.getSubmitFeedback
 );
@@ -138,8 +164,10 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
-      "HumanResource",
-      "MotherCompany",
+    "HumanResource",
+    "MotherCompany",   "Accounting",
+    "DRAWING",
+    "Monitoring",
   ]),
   uploadTask.single("task"),
   TaskController.submitFeedback

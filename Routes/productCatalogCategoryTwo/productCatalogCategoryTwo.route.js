@@ -6,43 +6,43 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.createCategory
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.getAllCategories
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.getCategoryTwoNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.getCategoryById
 );
 router.delete(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.deleteCategory
 );
 router.put(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.updateCategory
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.searchPCCT
 );
 
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "DRAWING"]),
   ProductCatalogCategoryTwoController.searchPCCT
 );
 

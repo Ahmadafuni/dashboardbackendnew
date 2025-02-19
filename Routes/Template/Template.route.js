@@ -7,23 +7,23 @@ const router = express.Router();
 
 router.post(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER" ,"DRAWING"]),
   upload.single("template"),
   TemplateController.createTemplate
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "Monitoring" ,"DRAWING"]),
   TemplateController.getTemplates
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring" ,"DRAWING"]),
   TemplateController.getTemplateNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring" ,"DRAWING"]),
   TemplateController.getTemplateById
 );
 router.delete(
@@ -39,12 +39,12 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring" ,"DRAWING"]),
   TemplateController.searchTemplate
 );
 router.get(
   "/view-details/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring" ,"DRAWING"]),
   TemplateController.viewTemplateDetails
 );
 export { router as TemplateRoute };

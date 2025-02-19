@@ -6,37 +6,37 @@ const rouetr = express.Router();
 
 rouetr.post(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.createPattern
 );
 rouetr.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.getPatterns
 );
 rouetr.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.getTemplatePatternNames
 );
 rouetr.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.getPatternById
 );
 rouetr.delete(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.deletePattern
 );
 rouetr.put(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.updatePattern
 );
 rouetr.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
   TemplatePatterController.searchTemplateTypes
 );
 export { rouetr as TemplatePatternRoute };

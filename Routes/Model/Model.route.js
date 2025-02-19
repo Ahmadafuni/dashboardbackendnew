@@ -124,7 +124,7 @@ router.get(
 
 router.get(
   "/allmodels",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER","Accounting"]),
   ModelController.getAllModels
 );
 

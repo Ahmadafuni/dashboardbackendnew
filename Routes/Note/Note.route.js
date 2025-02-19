@@ -20,7 +20,9 @@ router.get(
     "QUALITYASSURANCE",
      "WAREHOUSEMANAGER",
       "HumanResource",
-      "MotherCompany",
+      "MotherCompany",   "Accounting",
+      "DRAWING",
+      "Monitoring",
   ]),
   NoteController.getCurrentDepartmentNotes
 );

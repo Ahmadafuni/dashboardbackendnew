@@ -16,20 +16,20 @@ router.post("/downloadReports",
 verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
 ReportsController.downloadReports);
 
-router.get("/getAlldata", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
+router.get("/getAlldata", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
 ReportsController.fetchAllData);
 
 
-router.post("/productionReport", verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+router.post("/productionReport", verifyUser(["ENGINEERING", "FACTORYMANAGER","Accounting"]),
 ReportsController.productionReport);
 
-router.post("/orderReport", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER"]),
+router.post("/orderReport", verifyUser(["MotherCompany", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
 ReportsController.orderReport);
 
 
 router.post(
     "/departmentProductionReport",
-     verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+     verifyUser(["ENGINEERING", "FACTORYMANAGER","Accounting"]),
     ReportsController.departmentProductionReport
 );
 
