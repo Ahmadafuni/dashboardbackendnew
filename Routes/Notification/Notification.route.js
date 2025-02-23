@@ -31,6 +31,7 @@ router.get(
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
         "HumanResource",
+        "Accounting"
 
     ]),
     NotificationController.getUnreadCountByDepartment
@@ -40,7 +41,8 @@ router.get(
     "/unread-count/all",
     verifyUser([
             "FACTORYMANAGER",
-            "ENGINEERING",]),
+            "ENGINEERING"
+            ,"Accounting"]),
     NotificationController.getAllUnreadCount
 );
 
@@ -56,7 +58,7 @@ router.put(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
-        "HumanResource"
+        "HumanResource","Accounting"
 
     ]),
     NotificationController.markAsRead
@@ -72,7 +74,7 @@ router.put(
         "PRINTING",
         "QUALITYASSURANCE",
         "WAREHOUSEMANAGER",
-        "HumanResource",
+        "HumanResource","Accounting"
 
     ]),
     NotificationController.clearAll
@@ -80,7 +82,7 @@ router.put(
 
 router.get(
     "/all",
-    verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+    verifyUser(["FACTORYMANAGER", "ENGINEERING" ,"Accounting"]),
     NotificationController.getAllNotifications
 );
 

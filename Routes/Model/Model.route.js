@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post(
   "/search",
-  verifyUser(["FACTORYMANAGER", "WAREHOUSEMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "WAREHOUSEMANAGER", "ENGINEERING" , "Accounting"]),
   ModelController.filterModel
 );
 
@@ -124,7 +124,7 @@ router.get(
 
 router.get(
   "/allmodels",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER", "Accounting"]),
   ModelController.getAllModels
 );
 

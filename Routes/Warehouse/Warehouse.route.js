@@ -19,7 +19,7 @@ router.get(
 );
 router.get(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["WAREHOUSEMANAGER", "FACTORYMANAGER", "ENGINEERING" , "Accounting"]),
   WarehouseController.getWarehouseNames
 );
 router.get(

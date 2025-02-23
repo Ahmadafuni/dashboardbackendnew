@@ -16,7 +16,7 @@ router.post(
 );
 router.get(
   "/parent/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER" , "Accounting"]),
   MaterialController.getAllParentMaterials
 );
 router.get(

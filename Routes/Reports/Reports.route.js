@@ -29,7 +29,7 @@ ReportsController.orderReport);
 
 router.post(
     "/departmentProductionReport",
-     verifyUser(["ENGINEERING", "FACTORYMANAGER","Accounting"]),
+     verifyUser(["ENGINEERING", "FACTORYMANAGER", "Accounting"]),
     ReportsController.departmentProductionReport
 );
 
