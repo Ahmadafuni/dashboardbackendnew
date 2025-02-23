@@ -39,6 +39,12 @@ const NoteController = {
               Id: +AssignedToDepartmentId,
             },
           },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
         },
       });
 
@@ -59,6 +65,7 @@ const NoteController = {
       });
     } catch (error) {
       // Server error or unsolved error
+      console.log("error",error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",

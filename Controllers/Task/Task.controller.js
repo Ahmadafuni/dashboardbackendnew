@@ -45,6 +45,12 @@ const TaskController = {
               Id: +AssignedToDepartmentId,
             },
           },
+          Audit: {
+            create: {
+              CreatedById: userId,
+              UpdatedById: userId,
+            },
+          },
         },
       });
 
@@ -64,6 +70,7 @@ const TaskController = {
         data: {},
       });
     } catch (error) {
+      console.log("error",error);
       // Server error or unsolved error
       return res.status(500).send({
         status: 500,
