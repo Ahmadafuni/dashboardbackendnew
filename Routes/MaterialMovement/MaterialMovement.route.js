@@ -22,7 +22,7 @@ router.get(
 
 router.get(
     "/movementtype/:type",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
     MaterialMovementController.getMaterialMovementsByMovementType
 );
 router.get(
@@ -42,7 +42,7 @@ router.put(
 );
 router.get(
     "/materialreport/:searchTerm",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
     MaterialMovementController.getMaterialReportMovements
 );
 
