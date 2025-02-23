@@ -36,17 +36,17 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   SizeController.searchSize
 );
 router.get(
   "/by-template/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   SizeController.getSizesByTemplate
 );
 router.get(
   "/by-model/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   SizeController.getSizesByModel
 );
 export { router as SizeRoute };

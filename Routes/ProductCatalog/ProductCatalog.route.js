@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   ProductCatalogController.getAllProductCatalogs
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   ProductCatalogController.getProductCatalogueNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   ProductCatalogController.getProductCatalogById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
   ProductCatalogController.searchPC
 );
 const ProductCatalogRoute = router;
