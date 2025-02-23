@@ -12,6 +12,11 @@ const NotificationController = {
           Id: true,
           Title: true,
           Description: true,
+          Audit: {
+            select: {
+              CreatedAt: true,
+            },
+          },
         },
       });
       return res.status(200).send({
@@ -117,6 +122,11 @@ const NotificationController = {
           Id: true,
           Title: true,
           Description: true,
+          Audit: {
+            select: {
+              CreatedAt: true,
+            },
+          },
         },
       });
       return res.status(200).send({
