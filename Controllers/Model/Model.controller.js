@@ -1091,6 +1091,11 @@ const ModelController = {
               },
             },
           },
+          ManufacturingStagesModel: {
+            include: {
+              Department: true,
+            }
+          },
         },
       });
 
@@ -1149,21 +1154,17 @@ const ModelController = {
          })),
       };
 
-      // Fetch model stages for each ModelVarient
-      const stages = model.ModelVarients.flatMap((variant) =>
-        variant.TrakingModels.map((tracking) => ({
-          StageNumber: tracking.CurrentStage.StageNumber,
-          StageName: tracking.CurrentStage.StageName,
-          WorkDescription: tracking.CurrentStage.WorkDescription,
-          DepartmentName: tracking.CurrentStage.Department.Name,
-        }))
-      ).sort((a, b) => a.StageNumber - b.StageNumber);
 
-      const uniqueStages = Array.from(
-        new Map(stages.map((stage) => [stage.StageNumber, stage])).values()
-      );
 
-      modelSummary.stages = uniqueStages;
+      const stages = model.ManufacturingStagesModel.map((manufacturingStagesModel) => ({
+        StageNumber: manufacturingStagesModel.StageNumber,
+        StageName: manufacturingStagesModel.StageName,
+        WorkDescription: manufacturingStagesModel.WorkDescription,
+        DepartmentName: manufacturingStagesModel.Department.Name,
+      })).sort((a, b) => a.StageNumber - b.StageNumber);
+
+
+      modelSummary.stages = stages;
 
       const cuttingDepartmentVariants = [];
       const printingDepartmentVariants = [];
@@ -1457,6 +1458,96 @@ const ModelController = {
 
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
+
+
+      const incomingMovements = await prisma.materialMovement.findMany({
+        where: {
+          ModelId: +id,
+          MovementType: 'INCOMING',
+          Audit: {
+            IsDeleted: false
+          }
+        },
+        select: {
+          ChildMaterial: true,
+          Quantity: true,
+          UnitOfQuantity: true,
+        },
+      });
+
+      const outgoingMovements = await prisma.materialMovement.findMany({
+        where: {
+          ModelId: +id,
+          MovementType: 'OUTGOING',
+          Audit: {
+            IsDeleted: false
+          }
+        },
+        select: {
+          ChildMaterial: true,
+          Quantity: true,
+          UnitOfQuantity: true,
+        },
+      });
+
+      const consumptionReport = {};
+
+      incomingMovements.forEach((movement) => {
+        const materialId = movement.ChildMaterial.Id;
+        const unit = movement.UnitOfQuantity;
+
+        if (!consumptionReport[materialId]) {
+          consumptionReport[materialId] = {
+            material: movement.ChildMaterial,
+            units: {},
+          };
+        }
+
+        if (!consumptionReport[materialId].units[unit]) {
+          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+        }
+
+        consumptionReport[materialId].units[unit].incoming += parseFloat(movement.Quantity);
+      });
+
+      outgoingMovements.forEach((movement) => {
+        const materialId = movement.ChildMaterial.Id;
+        const unit = movement.UnitOfQuantity;
+
+        if (!consumptionReport[materialId]) {
+          consumptionReport[materialId] = {
+            material: movement.ChildMaterial,
+            units: {},
+          };
+        }
+
+        if (!consumptionReport[materialId].units[unit]) {
+          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+        }
+
+        consumptionReport[materialId].units[unit].outgoing += parseFloat(movement.Quantity);
+      });
+
+      const materialConsumption = Object.keys(consumptionReport).map((materialId) => {
+        const materialInfo = consumptionReport[materialId];
+        const unitsData = Object.keys(materialInfo.units).map((unit) => {
+          const { incoming, outgoing } = materialInfo.units[unit];
+          return {
+            unit,
+            incoming,
+            outgoing,
+            consumption: outgoing - incoming,
+          };
+        });
+
+        return {
+          material: materialInfo.material,
+          units: unitsData,
+        };
+      });
+
+
+      modelSummary.materialConsumption = materialConsumption;
 
       return res.status(200).send({
         status: 200,

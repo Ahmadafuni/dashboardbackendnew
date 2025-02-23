@@ -674,23 +674,67 @@ const ReportsController = {
         });
       }
 
-       if (status && Array.isArray(status)) {
-        modelVarientsFilter.some.TrakingModels.some.AND.push({
-          RunningStatus: { in: status.map(s => s.value) }
-        });
+      let checkingStatus ;
+      let otherStatuses ;
+      if (status && Array.isArray(status)) {
+         checkingStatus = status.find(s => s.value === 'CHECKING');
+         otherStatuses = status.filter(s => s.value !== 'CHECKING');
+      
+        const modelVarientsFilter = {
+          some: {
+            TrakingModels: {
+              some: {
+                AND: []
+              }
+            }
+          }
+        };
+      
+        // إضافة شرط CHECKING للـ MainStatus إذا وجد
+        if (checkingStatus) {
+          modelVarientsFilter.some.TrakingModels.some.AND.push({
+            MainStatus: "CHECKING"
+          });
+        }
+      
+        // إضافة باقي الحالات للـ RunningStatus
+        if (otherStatuses.length > 0) {
+          modelVarientsFilter.some.TrakingModels.some.AND.push({
+            RunningStatus: otherStatuses.map(s => s.value)
+          });
+        }
+      
+        filter.ModelVarients = modelVarientsFilter;
       }
 
-       if (startDate) {
+      if (startDate) {
         modelVarientsFilter.some.TrakingModels.some.AND.push({
-          EndTime: { gte: new Date(startDate) }
+          Audit: {
+            UpdatedAt: { gte: new Date(startDate) }
+          }
         });
       }
       
       if (endDate) {
         modelVarientsFilter.some.TrakingModels.some.AND.push({
-          EndTime: { lte: new Date(endDate) }
+          Audit: {
+            UpdatedAt: { lte: new Date(endDate) }
+          }
         });
       }
+      
+
+      //  if (startDate) {
+      //   modelVarientsFilter.some.TrakingModels.some.AND.push({
+      //     EndTime: { gte: new Date(startDate) }
+      //   });
+      // }
+      
+      // if (endDate) {
+      //   modelVarientsFilter.some.TrakingModels.some.AND.push({
+      //     EndTime: { lte: new Date(endDate) }
+      //   });
+      // }
 
        filter.ModelVarients = modelVarientsFilter;
 
@@ -748,9 +792,12 @@ const ReportsController = {
                       }
                     } : {},
                     status ? {
-                      RunningStatus: { in: status.map(s => s.value) }
+                      OR: [
+                        checkingStatus ? { MainStatus: "CHECKING" } : {},
+                        otherStatuses.length > 0 ? { RunningStatus: otherStatuses.map(s => s.value) } : {}
+                      ].filter(condition => Object.keys(condition).length > 0)
                     } : {}
-                  ]
+                  ].filter(condition => Object.keys(condition).length > 0)
                 },
                 select: {
                   Id: true,
@@ -789,7 +836,8 @@ const ReportsController = {
           'COMPLETED': 'مكتمل',
           'DONE': 'منتهي',
           'IN_PROGRESS': 'قيد التنفيذ',
-          'STOPPED': 'متوقف'
+          'STOPPED': 'متوقف',
+          'CHECKING': 'بانتظار التأكيد'
         };
       
         return statusMap[status] || status;
@@ -871,7 +919,7 @@ const ReportsController = {
               modelNumber: model.DemoModelNumber,
               modelName: model.ModelName,
               color: variant.Color.ColorName,
-              status: getArabicStatus(tracking.RunningStatus), 
+              status: tracking.MainStatus === "CHECKING" ? getArabicStatus(tracking.MainStatus) : getArabicStatus(tracking.RunningStatus) , 
               sizes: formatSizes(variant.Sizes),
               quantityReceived: formatQuantities(variant.QuantityReceived),
               quantityDelivered: formatQuantities(tracking.QuantityDelivered),
