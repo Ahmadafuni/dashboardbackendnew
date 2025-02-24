@@ -390,7 +390,23 @@ const AuthenticationController = {
   //     });
   //   }
   // },
-  getAllUsers: async (req, res, next) => {
+  getAllUsers: async (req, res) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+
+
+    const totalRecords = await prisma.users.count({
+      where: {
+        Audit: {
+          IsDeleted: false
+        }
+      }
+    });
+
+
+    const totalPages = Math.ceil(totalRecords / size);
+
     try {
       const users = await prisma.users.findMany({
         where: {
@@ -398,6 +414,8 @@ const AuthenticationController = {
             IsDeleted: false,
           },
         },
+        skip: (page - 1) * size,
+        take: size ,
         select: {
           Id: true,
           Firstname: true,
@@ -420,6 +438,7 @@ const AuthenticationController = {
       return res.status(200).send({
         status: 200,
         message: "تم جلب جميع المستخدمين بنجاح!",
+        totalPages,
         data: users,
       });
     } catch (error) {
@@ -431,6 +450,7 @@ const AuthenticationController = {
       });
     }
   },
+
   getUserById: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -485,6 +505,7 @@ const AuthenticationController = {
       });
     }
   },
+
   toggleUser: async (req, res, next) => {
     const toggleUserId = parseInt(req.params.id);
     const userId = req.userId;
