@@ -11,12 +11,12 @@ router.post(
 );
 router.get(
     "/all",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
     MaterialMovementController.getAllMaterialMovements
 );
 router.get(
     "/movementname",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
     MaterialMovementController.getMaterialMovementNames
 );
 
@@ -27,7 +27,7 @@ router.get(
 );
 router.get(
     "/:id",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Accounting"]),
     MaterialMovementController.getMaterialMovementById
 );
 router.delete(
@@ -48,7 +48,7 @@ router.get(
 
 router.get(
     "/consumptionModel/:id",
-    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+    verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER", "Accounting"]),
     MaterialMovementController.getConsumptionByModel
 );
 

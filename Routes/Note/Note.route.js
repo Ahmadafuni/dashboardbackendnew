@@ -18,16 +18,19 @@ router.post(
 router.get(
   "/current-notes",
   verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-    "WAREHOUSEMANAGER",
-    "HumanResource",
-    "MotherCompany",
-    "Accounting",
+      "CUTTING",
+      "DRAWING",
+      "ENGINEERING",
+      "FACTORYMANAGER",
+      "PRINTING",
+      "QUALITYASSURANCE",
+      "TAILORING",
+      "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
   ]),
   NoteController.getCurrentDepartmentNotes
 );

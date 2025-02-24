@@ -7,14 +7,19 @@ const router = express.Router();
 router.get(
     "/",
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER",
-        "HumanResource","Accounting"
+            "CUTTING",
+            "DRAWING",
+            "ENGINEERING",
+            "FACTORYMANAGER",
+            "PRINTING",
+            "QUALITYASSURANCE",
+            "TAILORING",
+            "WAREHOUSEMANAGER",
+            "HumanResource",
+            "MotherCompany",
+            "Accounting",
+            "Monitoring",
+            "PRODUCTION"
 
     ]),
     NotificationController.getNotificationsByDepartment
@@ -23,16 +28,19 @@ router.get(
 router.get(
     "/unread-count",
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER",
-        "HumanResource",
-        "Accounting"
-
+            "CUTTING",
+            "DRAWING",
+            "ENGINEERING",
+            "FACTORYMANAGER",
+            "PRINTING",
+            "QUALITYASSURANCE",
+            "TAILORING",
+            "WAREHOUSEMANAGER",
+            "HumanResource",
+            "MotherCompany",
+            "Accounting",
+            "Monitoring",
+            "PRODUCTION"
     ]),
     NotificationController.getUnreadCountByDepartment
 );
@@ -51,14 +59,19 @@ router.get(
 router.put(
     "/:id/read",
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER",
-        "HumanResource","Accounting"
+            "CUTTING",
+            "DRAWING",
+            "ENGINEERING",
+            "FACTORYMANAGER",
+            "PRINTING",
+            "QUALITYASSURANCE",
+            "TAILORING",
+            "WAREHOUSEMANAGER",
+            "HumanResource",
+            "MotherCompany",
+            "Accounting",
+            "Monitoring",
+            "PRODUCTION"
 
     ]),
     NotificationController.markAsRead
@@ -67,14 +80,19 @@ router.put(
 router.put(
     "/clear-all",
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
-        "CUTTING",
-        "TAILORING",
-        "PRINTING",
-        "QUALITYASSURANCE",
-        "WAREHOUSEMANAGER",
-        "HumanResource","Accounting"
+            "CUTTING",
+            "DRAWING",
+            "ENGINEERING",
+            "FACTORYMANAGER",
+            "PRINTING",
+            "QUALITYASSURANCE",
+            "TAILORING",
+            "WAREHOUSEMANAGER",
+            "HumanResource",
+            "MotherCompany",
+            "Accounting",
+            "Monitoring",
+            "PRODUCTION"
 
     ]),
     NotificationController.clearAll
@@ -82,7 +100,7 @@ router.put(
 
 router.get(
     "/all",
-    verifyUser(["FACTORYMANAGER", "ENGINEERING" ,"Accounting"]),
+    verifyUser(["FACTORYMANAGER", "ENGINEERING" ,"Monitoring","PRODUCTION"]),
     NotificationController.getAllNotifications
 );
 
