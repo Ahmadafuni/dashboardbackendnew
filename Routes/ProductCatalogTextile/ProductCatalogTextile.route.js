@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ProductCatalogTextileController.getAllTextiles
 );
 router.get(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ProductCatalogTextileController.getCatalogueTextileNames
 );
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ProductCatalogTextileController.getTextileById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ProductCatalogTextileController.searchPCT
 );
 

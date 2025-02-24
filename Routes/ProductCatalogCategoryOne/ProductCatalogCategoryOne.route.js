@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryOneController.getAllCategories
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryOneController.getCategoryOneNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryOneController.getCategoryById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryOneController.searchPCCO
 );
 const ProductCatalogCategorryOneRoute = router;

@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogController.getAllProductCatalogs
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogController.getProductCatalogueNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogController.getProductCatalogById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogController.searchPC
 );
 const ProductCatalogRoute = router;

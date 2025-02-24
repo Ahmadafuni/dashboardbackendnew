@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ColorController.getColors
 );
 router.get(
   "/",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ColorController.getColorNames
 );
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ColorController.getColorById
 );
 router.delete(
@@ -31,12 +31,12 @@ router.delete(
 );
 router.put(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ColorController.updateColor
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ColorController.searchColor
 );
 

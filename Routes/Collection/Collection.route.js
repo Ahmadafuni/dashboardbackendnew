@@ -12,13 +12,13 @@ router.post(
 
 router.get(
   "/update-archived",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING","PRODUCTION"]),
   CollectionController.toggleArchivedCollectionById
 );
 
 router.get(
   "/archived",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING","PRODUCTION"]),
   CollectionController.getArchivedCollections
 );
 
@@ -29,12 +29,12 @@ router.get(
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   CollectionController.getCollectionNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   CollectionController.getCollectionById
 );
 router.delete(

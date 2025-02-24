@@ -89,14 +89,19 @@ router.get(
 router.put(
   "/complete/variant/:id",
   verifyUser([
-    "FACTORYMANAGER",
-    "ENGINEERING",
-    "CUTTING",
-    "TAILORING",
-    "PRINTING",
-    "QUALITYASSURANCE",
-    "DRAWING",
-    "WAREHOUSEMANAGER",
+      "CUTTING",
+      "DRAWING",
+      "ENGINEERING",
+      "FACTORYMANAGER",
+      "PRINTING",
+      "QUALITYASSURANCE",
+      "TAILORING",
+      "WAREHOUSEMANAGER",
+      "HumanResource",
+      "MotherCompany",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
   ]),
   TrackingModelController.completeVariant
 );
@@ -111,41 +116,51 @@ router.post(
         "PRINTING",
         "QUALITYASSURANCE",
         "DRAWING",
-        "WAREHOUSEMANAGER",
+        "PRODUCTION"
     ]),
     TrackingModelController.pauseUnpause
 );
 
 router.get(
   "/alltracking",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING","PRODUCTION","Accounting"]),
   TrackingModelController.getAllTracking
 );
 
 router.get("/current/dep",
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
         "CUTTING",
-        "TAILORING",
+        "DRAWING",
+        "ENGINEERING",
+        "FACTORYMANAGER",
         "PRINTING",
         "QUALITYASSURANCE",
-        "DRAWING",
-        "WAREHOUSEMANAGER","Accounting"
+        "TAILORING",
+        "WAREHOUSEMANAGER",
+        "HumanResource",
+        "MotherCompany",
+        "Accounting",
+        "Monitoring",
+        "PRODUCTION"
     ]),
     TrackingModelController.getAllTrackingByDepartment);
 
 
 router.get("/model/details/dept" ,
     verifyUser([
-        "FACTORYMANAGER",
-        "ENGINEERING",
         "CUTTING",
-        "TAILORING",
+        "DRAWING",
+        "ENGINEERING",
+        "FACTORYMANAGER",
         "PRINTING",
         "QUALITYASSURANCE",
-        "DRAWING",
-        "WAREHOUSEMANAGER","Accounting"
+        "TAILORING",
+        "WAREHOUSEMANAGER",
+        "HumanResource",
+        "MotherCompany",
+        "Accounting",
+        "Monitoring",
+        "PRODUCTION"
     ]),
     TrackingModelController.getModelDetailsDepartment);
 

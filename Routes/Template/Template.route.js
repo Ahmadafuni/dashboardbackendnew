@@ -13,17 +13,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateController.getTemplates
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateController.getTemplateNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateController.getTemplateById
 );
 router.delete(
@@ -39,12 +39,12 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateController.searchTemplate
 );
 router.get(
   "/view-details/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateController.viewTemplateDetails
 );
 export { router as TemplateRoute };

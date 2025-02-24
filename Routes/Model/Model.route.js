@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post(
   "/search",
-  verifyUser(["FACTORYMANAGER", "WAREHOUSEMANAGER", "ENGINEERING" , "Accounting"]),
+  verifyUser(["FACTORYMANAGER", "WAREHOUSEMANAGER", "ENGINEERING" , "Accounting", "Monitoring", "PRODUCTION"]),
   ModelController.filterModel
 );
 
@@ -97,6 +97,9 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "FACTORYMANAGER",
+    "Accounting",
+    "Monitoring",
+    "PRODUCTION"
   ]),
   ModelController.getProdModels
 );
@@ -112,31 +115,48 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "FACTORYMANAGER",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
   ]),
   ModelController.getModelSummary
 );
 
 router.get(
   "/all/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"]),
   ModelController.getModelsByOrderId
 );
 
 router.get(
   "/allmodels",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER", "Accounting"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER" , "WAREHOUSEMANAGER",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
+  ]),
   ModelController.getAllModels
 );
 
 router.get(
   "/",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
+  ]),
   ModelController.getModelNames
 );
 
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"]),
   ModelController.getModelById
 );
 
@@ -154,7 +174,11 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["FACTORYMANAGER", "ENGINEERING"]),
+  verifyUser(["FACTORYMANAGER", "ENGINEERING",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
+  ]),
   ModelController.searchModel
 );
 router.get(
@@ -167,6 +191,9 @@ router.get(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
+      "Accounting",
+      "Monitoring",
+      "PRODUCTION"
   ]),
   ModelController.getAllModelVarients
 );
@@ -182,7 +209,7 @@ router.get(
 );
 router.put(
   "/varients/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ModelController.updateModelVarient
 );
 router.delete(
@@ -201,6 +228,8 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
+    "PRODUCTION"
+
   ]),
   ModelController.holdModelVarient
 );
@@ -215,19 +244,20 @@ router.put(
     "PRINTING",
     "QUALITYASSURANCE",
     "WAREHOUSEMANAGER",
+    "PRODUCTION"
   ]),
   ModelController.restartModelVarient
 );
 
 router.put(
   "/restart/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   ModelController.restartModel
 );
 
 router.put(
   "/hold/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "PRODUCTION"]),
   ModelController.holdModel
 );
 router.post(

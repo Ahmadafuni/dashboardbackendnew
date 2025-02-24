@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateSizeController.getSizes
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateSizeController.getTemplateSizeNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateSizeController.getSizeById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   TemplateSizeController.searchTemplateSize
 );
 export { router as TemplateSizeRoute };

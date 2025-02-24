@@ -11,17 +11,17 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryTwoController.getAllCategories
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryTwoController.getCategoryTwoNames
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryTwoController.getCategoryById
 );
 router.delete(
@@ -36,13 +36,13 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   ProductCatalogCategoryTwoController.searchPCCT
 );
 
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION","DRAWING"]),
   ProductCatalogCategoryTwoController.searchPCCT
 );
 

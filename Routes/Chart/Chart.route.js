@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get(
     "/orderchart",
-    verifyUser(["FACTORYMANAGER","ENGINEERING","MotherCompany"]),
+    verifyUser(["FACTORYMANAGER","ENGINEERING","MotherCompany","PRODUCTION"]),
     ChartController.getOrderChartData
 );
 

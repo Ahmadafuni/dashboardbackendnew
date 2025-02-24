@@ -11,17 +11,17 @@ rouetr.post(
 );
 rouetr.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   TemplatePatterController.getPatterns
 );
 rouetr.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   TemplatePatterController.getTemplatePatternNames
 );
 rouetr.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   TemplatePatterController.getPatternById
 );
 rouetr.delete(
@@ -36,7 +36,7 @@ rouetr.put(
 );
 rouetr.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","DRAWING","PRODUCTION"]),
   TemplatePatterController.searchTemplateTypes
 );
 export { rouetr as TemplatePatternRoute };

@@ -12,22 +12,22 @@ router.post(
 );
 router.get(
   "/all",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany","PRODUCTION"]),
   OrderController.getOrders
 );
 router.get(
   "/",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany","PRODUCTION"]),
   OrderController.getOrderNames
 );
 router.get(
   "/ordersForDash",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany","PRODUCTION"]),
   OrderController.getOrdersForDash
 );
 router.get(
   "/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany","PRODUCTION"]),
   OrderController.getOrderById
 );
 router.delete(
@@ -43,22 +43,22 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER", "MotherCompany","PRODUCTION"]),
   OrderController.searchOrder
 );
 router.get(
   "/start/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   OrderController.startOrder
 );
 router.put(
   "/hold/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   OrderController.holdOrder
 );
 router.get(
   "/restart/:id",
-  verifyUser(["ENGINEERING", "FACTORYMANAGER"]),
+  verifyUser(["ENGINEERING", "FACTORYMANAGER","PRODUCTION"]),
   OrderController.restartOrder
 );
 export { router as OrderRoute };

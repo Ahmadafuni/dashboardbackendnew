@@ -11,7 +11,7 @@ router.post(
 );
 router.get(
   "/all/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogDetailController.getAllDetails
 );
 router.post(
@@ -21,7 +21,7 @@ router.post(
 );
 router.get(
   "/:id",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogDetailController.getDetailById
 );
 router.delete(
@@ -36,7 +36,7 @@ router.put(
 );
 router.get(
   "/search/:searchTerm",
-  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING"]),
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER","Monitoring","DRAWING","PRODUCTION"]),
   ProductCatalogDetailController.searchPCD
 );
 
