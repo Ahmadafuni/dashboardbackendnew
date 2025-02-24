@@ -142,6 +142,40 @@ const MaterialController = {
       });
     }
   },
+
+  getAllParentMaterialsList: async (req, res, next) => {
+    try {
+      const materials = await prisma.parentMaterials.findMany({
+        where: {
+          Audit: {
+            IsDeleted: false,
+          },
+        },
+        include: {
+          Category: {
+            select: {
+              Id: true,
+              CategoryName: true,
+            },
+          },
+        },
+      });
+      // Return response
+      return res.status(200).send({
+        status: 200,
+        message: "تم جلب المواد بنجاح!",
+        data: materials,
+      });
+    } catch (error) {
+      // Server error or unsolved error
+      return res.status(500).send({
+        status: 500,
+        message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
+        data: {},
+      });
+    }
+  },
+
   getAllChildMaterials: async (req, res, next) => {
     try {
       const materials = await prisma.childMaterials.findMany({

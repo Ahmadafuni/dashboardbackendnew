@@ -19,6 +19,13 @@ router.get(
   verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER" , "Accounting"]),
   MaterialController.getAllParentMaterials
 );
+
+router.get(
+  "/parent/all/list",
+  verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER" , "Accounting"]),
+  MaterialController.getAllParentMaterialsList
+);
+
 router.get(
     "/childbyparent/:id",
     verifyUser(["WAREHOUSEMANAGER", "ENGINEERING", "FACTORYMANAGER"]),
