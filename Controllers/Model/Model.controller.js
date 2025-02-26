@@ -1913,8 +1913,8 @@ const ModelController = {
 
     try {
       const nameDepartmen = await prisma.departments.findUnique({
-        where: { id: userDepartmentId },
-        select: { name: true },
+        where: { Id: userDepartmentId },
+        select: { Name: true },
       });
 
       const newStopData = {
