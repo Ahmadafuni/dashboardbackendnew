@@ -1910,6 +1910,7 @@ const ModelController = {
     const id = req.params.id; // Model Variant ID
     const userId = req.userId;
     const stopDataFromBody = req.body.stopData;
+    const userDepartmentId = req.userDepartmentId;
 
     try {
       const nameDepartmen = await prisma.departments.findUnique({
@@ -1919,7 +1920,7 @@ const ModelController = {
 
       const newStopData = {
         userId: req.userId,
-        userDepartmentId: req.userDepartmentId,
+        userDepartmentId: userDepartmentId,
         nameDepartment: nameDepartmen,
         StartStopTime: new Date(),
         EndStopTime: null,
