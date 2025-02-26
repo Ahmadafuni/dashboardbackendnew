@@ -103,14 +103,11 @@ const ModelController = {
       let modelCount = await prisma.models.count({});
       modelCount++;
 
-
-   
-
       const createdModel = await prisma.models.create({
         data: {
           ModelName: `${pCatalogue.ProductCatalogName}-${cOne.CategoryName}`,
           ModelNumber: `MN${modelCount.toString().padStart(18, "0")}`,
-          DemoModelNumber: `${DemoModelNumber}-${order.OrderName}` ,
+          DemoModelNumber: `${DemoModelNumber}-${order.OrderName}`,
           Order: {
             connect: {
               Id: +orderId,
@@ -166,7 +163,7 @@ const ModelController = {
       });
     } catch (error) {
       // Server error or unsolved error
-      console.log(error)
+      console.log(error);
       return res.status(500).send({
         status: 500,
         message: "خطأ في الخادم الداخلي. الرجاء المحاولة مرة أخرى لاحقًا!",
@@ -774,7 +771,6 @@ const ModelController = {
     }
   },
 
-
   getModelVarientById: async (req, res, next) => {
     const id = req.params.id;
     try {
@@ -1029,7 +1025,6 @@ const ModelController = {
     try {
       const modelSummary = {};
 
-
       const initialModel = await prisma.models.findUnique({
         where: {
           Id: +id,
@@ -1038,8 +1033,8 @@ const ModelController = {
           },
         },
         include: {
-          Template:true,
-        }
+          Template: true,
+        },
       });
 
       const model = await prisma.models.findUnique({
@@ -1069,7 +1064,7 @@ const ModelController = {
                 },
               },
             },
-          },       
+          },
           Textile: true,
           Audit: true,
           ModelVarients: {
@@ -1094,11 +1089,10 @@ const ModelController = {
           ManufacturingStagesModel: {
             include: {
               Department: true,
-            }
+            },
           },
         },
       });
-
 
       const sizes = [];
       model?.ModelVarients.forEach((e) => {
@@ -1132,9 +1126,10 @@ const ModelController = {
         CategoryOne: model.CategoryOne.CategoryName,
         CategoryTwo: model.categoryTwo.CategoryName,
         ProductCatalog: model.ProductCatalog.ProductCatalogName,
-        StandardWeight: model.ProductCatalog.ProductCatalogDetails[0]?.StandardWeight || 0,
+        StandardWeight:
+          model.ProductCatalog.ProductCatalogDetails[0]?.StandardWeight || 0,
         FabricType: model.Textile.TextileName,
-        
+
         Specification: model.Textile.TextileName,
 
         Characteristics: model.Characteristics,
@@ -1151,18 +1146,17 @@ const ModelController = {
         ColorQuantities: model.ModelVarients.map((v) => ({
           Color: v.Color.ColorName,
           Quantity: v.Quantity,
-         })),
+        })),
       };
 
-
-
-      const stages = model.ManufacturingStagesModel.map((manufacturingStagesModel) => ({
-        StageNumber: manufacturingStagesModel.StageNumber,
-        StageName: manufacturingStagesModel.StageName,
-        WorkDescription: manufacturingStagesModel.WorkDescription,
-        DepartmentName: manufacturingStagesModel.Department.Name,
-      })).sort((a, b) => a.StageNumber - b.StageNumber);
-
+      const stages = model.ManufacturingStagesModel.map(
+        (manufacturingStagesModel) => ({
+          StageNumber: manufacturingStagesModel.StageNumber,
+          StageName: manufacturingStagesModel.StageName,
+          WorkDescription: manufacturingStagesModel.WorkDescription,
+          DepartmentName: manufacturingStagesModel.Department.Name,
+        })
+      ).sort((a, b) => a.StageNumber - b.StageNumber);
 
       modelSummary.stages = stages;
 
@@ -1459,14 +1453,13 @@ const ModelController = {
       modelSummary.cutting = formatedCutting;
       modelSummary.dressup = formatedDressup;
 
-
       const incomingMovements = await prisma.materialMovement.findMany({
         where: {
           ModelId: +id,
-          MovementType: 'INCOMING',
+          MovementType: "INCOMING",
           Audit: {
-            IsDeleted: false
-          }
+            IsDeleted: false,
+          },
         },
         select: {
           ChildMaterial: true,
@@ -1478,10 +1471,10 @@ const ModelController = {
       const outgoingMovements = await prisma.materialMovement.findMany({
         where: {
           ModelId: +id,
-          MovementType: 'OUTGOING',
+          MovementType: "OUTGOING",
           Audit: {
-            IsDeleted: false
-          }
+            IsDeleted: false,
+          },
         },
         select: {
           ChildMaterial: true,
@@ -1504,10 +1497,15 @@ const ModelController = {
         }
 
         if (!consumptionReport[materialId].units[unit]) {
-          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+          consumptionReport[materialId].units[unit] = {
+            incoming: 0,
+            outgoing: 0,
+          };
         }
 
-        consumptionReport[materialId].units[unit].incoming += parseFloat(movement.Quantity);
+        consumptionReport[materialId].units[unit].incoming += parseFloat(
+          movement.Quantity
+        );
       });
 
       outgoingMovements.forEach((movement) => {
@@ -1522,30 +1520,36 @@ const ModelController = {
         }
 
         if (!consumptionReport[materialId].units[unit]) {
-          consumptionReport[materialId].units[unit] = { incoming: 0, outgoing: 0 };
+          consumptionReport[materialId].units[unit] = {
+            incoming: 0,
+            outgoing: 0,
+          };
         }
 
-        consumptionReport[materialId].units[unit].outgoing += parseFloat(movement.Quantity);
+        consumptionReport[materialId].units[unit].outgoing += parseFloat(
+          movement.Quantity
+        );
       });
 
-      const materialConsumption = Object.keys(consumptionReport).map((materialId) => {
-        const materialInfo = consumptionReport[materialId];
-        const unitsData = Object.keys(materialInfo.units).map((unit) => {
-          const { incoming, outgoing } = materialInfo.units[unit];
+      const materialConsumption = Object.keys(consumptionReport).map(
+        (materialId) => {
+          const materialInfo = consumptionReport[materialId];
+          const unitsData = Object.keys(materialInfo.units).map((unit) => {
+            const { incoming, outgoing } = materialInfo.units[unit];
+            return {
+              unit,
+              incoming,
+              outgoing,
+              consumption: outgoing - incoming,
+            };
+          });
+
           return {
-            unit,
-            incoming,
-            outgoing,
-            consumption: outgoing - incoming,
+            material: materialInfo.material,
+            units: unitsData,
           };
-        });
-
-        return {
-          material: materialInfo.material,
-          units: unitsData,
-        };
-      });
-
+        }
+      );
 
       modelSummary.materialConsumption = materialConsumption;
 
@@ -1568,7 +1572,6 @@ const ModelController = {
     const id = req.params.id;
     const userId = req.userId;
     const stopDataFromBody = req.body.stopData;
-
 
     const newStopData = {
       ...stopDataFromBody,
@@ -1891,7 +1894,6 @@ const ModelController = {
             ? "Model and its variants restarted successfully!"
             : "Model and its variants started successfully!",
         data: {},
-        
       });
     } catch (error) {
       // Server error or unsolved error
@@ -1909,17 +1911,26 @@ const ModelController = {
     const userId = req.userId;
     const stopDataFromBody = req.body.stopData;
 
-    const newStopData = {
-      userId: req.userId,
-      userDepartmentId: req.userDepartmentId,
-      StartStopTime: new Date(),
-      EndStopTime: null,
-      ReasonText: stopDataFromBody,
-    };
-
+ 
     console.log("newStopData", newStopData);
 
     try {
+      
+      const nameDepartmen = await prisma.departments.findUnique({
+        where: { id: userDepartmentId },
+        select: { name: true },
+      });
+
+      const newStopData = {
+        userId: req.userId,
+        userDepartmentId: req.userDepartmentId,
+        nameDepartment:nameDepartmen,
+        StartStopTime: new Date(),
+        EndStopTime: null,
+        ReasonText: stopDataFromBody,
+      };
+  
+
       const modelVariant = await prisma.modelVarients.findUnique({
         where: {
           Id: +id,
@@ -2757,7 +2768,6 @@ const ModelController = {
             ColorName: true,
           },
         });
-
 
         const stageIds = Stages.split("-").map(
           (stage) => stageCodeToIdMap[stage]
