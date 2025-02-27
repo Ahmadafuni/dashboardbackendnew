@@ -1147,6 +1147,16 @@ const ModelController = {
           Color: v.Color.ColorName,
           Quantity: v.Quantity,
         })),
+
+        /*
+      //عرض اللون مع جميع المراحل  التي اتمها_ من اجل تتبع الالوان في مراحل العمل 
+       ColorStages: model.ModelVarients.map((v) => ({
+          Color: v.Color.ColorName,
+          traking: v.TrakingModels.map((v1) => ({
+            mainStatus: v1.MainStatus,
+            StageNumber: v1.CurrentStage.StageNumber,
+          })),
+        })),*/
       };
 
       const stages = model.ManufacturingStagesModel.map(
