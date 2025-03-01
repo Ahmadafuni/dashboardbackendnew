@@ -1147,17 +1147,9 @@ const ModelController = {
           Color: v.Color.ColorName,
           Quantity: v.Quantity,
         })),
-
-        /*
-      //عرض اللون مع جميع المراحل  التي اتمها_ من اجل تتبع الالوان في مراحل العمل 
-       ColorStages: model.ModelVarients.map((v) => ({
-          Color: v.Color.ColorName,
-          traking: v.TrakingModels.map((v1) => ({
-            mainStatus: v1.MainStatus,
-            StageNumber: v1.CurrentStage.StageNumber,
-          })),
-        })),*/
+  
       };
+      
 
       const stages = model.ManufacturingStagesModel.map(
         (manufacturingStagesModel) => ({
@@ -1923,15 +1915,15 @@ const ModelController = {
     const userDepartmentId = req.userDepartmentId;
 
     try {
-      const nameDepartmen = await prisma.departments.findUnique({
+      const departmentName = await prisma.departments.findUnique({
         where: { Id: userDepartmentId },
         select: { Name: true },
       });
 
       const newStopData = {
-        userId: req.userId,
+        userId: userId,
         userDepartmentId: userDepartmentId,
-        nameDepartment: nameDepartmen,
+        departmentName: departmentName.Name,
         StartStopTime: new Date(),
         EndStopTime: null,
         ReasonText: stopDataFromBody,
